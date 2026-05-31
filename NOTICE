@@ -1,0 +1,17 @@
+Chippy
+Copyright 2026 Philipp Sommer
+
+Licensed under the Apache License, Version 2.0 (see the LICENSE file).
+
+This product bundles the following third-party components, each distributed
+under its own license:
+
+- DOMPurify — Copyright (c) Cure53 and contributors.
+  Licensed under the Apache License 2.0 OR the Mozilla Public License 2.0.
+  https://github.com/cure53/DOMPurify
+
+- Roboto font — Copyright Google LLC.
+  Licensed under the Apache License 2.0.
+  https://fonts.google.com/specimen/Roboto
+
+Keep each component's own license/notice file alongside the bundled component.

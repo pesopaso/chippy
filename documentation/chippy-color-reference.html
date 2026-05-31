@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Chippy — Colour reference</title>
+<style>
+  :root {
+    --bg: #10152a;
+    --surface: #20293a;
+    --card: #334253;
+    --border: #46556b;
+    --text: #e3e7f0;
+    --muted: #92a3b9;
+    --accent: #518eaa;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 32px 24px;
+    line-height: 1.5;
+    font-size: 14px;
+  }
+  .page { max-width: 1040px; margin: 0 auto; }
+  h1 { font-size: 1.6rem; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+  h1 .ver { font-size: .8rem; color: var(--muted); font-weight: 400; margin-left: 10px; }
+  .lede { color: var(--muted); margin-bottom: 28px; font-size: .9rem; }
+
+  h2 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    margin: 32px 0 4px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  h2 .note { font-weight: 400; color: var(--muted); text-transform: none; letter-spacing: 0; font-size: .82rem; margin-left: 8px; }
+
+  .banner {
+    margin: 48px 0 12px;
+    padding: 14px 20px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .banner-dark {
+    background: linear-gradient(135deg, #10152a 0%, #20293a 100%);
+    color: #e3e7f0;
+    border: 1px solid #46556b;
+  }
+  .banner-light {
+    background: linear-gradient(135deg, #f8f9fa 0%, #fefdff 100%);
+    color: #10152a;
+    border: 1px solid #cbd6df;
+  }
+  .banner-shared {
+    background: linear-gradient(135deg, #334253 0%, #46556b 100%);
+    color: #f3f5f8;
+    border: 1px solid #63768b;
+  }
+  .banner-tag {
+    font-size: .68rem;
+    padding: 3px 9px;
+    border-radius: 4px;
+    background: rgba(255,255,255,.15);
+    letter-spacing: .8px;
+  }
+  .banner-light .banner-tag { background: rgba(0,0,0,.1); }
+
+  .grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 12px; }
+  .row {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+  }
+  .swatch {
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,.08);
+    box-shadow: 0 2px 6px rgba(0,0,0,.25);
+  }
+  .swatch-pair {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .swatch-pair .swatch { width: 64px; height: 64px; }
+  .swatch-pair-labels {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .swatch-pair-labels .swatch-lbl {
+    width: 64px;
+    text-align: center;
+    font-size: .62rem;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: var(--muted);
+  }
+  .swatch-col {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+
+  .meta { flex: 1; min-width: 0; }
+  .meta .name { font-weight: 600; font-size: .95rem; color: var(--text); }
+  .meta .codes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 6px 0 8px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: .8rem;
+  }
+  .meta .codes .hex { color: var(--text); background: var(--card); padding: 1px 6px; border-radius: 3px; }
+  .meta .codes .hex.light { background: #f3f5f8; color: #10152a; }
+  .meta .codes .hex-pair { display: inline-flex; gap: 4px; }
+  .meta .codes .hex-pair .hex-lbl { color: var(--muted); font-size: .7rem; align-self: center; margin-right: 2px; }
+  .meta .codes .var { color: var(--accent); }
+  .meta .role { color: var(--muted); font-size: .82rem; line-height: 1.5; }
+  .meta .role ul {
+    margin: 4px 0 0 0;
+    padding-left: 20px;
+    list-style: disc;
+  }
+  .meta .role ul li {
+    margin-bottom: 2px;
+    color: var(--muted);
+  }
+  .meta .role ul li::marker { color: var(--border); }
+
+  .light-zone {
+    background: #f8f9fa;
+    color: #10152a;
+    border-radius: 12px;
+    padding: 20px 24px 24px;
+    margin-top: 0;
+    box-shadow: 0 4px 18px rgba(0,0,0,.35);
+  }
+  .light-zone .row {
+    background: #fefdff;
+    border-color: #cbd6df;
+  }
+  .light-zone .meta .name { color: #10152a; }
+  .light-zone .meta .role,
+  .light-zone .meta .role ul li { color: #63768b; }
+  .light-zone .meta .role ul li::marker { color: #cbd6df; }
+  .light-zone .meta .codes .hex { color: #10152a; background: #f3f5f8; }
+  .light-zone .meta .codes .var { color: #384057; }
+  .light-zone .meta .codes .hex-pair .hex-lbl { color: #63768b; }
+  .light-zone .swatch { box-shadow: 0 2px 6px rgba(0,0,0,.12); border-color: rgba(0,0,0,.08); }
+  .light-zone .swatch-pair-labels .swatch-lbl { color: #63768b; }
+  .light-zone h2 {
+    border-bottom-color: #cbd6df;
+    color: #384057;
+    background: transparent;
+    margin-top: 16px;
+  }
+  .light-zone h2 .note { color: #63768b; }
+
+  footer {
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: .78rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>Chippy — Colour reference <span class="ver">v1.0</span></h1>
+<p class="lede">Every colour the app exposes, grouped by role. The surface scale stays neutral so the accents read cleanly. The page is split into three blocks: a dark-mode block at the top, a shared block in the middle for colours that look the same in both themes, and a light-mode block at the bottom — each clearly labelled so it's never ambiguous which mode a swatch belongs to.</p>
+
+<!-- ============================================================
+     DARK MODE
+     ============================================================ -->
+<div class="banner banner-dark">
+  <span class="banner-tag">Mode</span>
+  Dark mode — surface &amp; text scale
+</div>
+
+<h2>Surface &amp; text <span class="note">— neutral scale, dark variant</span></h2>
+<div class="grid">
+
+  <div class="row">
+    <div class="swatch" style="background:#10152a"></div>
+    <div class="meta">
+      <div class="name">Background</div>
+      <div class="codes"><span class="hex">#10152a</span><span class="var">--bg</span></div>
+      <div class="role">Outermost canvas behind everything. Sits behind the sidebar and the main column; not surfaced through any chrome.</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="swatch" style="background:#20293a"></div>
+    <div class="meta">
+      <div class="name">Surface</div>
+      <div class="codes"><span class="hex">#20293a</span><span class="var">--surface</span></div>
+      <div class="role">One step up from the background — defines containers.
+        <ul>
+          <li>Sidebar fill</li>
+          <li>Modal dialog backgrounds</li>
+          <li>Preparation card</li>
+          <li>Right-panel section containers</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="swatch" style="background:#334253"></div>
+    <div class="meta">
+      <div class="name">Card</div>
+      <div class="codes"><span class="hex">#334253</span><span class="var">--card</span></div>
+      <div class="role">Inset elements inside a surface.
+        <ul>
+          <li>Task rows in the right panel</li>
+          <li>Tag chips</li>
+          <li>Autocomplete dropdown rows</li>
+          <li>Secondary buttons</li>
+          <li>Avatar circles in the member list</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="swatch" style="background:#46556b"></div>
+    <div class="meta">
+      <div class="name">Border</div>
+      <div class="codes"><span class="hex">#46556b</span><span class="var">--border</span></div>
+      <div class="role">Divider lines and edges, plus a deliberately-quiet semantic role.
+        <ul>
+          <li>Panel borders and section dividers</li>
+          <li>Chrome-bar bottom rule</li>
+          <li>Input field outlines</li>
+          <li>"Never used" tag colour in overviews</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="swatch" style="background:#e3e7f0"></div>
+    <div class="meta">
+      <div class="name">Text</div>
+      <div class="codes"><span class="hex">#e3e7f0</span><span class="var">--text</span></div>
+      <div class="role">Primary body text. Comments, task titles, history entries, anything the reader is meant to focus on.</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="swatch" style="background:#92a3b9"></div>
+    <div class="meta">
+      <div class="name">Muted</div>
+      <div class="codes"><span class="hex">#92a3b9</span><span class="var">--muted</span></div>
+      <div class="role">Secondary text and metadata. Reads as text but recedes.
+        <ul>
+          <li>Timestamps</li>
+          <li>Entry counts</li>
+          <li>Filter input placeholders</li>
+          <li>Second-line context inside cards</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================================
+     SHARED — accent palette (theme-independent)
+     ============================================================ -->
+<div class="banner banner-shared">
+  <span class="banner-tag">Shared</span>
+  Accent palette — identical in both modes
+</div>
+
+<h2>Accent colours <span class="note">— same hex in dark and light</span></h2>
+<div class="grid">
+
+  <div class="row">
+    <div class="swatch" style="background:#317b61"></div>
+    <div class="meta">
+      <div class="name">Green</div>
+      <div class="codes"><span class="hex">#317b61</span><span class="var">--green</span></div>
+      <div class="role">Success and resolved states.
+        <ul>
+          <li>DONE task state</li>
+          <li>"Achieved" goal indicator</li>
+          <li>Success toasts</li>
+          <li>Folder-connected status text in the sidebar footer</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="swatch" style="background:#e19a25"></div>
+    <div class="meta">
+      <div class="name">Yellow</div>
+      <div class="codes"><span class="hex">#e19a25</span><span class="var">--yellow</span></div>
+      <div class="role">Attention-without-alarm states.
+        <ul>
+          <li>HOLD task state</li>
+          <li>Active favorite star (header + sidebar)</li>
+          <li>Stale tag indicator in the sidebar recency list</li>
+          <li>Stale row indicator in the Tags overview</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="swatch" style="background:#d9212a"></div>
+    <div class="meta">
+      <div class="name">Red</div>
+      <div class="codes"><span class="hex">#d9212a</span><span class="var">--red</span></div>
+      <div class="role">High-priority and alert states.
+        <ul>
+          <li>High-priority task dot</li>
+          <li>Error toasts</li>
+          <li>"Never used" tag name colour in Tags overview</li>
+          <li>Delete confirmation accents</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="swatch" style="background:#7a3346"></div>
+    <div class="meta">
+      <div class="name">Purple</div>
+      <div class="codes"><span class="hex">#7a3346</span><span class="var">--purple</span></div>
+      <div class="role">Discussion-name labels in cross-discussion lists (All Comments, All Tasks, All Goals, print previews).</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="swatch" style="background:#e05c23"></div>
+    <div class="meta">
+      <div class="name">Orange</div>
+      <div class="codes"><span class="hex">#e05c23</span><span class="var">--orange</span></div>
+      <div class="role">Open and active-filter states.
+        <ul>
+          <li>OPEN task state</li>
+          <li>Active-filter indicator (orange border on any input that has a value)</li>
+          <li>Discard / unsaved button accents</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="swatch" style="background:#b32794"></div>
+    <div class="meta">
+      <div class="name">Pink</div>
+      <div class="codes"><span class="hex">#b32794</span><span class="var">--pink</span></div>
+      <div class="role">One of the discussion-tag rotation colours. The sidebar cycles through this hue plus accent / green / yellow / red / purple / orange to colour-code discussion groups when more than one tag is in use.</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="swatch" style="background:#d9a3bc"></div>
+    <div class="meta">
+      <div class="name">Followup</div>
+      <div class="codes"><span class="hex">#d9a3bc</span><span class="var">--followup</span></div>
+      <div class="role">Followup entries — left-border stripe on followup rows, and chip backgrounds. A decoupled variant so it can be tuned independently of the discussion-name colour.</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="swatch" style="background:#225a7a"></div>
+    <div class="meta">
+      <div class="name">Goal</div>
+      <div class="codes"><span class="hex">#225a7a</span><span class="var">--goal</span></div>
+      <div class="role">Goal entries — left-border stripe on goal cards in the right panel and the All Goals list. Distinct from accent so goal cards stay visually separate from task cards.</div>
+    </div>
+  </div>
+
+</div>
+
+<h2>Top chrome <span class="note">— hardcoded, identical in both modes</span></h2>
+<div class="grid">
+
+  <div class="row">
+    <div class="swatch" style="background:#0c18a0"></div>
+    <div class="meta">
+      <div class="name">Top chrome</div>
+      <div class="codes"><span class="hex">#0c18a0</span><span class="var">not a CSS variable — inline hex</span></div>
+      <div class="role">The bar across the top of the viewport. Holds:
+        <ul>
+          <li>App title + version</li>
+          <li>Recent-discussion tabs</li>
+          <li>Print button (context-aware)</li>
+          <li>Theme toggle</li>
+          <li>Help icon</li>
+        </ul>
+        Hardcoded rather than themed because it stays the same in both light and dark mode.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<h2>Task state colours <span class="note">— left-border stripe + state-square fill</span></h2>
+<div class="grid">
+
+  <div class="row">
+    <div class="swatch" style="background:#e05c23"></div>
+    <div class="meta">
+      <div class="name">OPEN <span class="role" style="display:inline">via --orange</span></div>
+      <div class="codes"><span class="hex">#e05c23</span></div>
+      <div class="role">Default state for new tasks and tasks brought back from any closed state.</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="swatch" style="background:#7ca8bc"></div>
+    <div class="meta">
+      <div class="name">WIP</div>
+      <div class="codes"><span class="hex">#7ca8bc</span></div>
+      <div class="role">In-progress.
+        <ul>
+          <li>The dev-task-runner skill writes this tag when it starts work</li>
+          <li>User clicks it manually in the UI to claim a task</li>
+          <li>A lightened blue for better contrast at small sizes</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="swatch" style="background:#9f8a93"></div>
+    <div class="meta">
+      <div class="name">CHK</div>
+      <div class="codes"><span class="hex">#9f8a93</span></div>
+      <div class="role">Needs human review.
+        <ul>
+          <li>The skill writes this when it fails or aborts</li>
+          <li>User clicks it manually to flag "look at me"</li>
+          <li>A lightened mauve for better contrast at small sizes</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="swatch" style="background:#e19a25"></div>
+    <div class="meta">
+      <div class="name">HOLD <span class="role" style="display:inline">via --yellow</span></div>
+      <div class="codes"><span class="hex">#e19a25</span></div>
+      <div class="role">Parked. Not blocked, just not active. New tasks added via the skill's capture mode default here for the human to gate.</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="swatch" style="background:#92a3b9"></div>
+    <div class="meta">
+      <div class="name">PRGT <span class="role" style="display:inline">via --muted</span></div>
+      <div class="codes"><span class="hex">#92a3b9</span></div>
+      <div class="role">Purgatory. Halfway between obsolete and on-hold — kept visible but not actively prioritized.</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="swatch" style="background:#317b61"></div>
+    <div class="meta">
+      <div class="name">DONE <span class="role" style="display:inline">via --green</span></div>
+      <div class="codes"><span class="hex">#317b61</span></div>
+      <div class="role">Resolved. The UI writes the <code>Resolved:</code> timestamp when this is set; the skill never writes it.</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="swatch" style="background:#46556b"></div>
+    <div class="meta">
+      <div class="name">OBSL <span class="role" style="display:inline">via --border</span></div>
+      <div class="codes"><span class="hex">#46556b</span></div>
+      <div class="role">Obsolete. No longer relevant; appended with the <code>Obsolete:</code> timestamp.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================================
+     Theme-dependent accents — Accent + Name
+     ============================================================ -->
+<div class="banner banner-shared">
+  <span class="banner-tag">Theme-aware</span>
+  Accents that differ between dark and light
+</div>
+
+<h2>Theme-dependent colours <span class="note">— same CSS variable, different value per theme</span></h2>
+<div class="grid">
+
+  <div class="row">
+    <div class="swatch-col">
+      <div class="swatch-pair">
+        <div class="swatch" style="background:#518eaa"></div>
+        <div class="swatch" style="background:#384057"></div>
+      </div>
+      <div class="swatch-pair-labels">
+        <span class="swatch-lbl">Dark</span>
+        <span class="swatch-lbl">Light</span>
+      </div>
+    </div>
+    <div class="meta">
+      <div class="name">Accent</div>
+      <div class="codes">
+        <span class="hex-pair"><span class="hex-lbl">D</span><span class="hex">#518eaa</span></span>
+        <span class="hex-pair"><span class="hex-lbl">L</span><span class="hex">#384057</span></span>
+        <span class="var">--accent</span>
+      </div>
+      <div class="role">The app's primary action colour. Light mode uses a darker, less saturated blue so it reads cleanly against the white surface.
+        <ul>
+          <li>Active nav buttons</li>
+          <li>Save button fill</li>
+          <li>Link colour</li>
+          <li>Focus rings on inputs</li>
+          <li>Hover targets and selected states</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="swatch-col">
+      <div class="swatch-pair">
+        <div class="swatch" style="background:#93b4ac"></div>
+        <div class="swatch" style="background:#214937"></div>
+      </div>
+      <div class="swatch-pair-labels">
+        <span class="swatch-lbl">Dark</span>
+        <span class="swatch-lbl">Light</span>
+      </div>
+    </div>
+    <div class="meta">
+      <div class="name">Name</div>
+      <div class="codes">
+        <span class="hex-pair"><span class="hex-lbl">D</span><span class="hex">#93b4ac</span></span>
+        <span class="hex-pair"><span class="hex-lbl">L</span><span class="hex">#214937</span></span>
+        <span class="var">--name</span>
+      </div>
+      <div class="role">In-text <code>@[Name]</code> references render in this colour. Inline coloured text without a chip box so reading flow isn't interrupted. Light mode uses a much darker green so the references remain legible against the paper-white surface.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================================
+     LIGHT MODE
+     ============================================================ -->
+<div class="banner banner-light">
+  <span class="banner-tag">Mode</span>
+  Light mode — surface &amp; text scale
+</div>
+
+<div class="light-zone">
+
+  <h2>Surface &amp; text <span class="note">— neutral scale, light variant</span></h2>
+  <div class="grid">
+
+    <div class="row">
+      <div class="swatch" style="background:#f8f9fa"></div>
+      <div class="meta">
+        <div class="name">Background</div>
+        <div class="codes"><span class="hex light">#f8f9fa</span><span class="var">--bg</span></div>
+        <div class="role">Paper-feel canvas. Sits behind sidebar and main column.</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="swatch" style="background:#fefdff"></div>
+      <div class="meta">
+        <div class="name">Surface</div>
+        <div class="codes"><span class="hex light">#fefdff</span><span class="var">--surface</span></div>
+        <div class="role">Container fills.
+          <ul>
+            <li>Sidebar fill</li>
+            <li>Modal dialog backgrounds</li>
+            <li>Preparation card</li>
+            <li>Right-panel section containers</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="swatch" style="background:#f3f5f8"></div>
+      <div class="meta">
+        <div class="name">Card</div>
+        <div class="codes"><span class="hex light">#f3f5f8</span><span class="var">--card</span></div>
+        <div class="role">Inset elements.
+          <ul>
+            <li>Task rows in the right panel</li>
+            <li>Tag chips</li>
+            <li>Autocomplete dropdown rows</li>
+            <li>Secondary buttons</li>
+            <li>Avatar circles in the member list</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="swatch" style="background:#cbd6df"></div>
+      <div class="meta">
+        <div class="name">Border</div>
+        <div class="codes"><span class="hex light">#cbd6df</span><span class="var">--border</span></div>
+        <div class="role">Divider lines and outlines.
+          <ul>
+            <li>Panel borders and section dividers</li>
+            <li>Chrome-bar bottom rule</li>
+            <li>Input field outlines</li>
+            <li>"Never used" tag colour in overviews</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="swatch" style="background:#10152a; border:1px solid #cbd6df"></div>
+      <div class="meta">
+        <div class="name">Text</div>
+        <div class="codes"><span class="hex light">#10152a</span><span class="var">--text</span></div>
+        <div class="role">Primary body text. Dark mode's background hex flipped to fill the text role here.</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="swatch" style="background:#63768b"></div>
+      <div class="meta">
+        <div class="name">Muted</div>
+        <div class="codes"><span class="hex light">#63768b</span><span class="var">--muted</span></div>
+        <div class="role">Secondary text and metadata.
+          <ul>
+            <li>Timestamps</li>
+            <li>Entry counts</li>
+            <li>Filter input placeholders</li>
+            <li>Second-line context inside cards</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<footer>
+  Chippy v1.0 · single-file reference, theme-aware
+</footer>
+
+</div>
+</body>
+</html>

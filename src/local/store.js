@@ -130,10 +130,40 @@
     // Persistence of the theme into navigation.md is wired in a later step.
   }
 
+  // Toggle a discussion's favorite flag and persist navigation.md.
+  async function toggleFavorite(name) {
+    const d = state.nav.discussions.find(x => x.name === name);
+    if (!d) return;
+    d.favorite = !d.favorite;
+    await io().saveNav(state.nav);
+    emit({ type: 'favoriteToggled', name, favorite: d.favorite });
+  }
+
+  // Force-reload one discussion from disk (catches external edits), keeping
+  // the rest of the in-memory state and the active selection intact.
+  async function reloadMember(name) {
+    const member = await io().loadDiscussion(state.dirHandle, name);
+    state.members.set(name, member);
+    emit({ type: 'memberReloaded', name });
+    return member;
+  }
+
+  // Save a discussion's preparation text and persist the file.
+  async function setPrep(name, prep) {
+    const m = state.members.get(name);
+    if (!m) return;
+    m.prep = prep;
+    await io().saveDiscussion(state.dirHandle, m);
+    emit({ type: 'prepSaved', name });
+  }
+
   /* ------------------------------ export ------------------------------- */
 
   Chippy.store = Object.assign(
-    { subscribe, openFolder, selectMember, setActiveScreen, setTheme, _state: state },
+    {
+      subscribe, openFolder, selectMember, setActiveScreen, setTheme,
+      toggleFavorite, reloadMember, setPrep, _state: state
+    },
     selectors
   );
 })(typeof globalThis !== 'undefined' ? globalThis : this);

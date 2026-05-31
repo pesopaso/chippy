@@ -199,3 +199,93 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
   from { transform: translateY(12px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
+
+/* ---- Sidebar search ---------------------------------------------------- */
+.sidebar-search-wrap { position: relative; padding: 2px 6px 6px; }
+.sidebar-search {
+  width: 100%;
+  padding: 5px 22px 5px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: .8rem;
+}
+.sidebar-search.filter-active { border-color: var(--orange); }
+.search-clear {
+  position: absolute; right: 12px; top: 5px;
+  border: none; background: none; color: var(--muted);
+  cursor: pointer; font-size: 1rem; line-height: 1;
+}
+
+/* ---- Sidebar discussion list ------------------------------------------ */
+.member-group { margin-bottom: 8px; }
+.member-group-header {
+  padding: 6px 8px 2px;
+  font-size: .68rem; text-transform: uppercase; letter-spacing: .8px;
+  color: var(--muted);
+}
+.member-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 6px; border-radius: 6px; cursor: pointer;
+}
+.member-item:hover { background: var(--card); }
+.member-item.active { background: var(--card); }
+.member-item.favorite { background: linear-gradient(90deg, rgba(225,154,37,.12), transparent 70%); }
+.member-avatar {
+  flex: 0 0 auto; min-width: 26px; height: 20px;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0 4px; border-radius: 4px;
+  background: var(--card); color: var(--muted);
+  font-size: .62rem; letter-spacing: .5px;
+  border: 1px solid var(--border);
+}
+.member-name { flex: 1; min-width: 0; font-size: .85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fav-star { flex: 0 0 auto; color: var(--muted); cursor: pointer; opacity: 0; font-size: .85rem; }
+.member-item:hover .fav-star { opacity: 1; }
+.member-item.favorite .fav-star { opacity: 1; color: var(--yellow); }
+
+/* ---- Recent bar (top chrome) ------------------------------------------ */
+.recent-btn {
+  padding: 2px 9px; border-radius: 12px;
+  border: 1px solid transparent;
+  background: rgba(255,255,255,.10); color: var(--chrome-text);
+  font-size: .7rem; cursor: pointer; white-space: nowrap;
+}
+.recent-btn.active { background: #fff; color: var(--chrome); }
+
+/* ---- Member screen ----------------------------------------------------- */
+.member-header { display: flex; align-items: center; gap: 12px; padding-top: 12px; }
+.member-title { font-size: 1.4rem; font-weight: 600; flex: 1; min-width: 0; }
+.member-header-actions { display: flex; gap: 8px; align-items: center; }
+.favorite-btn, .reload-btn {
+  cursor: pointer; color: var(--muted); font-size: 1rem; user-select: none;
+}
+.favorite-btn.on { color: var(--yellow); }
+.favorite-btn:hover, .reload-btn:hover { color: var(--accent); }
+
+.split-view { display: flex; gap: 16px; margin-top: 12px; align-items: flex-start; }
+.split-left { flex: 1; min-width: 0; }
+.split-right { flex: 0 0 280px; }
+.panel-placeholder { color: var(--muted); font-size: .82rem; border: 1px dashed var(--border); border-radius: 8px; padding: 12px; }
+
+.section-label { font-size: .72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+.prep-section { margin-bottom: 14px; }
+.prep-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.prep-edit-btn { cursor: pointer; color: var(--muted); }
+.prep-edit-btn:hover { color: var(--accent); }
+.prep-empty { color: var(--muted); font-style: italic; font-size: .85rem; }
+.prep-edit, .entry-input {
+  width: 100%; min-height: 64px; resize: vertical;
+  background: var(--card); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px; padding: 8px;
+  font: inherit;
+}
+.entry-box { margin: 14px 0; }
+
+.history-list .day-group { margin-top: 18px; }
+.history-list .day-label { font-size: .72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 6px; }
+.history-entry { padding: 6px 0; border-bottom: 1px solid var(--border); }
+.entry-time { font-size: .7rem; color: var(--muted); margin-bottom: 2px; }
+.entry-text { font-size: .92rem; line-height: 1.55; }
+.history-empty, .prep-empty { color: var(--muted); font-size: .85rem; }

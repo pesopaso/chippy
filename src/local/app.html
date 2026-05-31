@@ -5,9 +5,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Chippy</title>
-  <link rel="stylesheet" href="style.css?v=3.0.0-dev.4" />
+  <link rel="stylesheet" href="style.css?v=3.0.0-dev.5" />
   <!-- DOMPurify is vendored flat (no subfolder). Loaded before the app so the global is ready. -->
-  <script src="dompurify.min.js?v=3.0.0-dev.4"></script>
+  <script src="dompurify.min.js?v=3.0.0-dev.5"></script>
 </head>
 <body>
   <!-- Top chrome: 36px bar across the viewport (R56). Hardcoded indigo, identical in both themes. -->
@@ -28,7 +28,11 @@
   <div id="app">
     <aside id="sidebar">
       <div class="sidebar-header">Discussions</div>
-      <div class="sidebar-body"><!-- discussion list (Step 6) --></div>
+      <div class="sidebar-search-wrap">
+        <input id="sidebarSearch" class="sidebar-search" type="text" placeholder="Search discussions…" />
+        <button id="sidebarSearchClear" class="search-clear hidden" title="Clear">×</button>
+      </div>
+      <div class="sidebar-body"><!-- discussion list rendered by pages.js --></div>
       <div class="sidebar-footer">
         <button id="btnOpenFolder" class="btn-open-folder" title="Open a local data folder">Open Folder</button>
         <div id="folderStatus" class="folder-status">No folder open</div>
@@ -43,19 +47,21 @@
           <p class="welcome-hint">Scaffold shell — screens are wired in later implementation steps.</p>
         </div>
       </section>
+
+      <section id="memberScreen" class="screen"><!-- built by discussion.js --></section>
     </main>
   </div>
 
   <!-- Classic scripts (no ES modules) so the app runs directly from file://.
        Load order matters: each file attaches to the global Chippy namespace,
        and later files depend on earlier ones (io needs format; main needs all). -->
-  <script src="format.js?v=3.0.0-dev.4"></script>
-  <script src="io.js?v=3.0.0-dev.4"></script>
-  <script src="store.js?v=3.0.0-dev.4"></script>
-  <script src="ui.js?v=3.0.0-dev.4"></script>
-  <script src="discussion.js?v=3.0.0-dev.4"></script>
-  <script src="pages.js?v=3.0.0-dev.4"></script>
-  <script src="dashboard.js?v=3.0.0-dev.4"></script>
-  <script src="main.js?v=3.0.0-dev.4"></script>
+  <script src="format.js?v=3.0.0-dev.5"></script>
+  <script src="io.js?v=3.0.0-dev.5"></script>
+  <script src="store.js?v=3.0.0-dev.5"></script>
+  <script src="ui.js?v=3.0.0-dev.5"></script>
+  <script src="discussion.js?v=3.0.0-dev.5"></script>
+  <script src="pages.js?v=3.0.0-dev.5"></script>
+  <script src="dashboard.js?v=3.0.0-dev.5"></script>
+  <script src="main.js?v=3.0.0-dev.5"></script>
 </body>
 </html>

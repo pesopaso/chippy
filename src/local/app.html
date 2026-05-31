@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chippy</title>
+  <link rel="stylesheet" href="style.css?v=3.0.0-dev.1" />
+  <!-- DOMPurify is vendored flat (no subfolder). Loaded before the app so the global is ready. -->
+  <script src="dompurify.min.js?v=3.0.0-dev.1"></script>
+</head>
+<body>
+  <!-- Top chrome: 36px bar across the viewport (R56). Hardcoded indigo, identical in both themes. -->
+  <div id="topChrome" class="top-chrome">
+    <div class="tc-left">
+      <h2>Chippy <span id="appVersion" class="app-version"></span></h2>
+    </div>
+    <div class="tc-middle">
+      <div id="recentBar" class="recent-bar"><!-- recent-discussion tabs (later steps) --></div>
+    </div>
+    <div class="tc-right">
+      <button id="btnPrintChrome" class="chrome-btn hidden" title="Print">🖶</button>
+      <button id="btnThemeToggle" class="chrome-btn" title="Toggle light / dark theme">☀</button>
+      <button id="btnHelp" class="chrome-btn" title="Help">?</button>
+    </div>
+  </div>
+
+  <div id="app">
+    <aside id="sidebar">
+      <div class="sidebar-header">Discussions</div>
+      <div class="sidebar-body"><!-- discussion list (Step 6) --></div>
+    </aside>
+
+    <main id="main">
+      <section id="welcomeScreen" class="screen active">
+        <div class="welcome">
+          <h1>Chippy</h1>
+          <p class="welcome-sub">Local notebook for long-running discussions.</p>
+          <p class="welcome-hint">Scaffold shell — screens are wired in later implementation steps.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="main.js?v=3.0.0-dev.1"></script>
+</body>
+</html>

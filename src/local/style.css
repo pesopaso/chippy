@@ -1,0 +1,140 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/*
+  Chippy — base stylesheet.
+  All colours are CSS variables (R50). Dark is the implicit default on :root;
+  light overrides live in :root[data-theme="light"]. Accent / state colours are
+  theme-independent and defined once. Palette source of truth:
+  ../../documentation/chippy-color-reference.html
+*/
+
+/* ---- Dark theme (default) ---------------------------------------------- */
+:root {
+  --bg: #10152a;
+  --surface: #20293a;
+  --card: #334253;
+  --border: #46556b;
+  --text: #e3e7f0;
+  --muted: #92a3b9;
+  --accent: #518eaa;
+  --name: #93b4ac;
+
+  /* Shared accents — identical in both themes */
+  --green: #317b61;
+  --yellow: #e19a25;
+  --red: #d9212a;
+  --purple: #7a3346;
+  --orange: #e05c23;
+  --pink: #b32794;
+  --followup: #d9a3bc;
+  --goal: #225a7a;
+
+  /* Task-state fills (WIP/CHK are dedicated; others reuse accents) */
+  --state-open: var(--orange);
+  --state-wip: #7ca8bc;
+  --state-chk: #9f8a93;
+  --state-hold: var(--yellow);
+  --state-prgt: var(--muted);
+  --state-done: var(--green);
+  --state-obsl: var(--border);
+
+  /* Top chrome — hardcoded, identical in both themes */
+  --chrome: #0c18a0;
+  --chrome-text: #ffffff;
+}
+
+/* ---- Light theme ------------------------------------------------------- */
+:root[data-theme="light"] {
+  --bg: #f8f9fa;
+  --surface: #fefdff;
+  --card: #f3f5f8;
+  --border: #cbd6df;
+  --text: #10152a;
+  --muted: #63768b;
+  --accent: #384057;
+  --name: #214937;
+}
+
+/* ---- Reset / base ------------------------------------------------------ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: Roboto, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.hidden { display: none !important; }
+
+/* ---- Top chrome -------------------------------------------------------- */
+.top-chrome {
+  height: 36px;
+  display: flex;
+  align-items: stretch;
+  background: var(--chrome);
+  color: var(--chrome-text);
+  border-bottom: 1px solid var(--border);
+}
+.tc-left { width: 200px; flex: 0 0 200px; display: flex; align-items: center; padding: 0 12px; border-right: 1px solid rgba(255,255,255,.18); }
+.tc-left h2 { font-size: .86rem; font-weight: 600; white-space: nowrap; }
+.app-version { font-size: .65rem; font-weight: 400; opacity: .8; margin-left: 8px; }
+.tc-middle { flex: 1; display: flex; align-items: center; padding: 0 12px; min-width: 0; }
+.recent-bar { display: flex; gap: 6px; overflow: hidden; }
+.tc-right { display: flex; align-items: center; gap: 8px; padding: 0 10px; border-left: 1px solid rgba(255,255,255,.18); }
+
+.chrome-btn {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.45);
+  background: rgba(255,255,255,.12);
+  color: var(--chrome-text);
+  font-size: .85rem;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.chrome-btn:hover { background: rgba(255,255,255,.22); }
+
+/* ---- App layout -------------------------------------------------------- */
+#app {
+  height: calc(100vh - 36px);
+  display: flex;
+  overflow: hidden;
+}
+
+#sidebar {
+  width: 200px;
+  flex: 0 0 200px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.sidebar-header {
+  padding: 14px 8px;
+  font-size: .75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+
+#main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 16px;
+}
+
+.screen { display: none; flex: 1; min-height: 0; }
+.screen.active { display: block; overflow-y: auto; padding: 24px 0; }
+
+/* ---- Welcome ----------------------------------------------------------- */
+.welcome { max-width: 640px; margin: 8vh auto 0; text-align: center; }
+.welcome h1 { font-size: 2rem; font-weight: 600; margin-bottom: 8px; }
+.welcome-sub { color: var(--muted); font-size: 1rem; margin-bottom: 16px; }
+.welcome-hint { color: var(--muted); font-size: .85rem; }

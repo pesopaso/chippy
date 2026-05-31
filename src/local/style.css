@@ -120,6 +120,30 @@ body {
   letter-spacing: 1px;
   color: var(--muted);
 }
+.sidebar-body { flex: 1; overflow-y: auto; }
+
+.sidebar-footer {
+  border-top: 1px solid var(--border);
+  padding: 10px 8px;
+}
+.btn-open-folder {
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: .82rem;
+  cursor: pointer;
+}
+.btn-open-folder:hover { border-color: var(--accent); }
+.folder-status {
+  margin-top: 6px;
+  font-size: .72rem;
+  color: var(--muted);
+}
+.folder-status.connected { color: var(--green); }
+.folder-status.error { color: var(--red); }
 
 #main {
   flex: 1;

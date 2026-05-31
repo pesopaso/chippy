@@ -15,14 +15,20 @@ code into modules with clear responsibilities, a single source of truth, and one
 so each layer can be tested and changed in isolation.
 
 Non-goals: no framework, no build step, no server, no new features beyond what the MVP already
-has. Technology stays vanilla HTML/CSS/JS ES modules plus DOMPurify, opened directly in
-Chrome/Edge against a local folder via the File System Access API. Stability over novelty.
+has. Technology stays vanilla HTML/CSS/JS plus DOMPurify, opened directly in Chrome/Edge against a
+local folder via the File System Access API. The scripts are **classic scripts** (not ES modules)
+that share a single global `Chippy` namespace, so the app loads straight from a `file://` page with
+no server — ES modules were tried but Chrome blocks cross-file `import` under `file://`, which the
+no-server mandate rules out. Stability over novelty.
 
 ## Module overview
 
-The code is a set of **flat script files at the app root — no module subfolders.** The scripts
-form three logical layers; dependencies point downward only, nothing in a lower layer imports
-from a higher one.
+The code is a set of **flat classic-script files at the app root — no module subfolders.** Each
+file wraps its body in an IIFE and attaches its API to the global `Chippy` object (e.g.
+`Chippy.format`, `Chippy.io`, `Chippy.store`). The scripts form three logical layers; dependencies
+point downward only — a lower layer never reads a higher layer's namespace. There is no
+`import`/`export`; the dependency direction is a convention enforced by review and by script load
+order in `app.html`.
 
 ```
                      ┌────────────────────────────────────────┐
@@ -47,8 +53,11 @@ from a higher one.
 ```
 
 All scripts sit flat next to `app.html` and `style.css`: `main.js`, `format.js`, `io.js`,
-`store.js`, `ui.js`, `discussion.js`, `pages.js`, `dashboard.js`. `main.js` bootstraps the app
-and owns the screen router. There are no subdirectories for the application code.
+`store.js`, `ui.js`, `discussion.js`, `pages.js`, `dashboard.js`. `app.html` loads them with
+ordered `<script>` tags in dependency order (`format` → `io` → `store` → `ui` → `discussion` →
+`pages` → `dashboard` → `main`), so each file's namespace is populated before a later file uses
+it. `main.js` loads last; it bootstraps the app and owns the screen router. There are no
+subdirectories for the application code.
 
 `store.js` is the hub: every screen reads from it and subscribes to its change events; every
 mutation goes through it; it is the only caller of `io.js`. The presentation scripts never touch
@@ -56,7 +65,7 @@ disk and never talk to each other — they coordinate only through the store.
 
 | Script | Layer | Responsibility | Depends on |
 |---|---|---|---|
-| `format.js` | persistence | Pure parse/serialize for every Markdown file type + legacy migration; no I/O, runs in Node | (nothing — leaf) |
+| `format.js` | persistence | Pure parse/serialize for every Markdown file type + legacy migration; no I/O. Plain statements only (no `import`/`export`), so it loads as a classic browser script AND as a Node side-effect import for the harness, populating `globalThis.Chippy.format` | (nothing — leaf) |
 | `io.js` | persistence | File System Access wrappers (open/list/load/save/rename/archive) and the image store, built on `format.js` | `format.js` |
 | `store.js` | core | Hold the in-memory source-of-truth object; selectors + mutation actions; persist through `io.js`; emit change events | `io.js` |
 | `ui.js` | shared UI | Reusable, data-agnostic controls (chips, dropdowns, modals, markdown renderer, sanitize, toast) | `store.js` (read/dispatch only) |
@@ -178,17 +187,22 @@ incrementally — application speed is the priority (see datadefinition.md §3).
    makes state transitions testable. Trade-off: we hand-roll minimal reactivity instead of using a
    framework — acceptable given the small surface and the no-build constraint.
 
-2. **Vanilla ES modules, flat files, no framework, no build step.** Matches the MVP's "stability
-   over novelty" mandate and keeps the app a set of scripts opened directly in the browser.
-   Trade-off: no JSX/TSX ergonomics and manual DOM updates; mitigated by the thin `ui.js` layer.
+2. **Vanilla classic scripts on a global `Chippy` namespace, flat files, no framework, no build
+   step.** Matches the MVP's "stability over novelty" mandate and keeps the app a set of scripts
+   opened directly in the browser — crucially, straight from `file://` with no server. ES modules
+   were the first choice but Chrome blocks cross-file `import` under `file://` (each file is an
+   opaque origin), which breaks the no-server requirement; classic scripts loaded via ordered
+   `<script>` tags avoid that entirely. Trade-off: no `import`/`export` isolation (the layering is a
+   convention, not compiler-enforced) and no JSX/TSX ergonomics; mitigated by the thin `ui.js` layer
+   and the one-namespace discipline.
 
 3. **Pure format transforms (`format.js`) separated from disk I/O (`io.js`).** Lets the regression
    harness run the parser/serializer in Node and pins fidelity. Trade-off: two scripts instead of
    one for persistence — worth it for the safety net.
 
 4. **One-way dependencies (presentation → `ui.js` → `store.js` → `io.js`/`format.js`).** No screen
-   imports another; all coordination is via the store. Trade-off: some indirection for cross-screen
-   effects, paid back in isolation and testability.
+   reads another screen's namespace; all coordination is via the store. Trade-off: some indirection
+   for cross-screen effects, paid back in isolation and testability.
 
 5. **DOMPurify at a single `safeSetHtml` boundary.** Every `innerHTML` write goes through one
    sanitize helper (requirement 62). Trade-off: contributors must use the helper, never raw

@@ -21,15 +21,15 @@ and the [regression harness](../regressionharness/README.md).
 ## Step 1 — Project scaffold and app shell
 
 **Substeps**
-1.1 Create the chippy app files: `app.html`, `style.css`, and an ES-module entry `main.js`; vendor DOMPurify flat at the app root (`dompurify.min.js`). No subfolders for application code.
+1.1 Create the chippy app files: `app.html`, `style.css`, and a classic-script entry `main.js`; vendor DOMPurify flat at the app root (`dompurify.min.js`). Scripts are classic (no ES modules) so the app runs from `file://`; each attaches to a global `Chippy` namespace and `app.html` loads them with ordered `<script>` tags. No subfolders for application code.
 1.2 Define all colors as CSS variables, taking the palette from `chippy-color-reference.html` (the canonical color reference) for both dark and light modes; add the light/dark theme via `:root[data-theme=light]` (R50).
 1.3 Build the top chrome bar (36px): app title, theme toggle, help button, print-button placeholder (R56).
 1.4 Add cache-busting version query params on CSS/JS links and a single `VERSION` constant (R48, v2.8).
-1.5 Create the flat module scripts (`format.js`, `io.js`, `store.js`, `ui.js`, `discussion.js`, `pages.js`, `dashboard.js`) as stubs with empty exports so imports resolve. All scripts sit at the app root — no module subfolders.
+1.5 Create the flat classic scripts (`format.js`, `io.js`, `store.js`, `ui.js`, `discussion.js`, `pages.js`, `dashboard.js`) as stubs, each an IIFE attaching an empty object to its `Chippy.<name>` slot. All scripts sit at the app root — no module subfolders.
 1.6 Licensing: the project is Apache-2.0. Keep `LICENSE` and `NOTICE` at the repo root; add an `// SPDX-License-Identifier: Apache-2.0` header to each source file; bundle the third-party license/notice files for DOMPurify (Apache-2.0 / MPL-2.0) and the Roboto font (Apache-2.0) alongside them.
 
 **Acceptance criteria**
-- App opens in Chrome/Edge with no console errors; the shell renders.
+- App opens in Chrome/Edge directly from `file://` (no server) with no console errors; the shell renders.
 - Theme toggle flips light/dark; all surfaces recolor via variables (no hard-coded colors).
 - Version constant is visible (e.g. in the title or help) and bumping it busts the CSS/JS cache.
 - `LICENSE` + `NOTICE` are present at the root, every source file carries the SPDX header, and DOMPurify and Roboto ship with their own license notices.

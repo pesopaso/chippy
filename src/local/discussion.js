@@ -213,7 +213,8 @@
         wrap.append(dayGroup); lastDay = day;
       }
       const tags = e.tags || [];
-      const div = el('div', 'history-entry ' + entryKindClass(tags));
+      const closed = tags.some(t => ['resolvedtask', 'obsoletetask', 'resolvedfollowup'].includes(t));
+      const div = el('div', 'history-entry ' + entryKindClass(tags) + (closed ? ' closed collapsed' : ''));
 
       const meta = el('div', 'entry-meta');
       meta.append(el('span', 'entry-time', e.created_at));
@@ -238,6 +239,88 @@
       }
       dayGroup.append(div);
     }
+    return wrap;
+  }
+
+  /* --------------------------- tasks panel ----------------------------- */
+
+  const PRIO_RANK = { high: 0, medium: 1, low: 2 };
+  const PRIO_LABEL = { high: 'HI', medium: 'MI', low: 'LO' };
+  const STATE_SQUARE = {
+    open: ['OPEN', 'state-open'], inprogress: ['WIP', 'state-inprogresstask'],
+    check: ['CHK', 'state-checktask'], onhold: ['HOLD', 'state-onholdtask'],
+    purgatory: ['PRGT', 'state-purgatorytask'], resolved: ['DONE', 'state-resolvedtask'],
+    obsolete: ['OBSL', 'state-obsoletetask']
+  };
+  function priorityOf(tags) { return tags.find(t => PRIO_RANK[t] !== undefined) || null; }
+  function stateKeyOf(tags) {
+    if (tags.includes('inprogresstask') || tags.includes('inprogress')) return 'inprogress';
+    if (tags.includes('checktask')) return 'check';
+    if (tags.includes('onholdtask') || tags.includes('onhold')) return 'onhold';
+    if (tags.includes('purgatorytask') || tags.includes('purgatory')) return 'purgatory';
+    if (tags.includes('resolvedtask') || tags.includes('resolvedfollowup')) return 'resolved';
+    if (tags.includes('obsoletetask')) return 'obsolete';
+    return 'open';
+  }
+  function ageDays(createdAt) {
+    const d = new Date(String(createdAt || '').replace(' ', 'T'));
+    return isNaN(d) ? null : Math.floor((Date.now() - d.getTime()) / 86400000);
+  }
+  const firstLine = body => String(body || '').split('\n')[0];
+
+  function renderTaskRow(member, t) {
+    const muted = store().isMuted(t);
+    const row = el('div', 'task-item' + (t.tags.includes('followup') ? ' followup' : '') + (muted ? ' muted' : ''));
+
+    const prio = priorityOf(t.tags) || 'low';
+    const ps = el('span', 'prio-square prio-' + prio, PRIO_LABEL[prio]);
+    ps.title = 'Change priority';
+    ps.addEventListener('click', () => store().cyclePriority(member.name, t.created_at));
+
+    const sk = stateKeyOf(t.tags);
+    const [slabel, scls] = STATE_SQUARE[sk];
+    const ss = el('span', 'state-square ' + scls, slabel);
+    ss.title = 'Change state';
+    ss.addEventListener('click', () =>
+      ui().showStateDropdown(ss, sk, (key) => store().setTaskState(member.name, t.created_at, key)));
+
+    const txt = el('div', 'task-text');
+    ui().safeSetHtml(txt, ui().renderEntryText(firstLine(t.body)));
+
+    const top = el('div', 'task-top');
+    top.append(ps, ss, txt);
+
+    const meta = el('div', 'task-meta');
+    const age = ageDays(t.created_at);
+    if (age != null) meta.append(el('span', 'task-age', age + 'd'));
+    const due = el('input', 'task-due'); due.type = 'date'; if (t.due) due.value = t.due;
+    due.title = 'Due date';
+    due.addEventListener('change', () => store().setDue(member.name, t.created_at, due.value || null));
+    const act = el('span', 'icon-btn act', '⚡'); act.title = 'Add action';
+    act.addEventListener('click', () =>
+      ui().showActionModal('Add action', (text) => store().appendAction(member.name, t.created_at, text)));
+    const mute = el('span', 'icon-btn', '🔇'); mute.title = muted ? 'Unmute' : 'Mute 5 days';
+    mute.addEventListener('click', () => store().toggleMute(member.name, t.created_at));
+    const done = el('span', 'icon-btn done', '✓'); done.title = 'Resolve';
+    done.addEventListener('click', () => store().setTaskState(member.name, t.created_at, 'resolved'));
+    meta.append(due, act, mute, done);
+
+    row.append(top, meta);
+    return row;
+  }
+
+  function renderTasksPanel(member) {
+    const wrap = el('div', 'tasks-section');
+    wrap.append(el('div', 'section-label', 'Open Tasks'));
+    const tasks = store().getOpenTasks(member).slice().sort((a, b) => {
+      const ma = store().isMuted(a) ? 1 : 0, mb = store().isMuted(b) ? 1 : 0;
+      if (ma !== mb) return ma - mb;
+      const pa = PRIO_RANK[priorityOf(a.tags)] ?? 3, pb = PRIO_RANK[priorityOf(b.tags)] ?? 3;
+      if (pa !== pb) return pa - pb;
+      return (a.created_at || '').localeCompare(b.created_at || '');
+    });
+    if (!tasks.length) { wrap.append(el('div', 'panel-empty', 'No open tasks.')); return wrap; }
+    for (const t of tasks) wrap.append(renderTaskRow(member, t));
     return wrap;
   }
 
@@ -269,7 +352,8 @@
     left.append(renderPrep(member));
     left.append(renderEntryBox(member));
     left.append(renderHistory(member));
-    right.append(el('div', 'panel-placeholder', 'Tasks, goals, links & gallery — Steps 8–10.'));
+    right.append(renderTasksPanel(member));
+    right.append(el('div', 'panel-placeholder', 'Goals, links & gallery — Steps 9–10.'));
 
     split.append(left, right);
     screen.append(split);

@@ -225,14 +225,142 @@
     return entry;
   }
 
+  /* --------------------- task / followup management -------------------- */
+
+  const STATE_TAGS = ['opentask', 'inprogresstask', 'checktask', 'onholdtask',
+                      'purgatorytask', 'resolvedtask', 'obsoletetask'];
+  const LEGACY_STATE = ['inprogress', 'onhold', 'purgatory'];
+  const STATE_TO_TAG = {
+    open: null, inprogress: 'inprogresstask', check: 'checktask', onhold: 'onholdtask',
+    purgatory: 'purgatorytask', resolved: 'resolvedtask', obsolete: 'obsoletetask'
+  };
+  const ACTION_HEADERS = new Set(['Task Resolution Actions', 'Followup Actions', 'Goal Actions']);
+  const BULLET_RE = /^- \d{4}-\d{2}-\d{2} : /;
+
+  function actionLabelFor(e) {
+    if (e.tags.includes('goal')) return 'Goal Actions';
+    if (e.tags.includes('followup')) return 'Followup Actions';
+    return 'Task Resolution Actions';
+  }
+
+  // Split a body into its description (`pre`) and the trailing action bullets,
+  // consuming any trailing run of blank / bullet / action-header lines.
+  function splitTrailingActions(body) {
+    const lines = String(body).split('\n');
+    const bullets = [];
+    let k = lines.length - 1;
+    while (k >= 0) {
+      const l = lines[k], tr = l.trim();
+      if (tr === '') { k--; continue; }
+      if (BULLET_RE.test(l)) { bullets.unshift(l); k--; continue; }
+      if (ACTION_HEADERS.has(tr)) { k--; continue; }
+      break;
+    }
+    return { pre: lines.slice(0, k + 1).join('\n').replace(/\n+$/, ''), bullets };
+  }
+
+  function findEntry(name, entryId) {
+    const m = state.members.get(name);
+    if (!m) return [null, null];
+    return [m, (m.entries || []).find(e => e.created_at === entryId) || null];
+  }
+
+  async function ensureTagsInUnion(tags) {
+    let changed = false;
+    for (const t of tags) if (!state.tags.includes(t)) { state.tags.push(t); changed = true; }
+    if (changed) { state.tags.sort((a, b) => a.localeCompare(b)); await io().saveTags(state.tags); }
+  }
+
+  function isMuted(e) {
+    const t = (e.tags || []).find(x => x.startsWith('muted:'));
+    if (!t) return false;
+    return t.slice('muted:'.length) >= nowISO().slice(0, 10); // expired -> not muted
+  }
+
+  // Set a task/followup state: strip every state tag, add the one new tag
+  // (resolved on a followup -> resolvedfollowup), and append Resolved:/Obsolete:
+  // markers before any action section. (datadefinition §2.1-2.2)
+  async function setTaskState(name, entryId, stateKey) {
+    const [m, e] = findEntry(name, entryId);
+    if (!e) return;
+    const isFollowup = e.tags.includes('followup');
+    e.tags = e.tags.filter(t =>
+      !STATE_TAGS.includes(t) && !LEGACY_STATE.includes(t) && t !== 'resolvedfollowup');
+    let newTag = STATE_TO_TAG[stateKey];
+    if (stateKey === 'resolved' && isFollowup) newTag = 'resolvedfollowup';
+    if (newTag) e.tags.push(newTag);
+
+    if (stateKey === 'resolved' || stateKey === 'obsolete') {
+      const { pre, bullets } = splitTrailingActions(e.body);
+      const marker = (stateKey === 'resolved' ? 'Resolved: ' : 'Obsolete: ') + nowISO();
+      let body = pre + '\n\n' + marker;
+      if (bullets.length) body += '\n\n' + actionLabelFor(e) + '\n' + bullets.join('\n');
+      e.body = body;
+    }
+    await ensureTagsInUnion(e.tags);
+    await io().saveDiscussion(state.dirHandle, m);
+    emit({ type: 'taskStateChanged', name, entryId, stateKey });
+  }
+
+  async function cyclePriority(name, entryId) {
+    const [m, e] = findEntry(name, entryId);
+    if (!e) return;
+    const order = ['high', 'medium', 'low'];
+    const cur = e.tags.find(t => order.includes(t));
+    const next = order[((cur ? order.indexOf(cur) : 2) + 1) % 3];
+    e.tags = e.tags.filter(t => !order.includes(t));
+    e.tags.push(next);
+    await ensureTagsInUnion(e.tags);
+    await io().saveDiscussion(state.dirHandle, m);
+    emit({ type: 'priorityChanged', name, entryId, priority: next });
+  }
+
+  async function setDue(name, entryId, due) {
+    const [m, e] = findEntry(name, entryId);
+    if (!e) return;
+    e.due = due || null;
+    await io().saveDiscussion(state.dirHandle, m);
+    emit({ type: 'dueChanged', name, entryId, due: e.due });
+  }
+
+  // Append a dated action bullet, consolidating into one action section at the
+  // end of the body. (skill resolution-actions rules / datadefinition §2.1)
+  async function appendAction(name, entryId, text) {
+    const [m, e] = findEntry(name, entryId);
+    if (!e) return;
+    const { pre, bullets } = splitTrailingActions(e.body);
+    bullets.push('- ' + nowISO().slice(0, 10) + ' : ' + text);
+    e.body = pre + '\n\n' + actionLabelFor(e) + '\n' + bullets.join('\n');
+    await io().saveDiscussion(state.dirHandle, m);
+    emit({ type: 'actionAppended', name, entryId });
+  }
+
+  // Toggle a 5-day mute (muted:<expiry>). (v2.3)
+  async function toggleMute(name, entryId) {
+    const [m, e] = findEntry(name, entryId);
+    if (!e) return;
+    const muted = e.tags.find(t => t.startsWith('muted:'));
+    if (muted) e.tags = e.tags.filter(t => t !== muted);
+    else {
+      const d = new Date(); d.setDate(d.getDate() + 5);
+      const p = n => String(n).padStart(2, '0');
+      e.tags.push(`muted:${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`);
+    }
+    await ensureTagsInUnion(e.tags);
+    await io().saveDiscussion(state.dirHandle, m);
+    emit({ type: 'muteToggled', name, entryId });
+  }
+
   /* ------------------------------ export ------------------------------- */
 
   Chippy.store = Object.assign(
     {
       subscribe, openFolder, selectMember, setActiveScreen, setTheme,
       toggleFavorite, reloadMember, setPrep, addEntry,
+      setTaskState, cyclePriority, setDue, appendAction, toggleMute, isMuted,
       // pure helpers exposed for the UI and for tests
       nowISO, mintGoalId, extractInlineTags, autoLinkUrls, extractNameTokens,
+      splitTrailingActions, actionLabelFor,
       _state: state
     },
     selectors

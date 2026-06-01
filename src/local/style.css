@@ -339,3 +339,55 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .state-purgatorytask { background: var(--state-prgt); }
 .state-resolvedtask { background: var(--state-done); }
 .state-obsoletetask { background: var(--state-obsl); }
+.state-open { background: var(--state-open); }
+.history-entry.closed { opacity: .6; }
+
+/* ---- Right-panel tasks ------------------------------------------------- */
+.tasks-section { margin-bottom: 18px; }
+.panel-empty { color: var(--muted); font-size: .82rem; padding: 4px 2px; }
+.task-item { padding: 6px 0; border-bottom: 1px solid var(--border); border-left: 3px solid var(--orange); padding-left: 8px; }
+.task-item.followup { border-left-color: var(--followup); }
+.task-item.muted { opacity: .55; }
+.task-top { display: flex; align-items: flex-start; gap: 6px; }
+.task-text { flex: 1; min-width: 0; font-size: .82rem; }
+.prio-square, .state-square {
+  flex: 0 0 auto; font-size: .6rem; font-weight: 700; color: #000;
+  padding: 1px 5px; border-radius: 3px; cursor: pointer; user-select: none;
+}
+.prio-high { background: var(--red); }
+.prio-medium { background: var(--yellow); }
+.prio-low { background: var(--orange); }
+.task-meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; padding-left: 2px; }
+.task-age { font-size: .68rem; color: var(--muted); }
+.task-due { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 4px; font-size: .68rem; padding: 1px 4px; }
+.icon-btn { cursor: pointer; font-size: .82rem; opacity: .8; }
+.icon-btn:hover { opacity: 1; }
+
+/* ---- State dropdown --------------------------------------------------- */
+.state-dropdown {
+  z-index: 1100; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,.4); overflow: hidden;
+}
+.state-option { padding: 5px 14px; cursor: pointer; font-size: .76rem; }
+.state-option:hover { background: var(--card); }
+.state-option.current { font-weight: 700; color: var(--accent); }
+
+/* ---- Modal ------------------------------------------------------------ */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 1200;
+  background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center;
+}
+.modal {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 18px 20px; min-width: 320px; box-shadow: 0 8px 28px rgba(0,0,0,.5);
+}
+.modal-title { font-size: .95rem; font-weight: 600; margin-bottom: 12px; }
+.modal-input {
+  width: 100%; padding: 7px 10px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--card); color: var(--text); font: inherit;
+}
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.btn-sm {
+  padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--card); color: var(--text); font-size: .76rem; cursor: pointer;
+}

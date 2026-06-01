@@ -42,6 +42,55 @@
     if (openEdit) { const b = div.querySelector('.entry-edit-btn'); if (b) b.click(); }
   }
 
+  function insertAtCursor(ta, text) {
+    const s = ta.selectionStart || 0, e = ta.selectionEnd || 0;
+    ta.value = ta.value.slice(0, s) + text + ta.value.slice(e);
+    ta.selectionStart = ta.selectionEnd = s + text.length;
+  }
+  // Convert a pasted image File/Blob to a JPEG Blob via canvas.
+  function blobToJpeg(file) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth; c.height = img.naturalHeight;
+        c.getContext('2d').drawImage(img, 0, 0);
+        URL.revokeObjectURL(url);
+        c.toBlob(b => resolve(b), 'image/jpeg', 0.9);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+      img.src = url;
+    });
+  }
+  function collectImages(member) {
+    const refs = []; const re = /!\[[^\]]*\]\(([^)]+)\)/g;
+    for (const e of (member.entries || [])) { let m; while ((m = re.exec(e.body || ''))) refs.push(m[1]); }
+    return refs;
+  }
+  function showMoveDialog(member, entryId) {
+    const others = store().getDiscussions().filter(d => !d.archived && d.name !== member.name);
+    ui().showModal('Move comment to…', (modal, close) => {
+      const sel = el('select', 'modal-input');
+      for (const d of others) sel.append(new Option(d.name, d.name));
+      const row = el('div', 'modal-actions');
+      const cancel = el('button', 'btn-sm', 'Cancel'); cancel.addEventListener('click', close);
+      const mv = el('button', 'btn-primary', 'Move');
+      mv.addEventListener('click', () => { if (sel.value) store().moveEntry(member.name, entryId, sel.value); close(); });
+      row.append(cancel, mv); modal.append(sel, row);
+    });
+  }
+  function showDeleteDialog(member, entryId, body) {
+    ui().showModal('Delete comment?', (modal, close) => {
+      modal.append(el('div', 'modal-preview', (body || '').split('\n')[0].slice(0, 120)));
+      const row = el('div', 'modal-actions');
+      const cancel = el('button', 'btn-sm', 'Cancel'); cancel.addEventListener('click', close);
+      const del = el('button', 'btn-primary danger', 'Delete');
+      del.addEventListener('click', () => { store().deleteEntry(member.name, entryId); close(); });
+      row.append(cancel, del); modal.append(row);
+    });
+  }
+
   /* ------------------------------ prep area ---------------------------- */
 
   function renderPrep(member) {
@@ -177,6 +226,23 @@
       } else hideDropdown();
     });
 
+    // Clipboard image paste -> JPEG in the discussion subfolder + inline ref.
+    ta.addEventListener('paste', async (ev) => {
+      const items = (ev.clipboardData && ev.clipboardData.items) || [];
+      for (const it of items) {
+        if (it.type && it.type.indexOf('image/') === 0) {
+          ev.preventDefault();
+          const jpeg = await blobToJpeg(it.getAsFile());
+          if (jpeg) {
+            const ref = await store().saveImage(member.name, jpeg);
+            insertAtCursor(ta, '![image](' + ref + ')');
+            saveDraft();
+          }
+          break;
+        }
+      }
+    });
+
     async function save() {
       const text = ta.value.trim();
       if (!text && !selectedTags.length) return;
@@ -235,7 +301,11 @@
       for (const t of tags) if (!HIDDEN_TAG.test(t)) meta.append(el('span', 'tag-chip', t));
       const editBtn = el('span', 'entry-edit-btn icon-btn', '✎');
       editBtn.title = 'Edit';
-      meta.append(editBtn);
+      const moveBtn = el('span', 'icon-btn', '➜'); moveBtn.title = 'Move to another discussion';
+      moveBtn.addEventListener('click', () => showMoveDialog(member, e.created_at));
+      const delBtn = el('span', 'icon-btn', '🗑'); delBtn.title = 'Delete';
+      delBtn.addEventListener('click', () => showDeleteDialog(member, e.created_at, e.body));
+      meta.append(editBtn, moveBtn, delBtn);
       div.append(meta);
 
       const bodyEl = el('div', 'entry-text');
@@ -397,6 +467,45 @@
     return wrap;
   }
 
+  /* --------------------------- links + gallery ------------------------- */
+
+  function renderLinksPanel(member) {
+    const wrap = el('div', 'links-section');
+    wrap.append(el('div', 'section-label', 'Links'));
+    const links = store().getLinks(member);
+    if (!links.length) { wrap.append(el('div', 'panel-empty', 'No links.')); return wrap; }
+    for (const l of links) {
+      const row = el('div', 'link-item');
+      const a = el('a', 'md-link', l.label);
+      a.href = l.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      const edit = el('span', 'icon-btn', '✎'); edit.title = 'Rename link';
+      edit.addEventListener('click', () =>
+        ui().showActionModal('Rename link', (newLabel) => store().renameLink(member.name, l.url, newLabel)));
+      row.append(a, edit);
+      wrap.append(row);
+    }
+    return wrap;
+  }
+
+  function renderGallery(member) {
+    const refs = collectImages(member);
+    const wrap = el('div', 'gallery-section');
+    wrap.append(el('div', 'section-label', 'Images'));
+    if (!refs.length) { wrap.append(el('div', 'panel-empty', 'No images.')); return wrap; }
+    const grid = el('div', 'gallery-grid');
+    refs.forEach((ref, idx) => {
+      const thumb = el('img', 'gallery-thumb');
+      store().getImageUrl(ref).then(u => { if (u) thumb.src = u; }).catch(() => {});
+      thumb.addEventListener('click', async () => {
+        const all = await Promise.all(refs.map(r => store().getImageUrl(r).catch(() => null)));
+        ui().showImageOverlay(all.filter(Boolean), idx);
+      });
+      grid.append(thumb);
+    });
+    wrap.append(grid);
+    return wrap;
+  }
+
   /* ------------------------------- render ------------------------------ */
 
   function render(member) {
@@ -427,7 +536,8 @@
     left.append(renderHistory(member));
     right.append(renderTasksPanel(member));
     right.append(renderGoalsPanel(member));
-    right.append(el('div', 'panel-placeholder', 'Links & gallery — Step 10.'));
+    right.append(renderLinksPanel(member));
+    right.append(renderGallery(member));
 
     split.append(left, right);
     screen.append(split);

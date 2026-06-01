@@ -110,6 +110,7 @@
     getDiscussions: () => state.nav.discussions,
     getTagUnion: () => state.tags,
     getNames: () => state.names,
+    getDirHandle: () => state.dirHandle,
     getActiveScreen: () => state.activeScreen,
     getActiveMemberName: () => state.activeMemberName,
     getMember: (name) => state.members.get(name) || null,
@@ -396,6 +397,104 @@
     emit({ type: 'entryEdited', name, entryId });
   }
 
+  /* --------------------------- links + move ---------------------------- */
+
+  function escRegex(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+  // Extract links from a text: markdown [label](url) plus bare http(s) URLs.
+  function extractLinks(text) {
+    const out = [], seen = new Set();
+    const s = String(text || '');
+    let m;
+    const md = /\[([^\]]+)\]\(([^)]+)\)/g;
+    while ((m = md.exec(s))) if (!seen.has(m[2])) { seen.add(m[2]); out.push({ label: m[1], url: m[2] }); }
+    const bare = /(^|\s)(https?:\/\/[^\s)]+)/g;
+    while ((m = bare.exec(s))) if (!seen.has(m[2])) {
+      seen.add(m[2]); out.push({ label: m[2].replace(/^https?:\/\//, '').split('/')[0], url: m[2] });
+    }
+    return out;
+  }
+
+  // Aggregate + dedupe links across a member's prep and all entry bodies.
+  function getLinks(member) {
+    const m = member || selectors.getActiveMember();
+    if (!m) return [];
+    const seen = new Set(), out = [];
+    const texts = [m.prep || ''].concat((m.entries || []).map(e => e.body || ''));
+    for (const t of texts) for (const l of extractLinks(t)) if (!seen.has(l.url)) { seen.add(l.url); out.push(l); }
+    return out;
+  }
+
+  // Rename a link's display title in its source text (matched by URL). (R44)
+  async function renameLink(name, url, newLabel) {
+    const m = state.members.get(name);
+    if (!m) return;
+    const re = new RegExp('\\[[^\\]]*\\]\\(' + escRegex(url) + '\\)', 'g');
+    const rep = '[' + newLabel + '](' + url + ')';
+    if (m.prep) m.prep = m.prep.replace(re, rep);
+    for (const e of (m.entries || [])) e.body = (e.body || '').replace(re, rep);
+    await io().saveDiscussion(state.dirHandle, m);
+    emit({ type: 'linkRenamed', name, url });
+  }
+
+  // Move an entry to another discussion: transfer its images, rewrite refs, add
+  // a "Moved from <source>: <ts>" marker. (R29, R36)
+  async function moveEntry(name, entryId, targetName) {
+    const src = state.members.get(name);
+    if (!src) return;
+    const idx = (src.entries || []).findIndex(e => e.created_at === entryId);
+    if (idx < 0) return;
+    const entry = src.entries[idx];
+
+    let tgt = state.members.get(targetName);
+    if (!tgt) { tgt = await io().loadDiscussion(state.dirHandle, targetName); state.members.set(targetName, tgt); }
+
+    // Transfer referenced images and rewrite their refs.
+    const imgRe = /!\[[^\]]*\]\(([^)]+)\)/g;
+    let mm; const refs = [];
+    while ((mm = imgRe.exec(entry.body || ''))) refs.push(mm[1]);
+    for (const ref of refs) {
+      if (io().isSafeImagePath(ref)) {
+        const newRef = await io().ImageStore.moveImage(state.dirHandle, ref, targetName);
+        if (newRef) entry.body = entry.body.split('](' + ref + ')').join('](' + newRef + ')');
+      }
+    }
+
+    // "Moved from" marker before any action section.
+    const { pre, bullets } = splitTrailingActions(entry.body);
+    let body = pre + '\n\nMoved from ' + src.name + ': ' + nowISO();
+    if (bullets.length) body += '\n\n' + actionLabelFor(entry) + '\n' + bullets.join('\n');
+    entry.body = body;
+
+    src.entries.splice(idx, 1);
+    tgt.entries.push(entry);
+    tgt.entries.sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
+
+    await io().saveDiscussion(state.dirHandle, src);
+    await io().saveDiscussion(state.dirHandle, tgt);
+    emit({ type: 'entryMoved', from: name, to: targetName, entryId });
+  }
+
+  // Delete an entry and any image files it references. (v1.22)
+  async function deleteEntry(name, entryId) {
+    const m = state.members.get(name);
+    if (!m) return;
+    const idx = (m.entries || []).findIndex(e => e.created_at === entryId);
+    if (idx < 0) return;
+    const entry = m.entries[idx];
+    const imgRe = /!\[[^\]]*\]\(([^)]+)\)/g;
+    let mm;
+    while ((mm = imgRe.exec(entry.body || ''))) { try { await io().ImageStore.deleteImage(state.dirHandle, mm[1]); } catch (_) {} }
+    m.entries.splice(idx, 1);
+    await io().saveDiscussion(state.dirHandle, m);
+    emit({ type: 'entryDeleted', name, entryId });
+  }
+
+  /* ------------------------------ images ------------------------------- */
+
+  async function saveImage(name, blob) { return io().ImageStore.saveImage(state.dirHandle, name, blob); }
+  async function getImageUrl(ref) { return io().ImageStore.getImageUrl(state.dirHandle, ref); }
+
   /* ------------------------------ export ------------------------------- */
 
   Chippy.store = Object.assign(
@@ -403,10 +502,11 @@
       subscribe, openFolder, selectMember, setActiveScreen, setTheme,
       toggleFavorite, reloadMember, setPrep, addEntry,
       setTaskState, cyclePriority, setDue, appendAction, toggleMute, isMuted,
-      setGoalState, editEntry,
+      setGoalState, editEntry, getLinks, renameLink, moveEntry, deleteEntry,
+      saveImage, getImageUrl,
       // pure helpers exposed for the UI and for tests
       nowISO, mintGoalId, extractInlineTags, autoLinkUrls, extractNameTokens,
-      splitTrailingActions, actionLabelFor,
+      splitTrailingActions, actionLabelFor, extractLinks,
       _state: state
     },
     selectors

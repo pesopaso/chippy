@@ -9,7 +9,7 @@
 
   // Single source of truth for the version. Used for display and as the cache-bust
   // query param on the CSS/JS tags in app.html (bump both together on release).
-  const VERSION = '3.0.0-dev.15';
+  const VERSION = '3.0.0-dev.16';
   Chippy.VERSION = VERSION;
 
   const THEME_KEY = 'chippy_theme';
@@ -45,6 +45,47 @@
     } catch (_) { /* ignore */ }
   }
 
+  // Help dialog listing the cross-discussion pages and key behaviors (R49).
+  function showHelp() {
+    const ui = Chippy.ui;
+    if (!ui || !ui.showModal) return;
+    const mk = (tag, text) => { const e = document.createElement(tag); if (text != null) e.textContent = text; return e; };
+    const PAGES = [
+      ['Comments', 'every entry across all discussions'],
+      ['Tasks', 'open tasks across all discussions'],
+      ['Goals', 'open goals across all discussions'],
+      ['Links', 'deduped links from entries + prep (rename inline)'],
+      ['Images', 'all images; click for the full-screen carousel'],
+      ['Names', '@[Name] references — counts, last-seen, drill-down'],
+      ['Kanban', 'drag cards between state columns'],
+      ['Ro3', 'three tasks (one per priority); Refresh re-rolls'],
+      ['Activity', 'charts: comment inflow, task/goal states, timeline'],
+      ['AI Summary', 'generate a summary via a local LLM endpoint']
+    ];
+    ui.showModal('Chippy — Help', (modal, close) => {
+      modal.appendChild(mk('p', 'Cross-discussion pages (sidebar buttons):'));
+      const ul = mk('ul'); ul.className = 'help-list';
+      for (const [n, d] of PAGES) {
+        const li = mk('li'); const b = mk('strong', n + ' — '); li.appendChild(b);
+        li.appendChild(document.createTextNode(d)); ul.appendChild(li);
+      }
+      modal.appendChild(ul);
+      modal.appendChild(mk('p', 'Authoring: type #tag to classify, @ to mention a name, ' +
+        'paste an image with Ctrl+V. Tasks have a state square (click for the menu), a priority ' +
+        'square (click to cycle), due dates, ⚡ actions, mute, and ✓ resolve. Double-click a ' +
+        'task/goal to jump to its entry; the ✎ pencil edits an entry inline. "Updated:" is added ' +
+        'only when an entry is edited on a later day than it was created.'));
+      const row = mk('div'); row.className = 'modal-actions';
+      const ok = mk('button', 'Close'); ok.className = 'btn-primary'; ok.addEventListener('click', close);
+      row.appendChild(ok); modal.appendChild(row);
+    });
+  }
+
+  // Slim layout under 800px (R36): stack the columns; the sidebar sits on top.
+  function checkSlimMode() {
+    document.body.classList.toggle('slim', window.innerWidth < 800);
+  }
+
   function init() {
     const ver = document.getElementById('appVersion');
     if (ver) ver.textContent = 'v' + VERSION;
@@ -59,10 +100,13 @@
     }
 
     const help = document.getElementById('btnHelp');
-    if (help) help.addEventListener('click', () => alert('Help — coming in a later step.'));
+    if (help) help.addEventListener('click', showHelp);
 
     const printBtn = document.getElementById('btnPrintChrome');
     if (printBtn) printBtn.addEventListener('click', () => window.print());
+
+    checkSlimMode();
+    window.addEventListener('resize', checkSlimMode);
 
     const pages = Chippy.pages;
     const store = Chippy.store;

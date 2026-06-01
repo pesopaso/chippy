@@ -512,3 +512,16 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
   .split-right, .entry-box, .prep-edit-btn, .icon-btn, .member-header-actions { display: none !important; }
   body { background: #fff; color: #000; }
 }
+
+/* ---- Help dialog ------------------------------------------------------ */
+.help-list { margin: 6px 0 10px 18px; }
+.help-list li { margin-bottom: 3px; font-size: .82rem; }
+.modal p { font-size: .82rem; color: var(--text); line-height: 1.5; }
+.modal { max-width: 480px; max-height: 80vh; overflow-y: auto; }
+
+/* ---- Slim mode (<800px) ----------------------------------------------- */
+body.slim #app { flex-direction: column; height: auto; }
+body.slim #sidebar { width: 100%; flex: none; border-right: none; border-bottom: 1px solid var(--border); max-height: 42vh; }
+body.slim .split-view { flex-direction: column; }
+body.slim .split-right { flex: none; width: 100%; }
+body.slim .kanban-board { flex-wrap: wrap; }

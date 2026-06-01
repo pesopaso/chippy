@@ -289,3 +289,53 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .entry-time { font-size: .7rem; color: var(--muted); margin-bottom: 2px; }
 .entry-text { font-size: .92rem; line-height: 1.55; }
 .history-empty, .prep-empty { color: var(--muted); font-size: .85rem; }
+
+/* ---- Entry input ------------------------------------------------------- */
+.entry-box { margin: 14px 0; position: relative; }
+.entry-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+.tag-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(81,142,170,.08); color: var(--accent);
+  border-radius: 3px; padding: 1px 6px; font-size: .72rem; font-weight: 500;
+}
+.tag-chip-x { cursor: pointer; color: var(--muted); }
+.entry-controls { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+.goal-link, .entry-due {
+  background: var(--card); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; font: inherit; font-size: .76rem;
+}
+.entry-controls #btnSaveEntry, .btn-primary {
+  padding: 5px 14px; border-radius: 6px; border: none;
+  background: var(--accent); color: #fff; font-size: .76rem; cursor: pointer;
+}
+.btn-primary:hover { filter: brightness(1.08); }
+
+/* Autocomplete dropdown */
+.ac-dropdown {
+  position: absolute; left: 0; right: 0; z-index: 20;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+  max-height: 220px; overflow-y: auto; box-shadow: 0 6px 18px rgba(0,0,0,.35);
+}
+.ac-option { padding: 6px 10px; cursor: pointer; font-size: .82rem; }
+.ac-option:hover { background: var(--card); }
+
+/* ---- History entry markers -------------------------------------------- */
+.entry-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 2px; }
+.history-entry { padding: 6px 0 6px 8px; border-bottom: 1px solid var(--border); }
+.history-entry.entry-task { border-left: 3px solid var(--orange); }
+.history-entry.entry-followup { border-left: 3px solid var(--followup); }
+.history-entry.entry-goal { border-left: 3px solid var(--goal); }
+.history-entry.collapsed .entry-text {
+  display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
+}
+.expand-tri { cursor: pointer; color: var(--muted); font-size: .7rem; }
+.state-square {
+  font-size: .6rem; font-weight: 700; color: #000;
+  padding: 1px 5px; border-radius: 3px;
+}
+.state-inprogresstask { background: var(--state-wip); }
+.state-checktask { background: var(--state-chk); }
+.state-onholdtask { background: var(--state-hold); }
+.state-purgatorytask { background: var(--state-prgt); }
+.state-resolvedtask { background: var(--state-done); }
+.state-obsoletetask { background: var(--state-obsl); }

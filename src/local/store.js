@@ -15,10 +15,10 @@
   const state = {
     folderReady: false,
     dirHandle: null,
-    nav: { discussions: [], theme: 'dark' }, // from navigation.md
-    tags: [],                                 // from tags.md (the union)
-    names: [],                                // from names.md
-    members: new Map(),                       // name -> member | null (lazy)
+    nav: { discussions: [], theme: 'dark' },
+    tags: [],
+    names: [],
+    members: new Map(),       // name -> member | null (lazy)
     activeMemberName: null,
     activeScreen: 'welcome',
     ui: { filters: {}, search: '', draft: null }
@@ -27,16 +27,10 @@
   /* ---------------------------- event emitter -------------------------- */
 
   const subscribers = new Set();
-
-  function subscribe(fn) {
-    subscribers.add(fn);
-    return () => subscribers.delete(fn);
-  }
-
+  function subscribe(fn) { subscribers.add(fn); return () => subscribers.delete(fn); }
   function emit(changeSet) {
     for (const fn of subscribers) {
-      try { fn(changeSet); }
-      catch (err) { console.error('[chippy] subscriber error:', err); }
+      try { fn(changeSet); } catch (err) { console.error('[chippy] subscriber error:', err); }
     }
   }
 
@@ -44,23 +38,68 @@
 
   const CLOSED_TASK = new Set(['resolvedtask', 'obsoletetask', 'resolvedfollowup']);
   const CLOSED_GOAL = new Set(['achievedgoal', 'canceledgoal', 'resolvedgoal']);
+  const PRIORITY = ['high', 'medium', 'low'];
+  const KINDS = ['task', 'followup', 'goal'];
 
-  function isTaskEntry(e) {
-    return e.tags && (e.tags.includes('task') || e.tags.includes('followup'));
-  }
-  function isOpenTask(e) {
-    return isTaskEntry(e) && !e.tags.some(t => CLOSED_TASK.has(t));
-  }
-  function isGoalEntry(e) {
-    return e.tags && e.tags.includes('goal');
-  }
-  function isOpenGoal(e) {
-    return isGoalEntry(e) && !e.tags.some(t => CLOSED_GOAL.has(t));
-  }
+  const isTaskEntry = e => e.tags && (e.tags.includes('task') || e.tags.includes('followup'));
+  const isOpenTask = e => isTaskEntry(e) && !e.tags.some(t => CLOSED_TASK.has(t));
+  const isGoalEntry = e => e.tags && e.tags.includes('goal');
+  const isOpenGoal = e => isGoalEntry(e) && !e.tags.some(t => CLOSED_GOAL.has(t));
 
   function io() {
     if (!Chippy.io) throw new Error('Chippy.io not loaded — io.js must load before store.js');
     return Chippy.io;
+  }
+
+  /* --------------------------- write-rule helpers ---------------------- */
+
+  // created_at with seconds, local time: "YYYY-MM-DD HH:MM:SS".
+  function nowISO(d) {
+    d = d || new Date();
+    const p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ` +
+           `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  }
+
+  // A goal's unique identity tag: goal-<5 base36 chars>.
+  function mintGoalId(rng) {
+    rng = rng || Math.random;
+    let s = '';
+    for (let i = 0; i < 5; i++) s += Math.floor(rng() * 36).toString(36);
+    return 'goal-' + s;
+  }
+
+  // Inline #tag extraction (the # trigger): returns { text, tags } with the
+  // #tokens removed from text. "# Heading" (space after #) is left untouched.
+  function extractInlineTags(text) {
+    const tags = [];
+    const out = String(text).replace(/(^|\s)#([a-zA-Z0-9][a-zA-Z0-9-]*)/g,
+      (m, pre, tag) => { tags.push(tag.toLowerCase()); return pre; });
+    return { text: out, tags };
+  }
+
+  // Bare http(s) URLs -> [label](url). A word immediately before becomes the
+  // label (underscores -> spaces); otherwise the domain. URLs already inside a
+  // [label](url) span are left alone (they sit after "](", not after whitespace,
+  // so the leading (^|\s) anchor never matches there).
+  function autoLinkUrls(text) {
+    return String(text).replace(
+      /(^|\s)(?:(\S+)\s+)?(https?:\/\/[^\s)]+)/g,
+      (m, lead, word, url) => {
+        if (word) return `${lead}[${word.replace(/_/g, ' ')}](${url})`;
+        const domain = url.replace(/^https?:\/\//, '').split('/')[0];
+        return `${lead}[${domain}](${url})`;
+      }
+    );
+  }
+
+  // Names referenced as @[Full Name] in body text.
+  function extractNameTokens(text) {
+    const names = [];
+    const re = /@\[([^\]]+)\]/g;
+    let m;
+    while ((m = re.exec(String(text)))) names.push(m[1]);
+    return names;
   }
 
   /* ------------------------------ selectors ---------------------------- */
@@ -77,7 +116,6 @@
     isLoaded: (name) => !!state.members.get(name),
     getActiveMember: () =>
       state.activeMemberName ? (state.members.get(state.activeMemberName) || null) : null,
-    // Open tasks/goals for a given member object (or the active member if omitted).
     getOpenTasks: (member) => {
       const m = member || selectors.getActiveMember();
       return m && m.entries ? m.entries.filter(isOpenTask) : [];
@@ -90,8 +128,6 @@
 
   /* ------------------------------ actions ------------------------------ */
 
-  // Open a folder: hydrate nav/tags/names only. Discussion bodies are NOT read —
-  // members start null (lazy) and load on selectMember.
   async function openFolder() {
     const dir = await io().openFolder();
     const { nav, tags, names } = await io().loadIndexes(dir);
@@ -106,12 +142,10 @@
     return state;
   }
 
-  // Lazy-load one discussion the first time it is selected; cache it thereafter.
   async function selectMember(name) {
     if (!state.members.has(name)) state.members.set(name, null);
     if (state.members.get(name) === null) {
-      const member = await io().loadDiscussion(state.dirHandle, name);
-      state.members.set(name, member);
+      state.members.set(name, await io().loadDiscussion(state.dirHandle, name));
     }
     state.activeMemberName = name;
     state.activeScreen = 'member';
@@ -119,18 +153,13 @@
     return state.members.get(name);
   }
 
-  function setActiveScreen(name) {
-    state.activeScreen = name;
-    emit({ type: 'screenChanged', name });
-  }
+  function setActiveScreen(name) { state.activeScreen = name; emit({ type: 'screenChanged', name }); }
 
   function setTheme(theme) {
     state.nav.theme = theme === 'light' ? 'light' : 'dark';
     emit({ type: 'themeChanged', theme: state.nav.theme });
-    // Persistence of the theme into navigation.md is wired in a later step.
   }
 
-  // Toggle a discussion's favorite flag and persist navigation.md.
   async function toggleFavorite(name) {
     const d = state.nav.discussions.find(x => x.name === name);
     if (!d) return;
@@ -139,8 +168,6 @@
     emit({ type: 'favoriteToggled', name, favorite: d.favorite });
   }
 
-  // Force-reload one discussion from disk (catches external edits), keeping
-  // the rest of the in-memory state and the active selection intact.
   async function reloadMember(name) {
     const member = await io().loadDiscussion(state.dirHandle, name);
     state.members.set(name, member);
@@ -148,7 +175,6 @@
     return member;
   }
 
-  // Save a discussion's preparation text and persist the file.
   async function setPrep(name, prep) {
     const m = state.members.get(name);
     if (!m) return;
@@ -157,12 +183,57 @@
     emit({ type: 'prepSaved', name });
   }
 
+  // Create a new entry applying all write rules; persist the file + indexes.
+  // opts: { text, tags=[], goalLinkId=null, due=null }
+  async function addEntry(name, opts) {
+    opts = opts || {};
+    const m = state.members.get(name);
+    if (!m) throw new Error('member not loaded: ' + name);
+
+    const body = autoLinkUrls(String(opts.text || '').trim());
+    if (!body) return null; // empty body is not retained
+
+    const tags = (opts.tags || []).map(t => String(t).trim()).filter(Boolean);
+    let goal = null;
+
+    if (tags.includes('goal') && !tags.some(t => /^goal-[a-z0-9]{5}$/.test(t))) {
+      tags.push(mintGoalId());
+    }
+    if (opts.goalLinkId) {
+      if (!tags.includes(opts.goalLinkId)) tags.push(opts.goalLinkId);
+      const g = (m.entries || []).find(e =>
+        e.tags && e.tags.includes('goal') && e.tags.includes(opts.goalLinkId));
+      if (g) goal = (g.body || '').split('\n')[0];
+    }
+    if (tags.some(t => KINDS.includes(t)) && !tags.some(t => PRIORITY.includes(t))) {
+      tags.push('low');
+    }
+
+    const entry = { created_at: nowISO(), tags, goal, due: opts.due || null, body };
+    m.entries.push(entry);
+
+    let tagsChanged = false;
+    for (const t of tags) if (!state.tags.includes(t)) { state.tags.push(t); tagsChanged = true; }
+    if (tagsChanged) { state.tags.sort((a, b) => a.localeCompare(b)); await io().saveTags(state.tags); }
+
+    let namesChanged = false;
+    for (const n of extractNameTokens(body)) if (!state.names.includes(n)) { state.names.push(n); namesChanged = true; }
+    if (namesChanged) { state.names.sort((a, b) => a.localeCompare(b)); await io().saveNames(state.names); }
+
+    await io().saveDiscussion(state.dirHandle, m);
+    emit({ type: 'entryAdded', name, entry });
+    return entry;
+  }
+
   /* ------------------------------ export ------------------------------- */
 
   Chippy.store = Object.assign(
     {
       subscribe, openFolder, selectMember, setActiveScreen, setTheme,
-      toggleFavorite, reloadMember, setPrep, _state: state
+      toggleFavorite, reloadMember, setPrep, addEntry,
+      // pure helpers exposed for the UI and for tests
+      nowISO, mintGoalId, extractInlineTags, autoLinkUrls, extractNameTokens,
+      _state: state
     },
     selectors
   );

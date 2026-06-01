@@ -9,7 +9,7 @@
 
   // Single source of truth for the version. Used for display and as the cache-bust
   // query param on the CSS/JS tags in app.html (bump both together on release).
-  const VERSION = '3.0.0-dev.5';
+  const VERSION = '3.0.0-dev.6';
   Chippy.VERSION = VERSION;
 
   const THEME_KEY = 'chippy_theme';
@@ -27,6 +27,22 @@
 
   function currentTheme() {
     try { return localStorage.getItem(THEME_KEY) || 'dark'; } catch (_) { return 'dark'; }
+  }
+
+  // Remove draft keys whose discussion no longer exists (rename/archive/delete).
+  function cleanupOrphanDrafts() {
+    const store = Chippy.store;
+    if (!store) return;
+    try {
+      const names = new Set(store.getDiscussions().map(d => d.name));
+      const remove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('nb_draft_') && !names.has(k.slice('nb_draft_'.length))) remove.push(k);
+      }
+      remove.forEach(k => localStorage.removeItem(k));
+      if (remove.length) console.log(`[chippy] cleaned ${remove.length} orphaned draft(s)`);
+    } catch (_) { /* ignore */ }
   }
 
   function init() {
@@ -65,6 +81,7 @@
               status.className = 'folder-status connected';
             }
             if (pages) { pages.renderSidebar(); pages.showScreen('welcome'); }
+            cleanupOrphanDrafts();
             break;
           case 'memberSelected':
             if (pages) { pages.noteRecent(cs.name); pages.renderSidebar(); pages.renderRecent(); }
@@ -72,6 +89,7 @@
             if (pages) pages.showScreen('member');
             break;
           case 'memberReloaded':
+          case 'entryAdded':
             if (Chippy.discussion) Chippy.discussion.render(store.getActiveMember());
             break;
           case 'favoriteToggled':

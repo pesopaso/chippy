@@ -9,7 +9,7 @@
 
   // Single source of truth for the version. Used for display and as the cache-bust
   // query param on the CSS/JS tags in app.html (bump both together on release).
-  const VERSION = '3.0.0-dev.7';
+  const VERSION = '3.0.0-dev.9';
   Chippy.VERSION = VERSION;
 
   const THEME_KEY = 'chippy_theme';
@@ -95,6 +95,8 @@
           case 'dueChanged':
           case 'actionAppended':
           case 'muteToggled':
+          case 'goalStateChanged':
+          case 'entryEdited':
             if (Chippy.discussion) Chippy.discussion.render(store.getActiveMember());
             break;
           case 'favoriteToggled':

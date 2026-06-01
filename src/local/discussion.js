@@ -31,6 +31,17 @@
   }
   function draftKey(name) { return 'nb_draft_' + name; }
 
+  // Scroll to a history entry by created_at; optionally open its inline edit.
+  function scrollToEntry(entryId, openEdit) {
+    const id = (window.CSS && CSS.escape) ? CSS.escape(entryId) : entryId;
+    const div = document.querySelector('.history-entry[data-entry-id="' + id + '"]');
+    if (!div) return;
+    div.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    div.classList.add('flash');
+    setTimeout(() => div.classList.remove('flash'), 1500);
+    if (openEdit) { const b = div.querySelector('.entry-edit-btn'); if (b) b.click(); }
+  }
+
   /* ------------------------------ prep area ---------------------------- */
 
   function renderPrep(member) {
@@ -215,17 +226,44 @@
       const tags = e.tags || [];
       const closed = tags.some(t => ['resolvedtask', 'obsoletetask', 'resolvedfollowup'].includes(t));
       const div = el('div', 'history-entry ' + entryKindClass(tags) + (closed ? ' closed collapsed' : ''));
+      div.dataset.entryId = e.created_at;
 
       const meta = el('div', 'entry-meta');
       meta.append(el('span', 'entry-time', e.created_at));
       const stateTag = tags.find(t => STATE_LABEL[t]);
       if (stateTag) meta.append(el('span', 'state-square state-' + stateTag, STATE_LABEL[stateTag]));
       for (const t of tags) if (!HIDDEN_TAG.test(t)) meta.append(el('span', 'tag-chip', t));
+      const editBtn = el('span', 'entry-edit-btn icon-btn', '✎');
+      editBtn.title = 'Edit';
+      meta.append(editBtn);
       div.append(meta);
 
       const bodyEl = el('div', 'entry-text');
       ui().safeSetHtml(bodyEl, ui().renderEntryText(e.body || ''));
       div.append(bodyEl);
+
+      // Inline edit (re-render happens via the entryEdited event on save).
+      let editing = false;
+      editBtn.addEventListener('click', () => {
+        if (editing) return;
+        editing = true;
+        const ta = el('textarea', 'entry-edit-area');
+        ta.value = e.body || '';
+        div.replaceChild(ta, bodyEl);
+        ta.focus();
+        let fin = false;
+        function done(save) {
+          if (fin) return; fin = true;
+          if (save) { store().editEntry(member.name, e.created_at, { text: ta.value }); return; }
+          if (ta.parentNode === div) div.replaceChild(bodyEl, ta);
+          editing = false;
+        }
+        ta.addEventListener('keydown', (ev) => {
+          if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); done(true); }
+          else if (ev.key === 'Escape') { ev.preventDefault(); done(false); }
+        });
+        ta.addEventListener('blur', () => done(true));
+      });
 
       // Multi-line expand indicator.
       if ((e.body || '').includes('\n')) {
@@ -286,6 +324,7 @@
 
     const txt = el('div', 'task-text');
     ui().safeSetHtml(txt, ui().renderEntryText(firstLine(t.body)));
+    txt.addEventListener('dblclick', () => scrollToEntry(t.created_at));
 
     const top = el('div', 'task-top');
     top.append(ps, ss, txt);
@@ -324,6 +363,40 @@
     return wrap;
   }
 
+  /* --------------------------- goals panel ----------------------------- */
+
+  function renderGoalRow(member, g) {
+    const row = el('div', 'goal-item');
+    const txt = el('div', 'goal-text');
+    ui().safeSetHtml(txt, ui().renderEntryText(firstLine(g.body)));
+    txt.addEventListener('dblclick', () => scrollToEntry(g.created_at));
+
+    const meta = el('div', 'goal-meta');
+    if (g.due) meta.append(el('span', 'task-age', 'due ' + g.due));
+    const act = el('span', 'icon-btn', '⚡'); act.title = 'Add action';
+    act.addEventListener('click', () =>
+      ui().showActionModal('Add action', (text) => store().appendAction(member.name, g.created_at, text)));
+    const edit = el('span', 'icon-btn', '✎'); edit.title = 'Edit goal';
+    edit.addEventListener('click', () => scrollToEntry(g.created_at, true));
+    const ach = el('span', 'icon-btn done', '✓'); ach.title = 'Achieved';
+    ach.addEventListener('click', () => store().setGoalState(member.name, g.created_at, 'achieved'));
+    const can = el('span', 'icon-btn cancel', '✕'); can.title = 'Canceled';
+    can.addEventListener('click', () => store().setGoalState(member.name, g.created_at, 'canceled'));
+    meta.append(act, edit, ach, can);
+
+    row.append(txt, meta);
+    return row;
+  }
+
+  function renderGoalsPanel(member) {
+    const wrap = el('div', 'goals-section');
+    wrap.append(el('div', 'section-label', 'Goals'));
+    const goals = store().getGoals(member);
+    if (!goals.length) { wrap.append(el('div', 'panel-empty', 'No open goals.')); return wrap; }
+    for (const g of goals) wrap.append(renderGoalRow(member, g));
+    return wrap;
+  }
+
   /* ------------------------------- render ------------------------------ */
 
   function render(member) {
@@ -353,7 +426,8 @@
     left.append(renderEntryBox(member));
     left.append(renderHistory(member));
     right.append(renderTasksPanel(member));
-    right.append(el('div', 'panel-placeholder', 'Goals, links & gallery — Steps 9–10.'));
+    right.append(renderGoalsPanel(member));
+    right.append(el('div', 'panel-placeholder', 'Links & gallery — Step 10.'));
 
     split.append(left, right);
     screen.append(split);

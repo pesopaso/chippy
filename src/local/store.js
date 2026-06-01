@@ -164,7 +164,7 @@
     const d = state.nav.discussions.find(x => x.name === name);
     if (!d) return;
     d.favorite = !d.favorite;
-    await io().saveNav(state.nav);
+    await io().saveNav(state.dirHandle, state.nav);
     emit({ type: 'favoriteToggled', name, favorite: d.favorite });
   }
 
@@ -214,11 +214,11 @@
 
     let tagsChanged = false;
     for (const t of tags) if (!state.tags.includes(t)) { state.tags.push(t); tagsChanged = true; }
-    if (tagsChanged) { state.tags.sort((a, b) => a.localeCompare(b)); await io().saveTags(state.tags); }
+    if (tagsChanged) { state.tags.sort((a, b) => a.localeCompare(b)); await io().saveTags(state.dirHandle, state.tags); }
 
     let namesChanged = false;
     for (const n of extractNameTokens(body)) if (!state.names.includes(n)) { state.names.push(n); namesChanged = true; }
-    if (namesChanged) { state.names.sort((a, b) => a.localeCompare(b)); await io().saveNames(state.names); }
+    if (namesChanged) { state.names.sort((a, b) => a.localeCompare(b)); await io().saveNames(state.dirHandle, state.names); }
 
     await io().saveDiscussion(state.dirHandle, m);
     emit({ type: 'entryAdded', name, entry });
@@ -268,7 +268,7 @@
   async function ensureTagsInUnion(tags) {
     let changed = false;
     for (const t of tags) if (!state.tags.includes(t)) { state.tags.push(t); changed = true; }
-    if (changed) { state.tags.sort((a, b) => a.localeCompare(b)); await io().saveTags(state.tags); }
+    if (changed) { state.tags.sort((a, b) => a.localeCompare(b)); await io().saveTags(state.dirHandle, state.tags); }
   }
 
   function isMuted(e) {
@@ -351,6 +351,51 @@
     emit({ type: 'muteToggled', name, entryId });
   }
 
+  /* ----------------------------- goals --------------------------------- */
+
+  const GOAL_STATE_TAGS = ['achievedgoal', 'canceledgoal', 'resolvedgoal'];
+
+  // Append a "<Label>: <ts>" marker before any trailing action section.
+  function insertMarker(e, label) {
+    const { pre, bullets } = splitTrailingActions(e.body);
+    let b = pre + '\n\n' + label + ': ' + nowISO();
+    if (bullets.length) b += '\n\n' + actionLabelFor(e) + '\n' + bullets.join('\n');
+    return b;
+  }
+
+  // Goal state: 'achieved' (achievedgoal + Achieved: marker), 'canceled'
+  // (canceledgoal + Canceled:), or 'open' (no closed tag). (datadefinition §2.2)
+  async function setGoalState(name, entryId, stateKey) {
+    const [m, e] = findEntry(name, entryId);
+    if (!e) return;
+    e.tags = e.tags.filter(t => !GOAL_STATE_TAGS.includes(t));
+    if (stateKey === 'achieved') { e.tags.push('achievedgoal'); e.body = insertMarker(e, 'Achieved'); }
+    else if (stateKey === 'canceled') { e.tags.push('canceledgoal'); e.body = insertMarker(e, 'Canceled'); }
+    await ensureTagsInUnion(e.tags);
+    await io().saveDiscussion(state.dirHandle, m);
+    emit({ type: 'goalStateChanged', name, entryId, stateKey });
+  }
+
+  // Edit an entry's body (and optionally tags). Appends an "Updated:" marker only
+  // when edited on a different calendar day than its creation. (R41 / v1.42)
+  async function editEntry(name, entryId, opts) {
+    opts = opts || {};
+    const [m, e] = findEntry(name, entryId);
+    if (!e) return;
+    if (Array.isArray(opts.tags)) e.tags = opts.tags.slice();
+    if (opts.text != null) {
+      e.body = autoLinkUrls(String(opts.text).trim());
+      const created = (e.created_at || '').slice(0, 10);
+      const today = nowISO().slice(0, 10);
+      if (today !== created && !e.body.split('\n').some(l => l.startsWith('Updated: ' + today))) {
+        e.body = insertMarker(e, 'Updated');
+      }
+    }
+    await ensureTagsInUnion(e.tags);
+    await io().saveDiscussion(state.dirHandle, m);
+    emit({ type: 'entryEdited', name, entryId });
+  }
+
   /* ------------------------------ export ------------------------------- */
 
   Chippy.store = Object.assign(
@@ -358,6 +403,7 @@
       subscribe, openFolder, selectMember, setActiveScreen, setTheme,
       toggleFavorite, reloadMember, setPrep, addEntry,
       setTaskState, cyclePriority, setDue, appendAction, toggleMute, isMuted,
+      setGoalState, editEntry,
       // pure helpers exposed for the UI and for tests
       nowISO, mintGoalId, extractInlineTags, autoLinkUrls, extractNameTokens,
       splitTrailingActions, actionLabelFor,

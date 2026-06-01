@@ -290,70 +290,14 @@
     if (!entries.length) { wrap.append(el('div', 'history-empty', 'No entries yet.')); return wrap; }
 
     let lastDay = null, dayGroup = null;
-    for (const e of entries) {
+    for (const e of entries.slice().reverse()) { // newest day + entry first
       const day = (e.created_at || '').slice(0, 10);
       if (day !== lastDay) {
         dayGroup = el('div', 'day-group');
         dayGroup.append(el('div', 'day-label', day));
         wrap.append(dayGroup); lastDay = day;
       }
-      const tags = e.tags || [];
-      const closed = tags.some(t => ['resolvedtask', 'obsoletetask', 'resolvedfollowup'].includes(t));
-      const div = el('div', 'history-entry ' + entryKindClass(tags) + (closed ? ' closed collapsed' : ''));
-      div.dataset.entryId = e.created_at;
-
-      const meta = el('div', 'entry-meta');
-      meta.append(el('span', 'entry-time', e.created_at));
-      const stateTag = tags.find(t => STATE_LABEL[t]);
-      if (stateTag) meta.append(el('span', 'state-square state-' + stateTag, STATE_LABEL[stateTag]));
-      for (const t of tags) if (!HIDDEN_TAG.test(t)) meta.append(el('span', 'tag-chip', t));
-      const editBtn = el('span', 'entry-edit-btn icon-btn', '✎');
-      editBtn.title = 'Edit';
-      const moveBtn = el('span', 'icon-btn', '➜'); moveBtn.title = 'Move to another discussion';
-      moveBtn.addEventListener('click', () => showMoveDialog(member, e.created_at));
-      const delBtn = el('span', 'icon-btn', '🗑'); delBtn.title = 'Delete';
-      delBtn.addEventListener('click', () => showDeleteDialog(member, e.created_at, e.body));
-      meta.append(editBtn, moveBtn, delBtn);
-      div.append(meta);
-
-      const bodyEl = el('div', 'entry-text');
-      ui().safeSetHtml(bodyEl, ui().renderEntryText(e.body || ''));
-      div.append(bodyEl);
-
-      // Inline edit (re-render happens via the entryEdited event on save).
-      let editing = false;
-      editBtn.addEventListener('click', () => {
-        if (editing) return;
-        editing = true;
-        const ta = el('textarea', 'entry-edit-area');
-        ta.value = e.body || '';
-        div.replaceChild(ta, bodyEl);
-        ta.focus();
-        let fin = false;
-        function done(save) {
-          if (fin) return; fin = true;
-          if (save) { store().editEntry(member.name, e.created_at, { text: ta.value }); return; }
-          if (ta.parentNode === div) div.replaceChild(bodyEl, ta);
-          editing = false;
-        }
-        ta.addEventListener('keydown', (ev) => {
-          if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); done(true); }
-          else if (ev.key === 'Escape') { ev.preventDefault(); done(false); }
-        });
-        ta.addEventListener('blur', () => done(true));
-      });
-
-      // Multi-line expand indicator.
-      if ((e.body || '').includes('\n')) {
-        div.classList.add('collapsed');
-        const tri = el('span', 'expand-tri', '▸');
-        tri.addEventListener('click', () => {
-          div.classList.toggle('collapsed');
-          tri.textContent = div.classList.contains('collapsed') ? '▸' : '▾';
-        });
-        meta.append(tri);
-      }
-      dayGroup.append(div);
+      dayGroup.append(ui().entryCard(e, { member: member.name }));
     }
     return wrap;
   }
@@ -496,7 +440,7 @@
   }
 
   function renderGallery(member) {
-    const refs = collectImages(member);
+    const refs = collectImages(member).reverse(); // newest first
     const wrap = el('div', 'gallery-section');
     wrap.append(el('div', 'section-label', 'Images'));
     if (!refs.length) { wrap.append(el('div', 'panel-empty', 'No images.')); return wrap; }

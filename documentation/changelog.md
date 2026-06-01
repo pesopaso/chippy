@@ -26,6 +26,79 @@ harness status when `format.js`/`io.js` change; reference the requirement (`R#`)
 
 ## Build history
 
+### v3.0.0-dev.26 — 2026-06-02 — Fix inline images in comments
+
+> Inline images showed a broken-image icon in discussions and the cross-views.
+
+- Rendered entry text produces `<img data-src="…">` with no real `src`; the unified `entryCard` never resolved those (only the gallery did). It now resolves each `data-src` to a blob URL via `store.getImageUrl`.
+- Clicking an inline image opens the full-screen carousel over all images in that card.
+
+### v3.0.0-dev.25 — 2026-06-02 — Restore paragraph spacing in comments
+
+> Blank lines between paragraphs were collapsing, so multi-paragraph comments read as one run-on block.
+
+- The global `* { margin: 0 }` reset had zeroed `<p>`/heading/list/blockquote margins inside rendered entry text. Added `.entry-text` block spacing (`0 0 .7em`, last child flush) so a blank line between paragraphs now renders as a visible pause.
+
+### v3.0.0-dev.24 — 2026-06-02 — Ro3 cards use full width
+
+> Rule of Three cards were capped at 640px; the other list views aren't.
+
+- Removed the `max-width: 640px` on `.ro3-cards` so cards span the full content width, matching All Comments / All Tasks.
+
+### v3.0.0-dev.23 — 2026-06-02 — Collapse only finished items
+
+> Comment boxes no longer collapse just because they span multiple lines.
+
+- A card starts collapsed only when the item is finished: a done/obsolete task (or done followup) or an achieved/canceled goal — previously achieved/canceled goals were not treated as closed.
+- Removed the multi-line auto-collapse: all other comments now render in their entirety, with no expand triangle.
+- The expand triangle is shown only on finished items so they can still be opened.
+
+### v3.0.0-dev.22 — 2026-06-02 — Ro3: drop the double box
+
+> Rule of Three cards were a comment box nested inside an extra `.ro3-card` wrapper.
+
+- `ro3Card` now returns the unified `entryCard` directly — no outer wrapper — so each item is a single comment box like everywhere else.
+- Removed the unused `.ro3-card` / `.ro3-card .btn-sm` styles; tightened `.ro3-cards` gap to 8px.
+
+### v3.0.0-dev.21 — 2026-06-02 — Square content boxes (controls stay rounded)
+
+> Scoped the square aesthetic to content boxes only; entry fields, buttons, and chips keep their rounded corners as before.
+
+- Removed the dev.20 global `*{border-radius:0!important}` rule, which had flattened everything including inputs/buttons/chips/avatars/modals.
+- `border-radius: 0` now applied only to the content boxes: `.entry-card`, `.ro3-card`, `.summary-card`, `.summary-output`, `.kanban-card`, `.chart`. Inputs, buttons, chips, and other controls retain their prior rounding.
+
+### v3.0.0-dev.20 — 2026-06-02 — Square corners app-wide
+
+> Removed rounded corners everywhere for a consistent square aesthetic.
+
+- Global `*, *::before, *::after { border-radius: 0 !important; }` flattens all elements (cards, buttons, inputs, chips, modals, avatars, chrome buttons). Overrides every per-element radius, including the dev.19 comment-card rounding.
+
+### v3.0.0-dev.19 — 2026-06-02 — Comment box styling: filled cards, 5px gap
+
+> Comment boxes read as distinct sections instead of line-separated rows.
+
+- `.entry-card` now has a `var(--surface)` background (slight contrast to the page background) with rounded corners and padding, replacing the bottom divider line.
+- 5px vertical gap between cards (`margin-bottom: 5px`). The task/followup/goal left-color stripe is retained.
+
+### v3.0.0-dev.18 — 2026-06-02 — Unified comment box everywhere
+
+> One fully-interactive comment card, identical in look and behaviour across every view.
+
+- New shared `ui.entryCard(entry, opts)`: timestamp, optional member label, state square, priority square, visible tags, and the full control set — inline edit (✎), ⚡ action, mute, ✓ resolve, move (➜), delete (🗑) — with controls that don't apply to a tagless entry simply not rendering. Actions default to store mutations keyed by `(opts.member, created_at)`; `opts.on*` override them.
+- Routed through it: discussion history, All Comments / All Tasks / All Goals, Ro3, and the AI Summary cards — replacing the previous bespoke renderers.
+- **Summary cards are now real comment boxes**: edit rewrites the summary, delete removes it, and **move** turns a generated summary into a new entry in any discussion (`store.moveSummaryToDiscussion`, plus `updateSummary`). 
+- `pages.refresh()` re-renders the active screen after a card action, so cross-views update live (not just the discussion).
+- Move/delete dialogs and the entry-card styling consolidated into `ui.js`/`.entry-card`.
+
+### v3.0.0-dev.17 — 2026-06-02 — Newest-first ordering across views
+
+> Chronological lists now show the most recent item first.
+
+- Discussion history renders newest day + newest entry first; per-discussion gallery newest first.
+- All Tasks and All Goals sorted by `created_at` descending; All Images ordered by source-entry date descending.
+- `getLinks` now tracks each link's newest source date and returns links newest-first; All Links sorts the aggregated set by date descending. (Node-checked.)
+- All Comments and AI Summary cards were already newest-first.
+
 ### v3.0.0-dev.16 — 2026-06-01 — Step 15: Hardening & MVP parity
 
 > XSS boundary made live, plus help, slim mode, and the parity sweep.

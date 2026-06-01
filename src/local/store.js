@@ -419,10 +419,16 @@
   function getLinks(member) {
     const m = member || selectors.getActiveMember();
     if (!m) return [];
-    const seen = new Set(), out = [];
-    const texts = [m.prep || ''].concat((m.entries || []).map(e => e.body || ''));
-    for (const t of texts) for (const l of extractLinks(t)) if (!seen.has(l.url)) { seen.add(l.url); out.push(l); }
-    return out;
+    const map = new Map(); // url -> { label, url, date } (newest occurrence wins)
+    const consider = (text, date) => {
+      for (const l of extractLinks(text)) {
+        const ex = map.get(l.url);
+        if (!ex || (date || '') > (ex.date || '')) map.set(l.url, { label: l.label, url: l.url, date: date || '' });
+      }
+    };
+    for (const e of (m.entries || [])) consider(e.body || '', e.created_at || '');
+    consider(m.prep || '', '');
+    return [...map.values()].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   }
 
   // Rename a link's display title in its source text (matched by URL). (R44)
@@ -651,6 +657,23 @@
     await io().writeSummary(state.dirHandle, Chippy.format.serializeSummary(s));
     emit({ type: 'summaryDeleted' });
   }
+  async function updateSummary(id, body) {
+    const s = await loadSummary();
+    const c = s.summaries.find(x => x.id === id);
+    if (!c) return;
+    c.body = String(body).trim();
+    await io().writeSummary(state.dirHandle, Chippy.format.serializeSummary(s));
+    emit({ type: 'summarySaved' });
+  }
+  // Move a generated summary into a discussion: create an entry there, drop the card.
+  async function moveSummaryToDiscussion(id, targetName) {
+    const s = await loadSummary();
+    const c = s.summaries.find(x => x.id === id);
+    if (!c) return;
+    await addEntry(targetName, { text: c.body });
+    await deleteSummary(id);
+    emit({ type: 'summaryMoved', id, to: targetName });
+  }
 
   // Build a Markdown contribution summary for a discussion (mid/end-year reviews).
   function exportContribution(member) {
@@ -679,7 +702,7 @@
       saveImage, getImageUrl,
       ensureAllLoaded, collectEntries, applyUnifiedFilter, getAllNames,
       getRo3Candidates, pickRo3, doneRecent, resolvedDate,
-      loadSummary, saveSummaryConfig, appendSummary, deleteSummary, exportContribution, shortId,
+      loadSummary, saveSummaryConfig, appendSummary, deleteSummary, updateSummary, moveSummaryToDiscussion, exportContribution, shortId,
       // pure helpers exposed for the UI and for tests
       nowISO, mintGoalId, extractInlineTags, autoLinkUrls, extractNameTokens,
       splitTrailingActions, actionLabelFor, extractLinks, parseSearchQuery,

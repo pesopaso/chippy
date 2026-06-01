@@ -288,6 +288,12 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .history-entry { padding: 6px 0; border-bottom: 1px solid var(--border); }
 .entry-time { font-size: .7rem; color: var(--muted); margin-bottom: 2px; }
 .entry-text { font-size: .92rem; line-height: 1.55; }
+/* Restore block spacing (the global reset zeroes margins) so blank lines between
+   paragraphs render as a visible pause instead of collapsing together. */
+.entry-text p, .entry-text ul, .entry-text ol, .entry-text blockquote,
+.entry-text pre, .entry-text h1, .entry-text h2, .entry-text h3,
+.entry-text h4, .entry-text h5, .entry-text h6 { margin: 0 0 .7em; }
+.entry-text > :last-child { margin-bottom: 0; }
 .history-empty, .prep-empty { color: var(--muted); font-size: .85rem; }
 
 /* ---- Entry input ------------------------------------------------------- */
@@ -471,7 +477,7 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .kanban-col { flex: 0 0 200px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px; min-height: 120px; }
 .kanban-col.drag-over { border-color: var(--accent); background: var(--card); }
 .kanban-col-header { font-size: .7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; }
-.kanban-card { background: var(--card); border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; cursor: grab; border-left: 3px solid var(--orange); }
+.kanban-card { background: var(--card); border-radius: 0; padding: 6px 8px; margin-bottom: 6px; cursor: grab; border-left: 3px solid var(--orange); }
 .kanban-card.followup { border-left-color: var(--followup); }
 .kanban-card.muted { opacity: .55; }
 .kanban-card-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
@@ -479,14 +485,12 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .cam-icon { font-size: .72rem; }
 
 /* ---- Rule of Three ---------------------------------------------------- */
-.ro3-cards { display: flex; flex-direction: column; gap: 12px; max-width: 640px; margin-top: 12px; }
-.ro3-card { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--orange); border-radius: 8px; padding: 12px; }
-.ro3-card .btn-sm { margin-top: 8px; }
+.ro3-cards { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
 
 /* ---- Dashboard -------------------------------------------------------- */
 .dashboard-body { padding-bottom: 24px; }
 .chart-grid { display: flex; flex-wrap: wrap; gap: 16px; }
-.chart { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+.chart { background: var(--surface); border: 1px solid var(--border); border-radius: 0; padding: 12px; }
 .chart.wide { width: 100%; margin-top: 16px; }
 .chart-title { font-size: .78rem; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin-bottom: 8px; }
 .pie-wrap { display: flex; gap: 12px; align-items: center; }
@@ -499,8 +503,8 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .summary-input { flex: 1; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); color: var(--text); font: inherit; font-size: .8rem; }
 .summary-ctrl { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
 .summary-ctrl .btn-sm.active { border-color: var(--accent); color: var(--accent); }
-.summary-output { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; min-height: 40px; margin-bottom: 16px; }
-.summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+.summary-output { background: var(--surface); border: 1px solid var(--border); border-radius: 0; padding: 12px; min-height: 40px; margin-bottom: 16px; }
+.summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: 0; padding: 12px; margin-bottom: 10px; }
 
 /* ---- Print ------------------------------------------------------------ */
 @media print {
@@ -525,3 +529,13 @@ body.slim #sidebar { width: 100%; flex: none; border-right: none; border-bottom:
 body.slim .split-view { flex-direction: column; }
 body.slim .split-right { flex: none; width: 100%; }
 body.slim .kanban-board { flex-wrap: wrap; }
+
+/* ---- Unified entry card (comment box) --------------------------------- */
+.entry-card { background: var(--surface); border-radius: 0; padding: 8px 10px; margin-bottom: 5px; }
+.entry-card.entry-task { border-left: 3px solid var(--orange); }
+.entry-card.entry-followup { border-left: 3px solid var(--followup); }
+.entry-card.entry-goal { border-left: 3px solid var(--goal); }
+.entry-card.closed { opacity: .6; }
+.entry-card.collapsed .entry-text { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.entry-card .entry-meta { flex-wrap: wrap; }
+.summary-meta { font-size: .72rem; color: var(--muted); margin-bottom: 4px; }

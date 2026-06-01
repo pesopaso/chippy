@@ -163,19 +163,9 @@
     build(body, '');
   }
 
-  function entryRow(e, opts) {
-    opts = opts || {};
-    const row = el('div', 'cross-entry');
-    const meta = el('div', 'entry-meta');
-    const mn = el('span', 'member-name-label', e._member);
-    mn.addEventListener('click', () => store().selectMember(e._member));
-    meta.append(mn, el('span', 'entry-time', e.created_at));
-    for (const t of (e.tags || [])) if (!HIDDEN_TAG.test(t)) meta.append(el('span', 'tag-chip', t));
-    row.append(meta);
-    const b = el('div', 'entry-text');
-    ui().safeSetHtml(b, ui().renderEntryText(opts.firstLineOnly ? (e.body || '').split('\n')[0] : (e.body || '')));
-    row.append(b);
-    return row;
+  // Every cross-view row is the shared, fully-interactive comment card.
+  function entryRow(e) {
+    return ui().entryCard(e, { member: e._member, showMember: true });
   }
 
   function openComments() {
@@ -190,7 +180,7 @@
     crossScreen('allTasksScreen', 'All Tasks', (c, q) => {
       const items = store().applyUnifiedFilter(store().collectEntries(), q)
         .filter(e => (e.tags || []).some(t => t === 'task' || t === 'followup') && !(e.tags || []).some(t => CLOSED_TASK.includes(t)))
-        .sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
+        .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')); // newest first
       if (!items.length) { c.append(el('div', 'panel-empty', 'No open tasks.')); return; }
       for (const e of items) c.append(entryRow(e, { firstLineOnly: true }));
     });
@@ -198,7 +188,8 @@
   function openGoals() {
     crossScreen('allGoalsScreen', 'All Goals', (c, q) => {
       const items = store().applyUnifiedFilter(store().collectEntries(), q)
-        .filter(e => (e.tags || []).includes('goal') && !(e.tags || []).some(t => CLOSED_GOAL.includes(t)));
+        .filter(e => (e.tags || []).includes('goal') && !(e.tags || []).some(t => CLOSED_GOAL.includes(t)))
+        .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')); // newest first
       if (!items.length) { c.append(el('div', 'panel-empty', 'No open goals.')); return; }
       for (const e of items) c.append(entryRow(e, { firstLineOnly: true }));
     });
@@ -210,6 +201,7 @@
         if (!m) continue;
         for (const l of store().getLinks(m)) if (!seen.has(l.url)) { seen.add(l.url); links.push(Object.assign({ _member: name }, l)); }
       }
+      links.sort((a, b) => (b.date || '').localeCompare(a.date || '')); // newest first
       const ql = q.trim().toLowerCase();
       const shown = ql ? links.filter(l => (l.label + ' ' + l.url).toLowerCase().includes(ql.replace(/^#|^@/, ''))) : links;
       if (!shown.length) { c.append(el('div', 'panel-empty', 'No links.')); return; }
@@ -223,12 +215,14 @@
   }
   function openImages() {
     crossScreen('allImagesScreen', 'All Images', (c) => {
-      const refs = [];
+      const withDate = [];
       const re = /!\[[^\]]*\]\(([^)]+)\)/g;
       for (const [, m] of store()._state.members) {
         if (!m) continue;
-        for (const e of (m.entries || [])) { let mm; while ((mm = re.exec(e.body || ''))) refs.push(mm[1]); }
+        for (const e of (m.entries || [])) { let mm; while ((mm = re.exec(e.body || ''))) withDate.push({ ref: mm[1], date: e.created_at || '' }); }
       }
+      withDate.sort((a, b) => (b.date || '').localeCompare(a.date || '')); // newest first
+      const refs = withDate.map(x => x.ref);
       if (!refs.length) { c.append(el('div', 'panel-empty', 'No images.')); return; }
       const grid = el('div', 'gallery-grid');
       refs.forEach((ref, idx) => {
@@ -344,19 +338,8 @@
   let ro3Pick = null; // session-persistent selection
 
   function ro3Card(e) {
-    const card = el('div', 'ro3-card');
-    const meta = el('div', 'kanban-card-meta');
-    const p = prioOf(e.tags);
-    meta.append(el('span', 'prio-square prio-' + p, PRIO_LABEL[p]));
-    meta.append(el('span', 'member-name-label', e._member));
-    card.append(meta);
-    const txt = el('div', 'entry-text');
-    ui().safeSetHtml(txt, ui().renderEntryText(e.body || ''));
-    card.append(txt);
-    const done = el('button', 'btn-sm', '✓ Resolve');
-    done.addEventListener('click', async () => { await store().setTaskState(e._member, e.created_at, 'resolved'); ro3Pick = store().pickRo3(store().getRo3Candidates()); openRo3(); });
-    card.append(done);
-    return card;
+    // No outer wrapper — the unified comment box is the whole card (avoids a double box).
+    return ui().entryCard(e, { member: e._member, showMember: true });
   }
 
   function openRo3() {
@@ -434,14 +417,16 @@
 
     const list = el('div', 'summary-list');
     for (const c of (cfg.summaries || [])) {
-      const card = el('div', 'summary-card');
-      const meta = el('div', 'entry-meta');
-      meta.append(el('span', 'name-count', (c.range || '') + ' · ' + (c.created_at || '')));
-      const del = el('span', 'icon-btn', '🗑'); del.title = 'Delete'; del.addEventListener('click', async () => { await store().deleteSummary(c.id); openSummary(); });
-      meta.append(del);
-      card.append(meta);
-      const b = el('div', 'entry-text'); ui().safeSetHtml(b, ui().renderEntryText(c.body || '')); card.append(b);
-      list.append(card);
+      const synthetic = { created_at: c.created_at, tags: [], body: c.body };
+      const card = ui().entryCard(synthetic, {
+        onEdit: (text) => store().updateSummary(c.id, text),
+        onMove: (target) => store().moveSummaryToDiscussion(c.id, target),
+        onDelete: () => store().deleteSummary(c.id)
+      });
+      const box = el('div', 'summary-card');
+      box.append(el('div', 'summary-meta', (c.range || '') + ' · ' + (c.created_at || '') + (c.model ? ' · ' + c.model : '')));
+      box.append(card);
+      list.append(box);
     }
     screen.append(list);
 
@@ -482,5 +467,14 @@
     showScreen(name);
   }
 
-  Chippy.pages = { showScreen, getCurrentScreen, renderSidebar, renderRecent, noteRecent, getInitials, openCrossView, init };
+  // Re-render whatever screen is active (after a card mutation).
+  function refresh() {
+    if (currentScreen === 'member') {
+      if (Chippy.discussion) Chippy.discussion.render(store().getActiveMember());
+    } else if (CROSS[currentScreen]) {
+      CROSS[currentScreen]();
+    }
+  }
+
+  Chippy.pages = { showScreen, getCurrentScreen, renderSidebar, renderRecent, noteRecent, getInitials, openCrossView, refresh, init };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

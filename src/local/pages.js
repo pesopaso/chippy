@@ -264,9 +264,118 @@
     });
   }
 
+  /* ------------------------------ kanban ------------------------------- */
+
+  const KANBAN_COLS = [['open', 'OPEN'], ['inprogress', 'WIP'], ['check', 'CHK'],
+                       ['onhold', 'HOLD'], ['purgatory', 'PRGT'], ['resolved', 'DONE']];
+  const PRIO_LABEL = { high: 'HI', medium: 'MI', low: 'LO' };
+
+  function stateKeyOf(tags) {
+    if (tags.includes('inprogresstask') || tags.includes('inprogress')) return 'inprogress';
+    if (tags.includes('checktask')) return 'check';
+    if (tags.includes('onholdtask') || tags.includes('onhold')) return 'onhold';
+    if (tags.includes('purgatorytask') || tags.includes('purgatory')) return 'purgatory';
+    if (tags.includes('resolvedtask') || tags.includes('resolvedfollowup')) return 'resolved';
+    if (tags.includes('obsoletetask')) return 'obsolete';
+    return 'open';
+  }
+  function prioOf(tags) { return tags.find(t => t === 'high' || t === 'medium' || t === 'low') || 'low'; }
+
+  function kanbanCard(e) {
+    const card = el('div', 'kanban-card' + (e.tags.includes('followup') ? ' followup' : '') + (store().isMuted(e) ? ' muted' : ''));
+    card.draggable = true;
+    card.addEventListener('dragstart', ev =>
+      ev.dataTransfer.setData('application/json', JSON.stringify({ m: e._member, id: e.created_at })));
+    const meta = el('div', 'kanban-card-meta');
+    const p = prioOf(e.tags);
+    meta.append(el('span', 'prio-square prio-' + p, PRIO_LABEL[p]));
+    meta.append(el('span', 'member-name-label', e._member));
+    if (/!\[[^\]]*\]\(/.test(e.body || '')) meta.append(el('span', 'cam-icon', '📷'));
+    card.append(meta);
+    const txt = el('div', 'kanban-card-text');
+    ui().safeSetHtml(txt, ui().renderEntryText((e.body || '').split('\n')[0]));
+    card.append(txt);
+    return card;
+  }
+
+  function openKanban() {
+    const screen = document.getElementById('kanbanScreen');
+    if (!screen) return;
+    screen.replaceChildren();
+    const header = el('div', 'member-header'); header.append(el('h1', 'member-title', 'Kanban'));
+    screen.append(header);
+    const board = el('div', 'kanban-board');
+    const tasks = store().collectEntries().filter(e => {
+      const t = e.tags || [];
+      return (t.includes('task') || t.includes('followup')) && !t.includes('obsoletetask');
+    });
+    const rank = e => ({ high: 0, medium: 1, low: 2 })[prioOf(e.tags)] ?? 3;
+    for (const [key, label] of KANBAN_COLS) {
+      const col = el('div', 'kanban-col');
+      col.append(el('div', 'kanban-col-header', label));
+      let colTasks = tasks.filter(e => stateKeyOf(e.tags) === key);
+      if (key === 'resolved') colTasks = colTasks.filter(e => store().doneRecent(e, 2));
+      colTasks.sort((a, b) => {
+        const ma = store().isMuted(a) ? 1 : 0, mb = store().isMuted(b) ? 1 : 0;
+        return ma !== mb ? ma - mb : rank(a) - rank(b);
+      });
+      for (const e of colTasks) col.append(kanbanCard(e));
+      col.addEventListener('dragover', ev => { ev.preventDefault(); col.classList.add('drag-over'); });
+      col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
+      col.addEventListener('drop', async ev => {
+        ev.preventDefault(); col.classList.remove('drag-over');
+        try {
+          const { m, id } = JSON.parse(ev.dataTransfer.getData('application/json'));
+          await store().setTaskState(m, id, key);
+          openKanban();
+        } catch (_) {}
+      });
+      board.append(col);
+    }
+    screen.append(board);
+  }
+
+  /* ----------------------------- Rule of Three ------------------------- */
+
+  let ro3Pick = null; // session-persistent selection
+
+  function ro3Card(e) {
+    const card = el('div', 'ro3-card');
+    const meta = el('div', 'kanban-card-meta');
+    const p = prioOf(e.tags);
+    meta.append(el('span', 'prio-square prio-' + p, PRIO_LABEL[p]));
+    meta.append(el('span', 'member-name-label', e._member));
+    card.append(meta);
+    const txt = el('div', 'entry-text');
+    ui().safeSetHtml(txt, ui().renderEntryText(e.body || ''));
+    card.append(txt);
+    const done = el('button', 'btn-sm', '✓ Resolve');
+    done.addEventListener('click', async () => { await store().setTaskState(e._member, e.created_at, 'resolved'); ro3Pick = store().pickRo3(store().getRo3Candidates()); openRo3(); });
+    card.append(done);
+    return card;
+  }
+
+  function openRo3() {
+    const screen = document.getElementById('ro3Screen');
+    if (!screen) return;
+    screen.replaceChildren();
+    const header = el('div', 'member-header');
+    header.append(el('h1', 'member-title', 'Rule of Three'));
+    const refresh = el('button', 'btn-sm', '↻ Refresh');
+    refresh.addEventListener('click', () => { ro3Pick = store().pickRo3(store().getRo3Candidates()); openRo3(); });
+    header.append(refresh);
+    screen.append(header);
+    if (!ro3Pick || !ro3Pick.length) ro3Pick = store().pickRo3(store().getRo3Candidates());
+    const cont = el('div', 'ro3-cards');
+    if (!ro3Pick.length) cont.append(el('div', 'panel-empty', 'No open tasks.'));
+    else for (const e of ro3Pick) cont.append(ro3Card(e));
+    screen.append(cont);
+  }
+
   const CROSS = {
     allComments: openComments, allTasks: openTasks, allGoals: openGoals,
-    allLinks: openLinks, allImages: openImages, allNames: openNames
+    allLinks: openLinks, allImages: openImages, allNames: openNames,
+    kanban: openKanban, ro3: openRo3
   };
 
   async function openCrossView(name) {

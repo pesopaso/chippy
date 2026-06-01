@@ -465,3 +465,20 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .name-count { font-size: .72rem; color: var(--muted); }
 .name-discs { font-size: .72rem; color: var(--muted); }
 .name-excerpt { font-size: .8rem; margin: 4px 0 0 16px; color: var(--text); }
+
+/* ---- Kanban ----------------------------------------------------------- */
+.kanban-board { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 12px; }
+.kanban-col { flex: 0 0 200px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px; min-height: 120px; }
+.kanban-col.drag-over { border-color: var(--accent); background: var(--card); }
+.kanban-col-header { font-size: .7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; }
+.kanban-card { background: var(--card); border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; cursor: grab; border-left: 3px solid var(--orange); }
+.kanban-card.followup { border-left-color: var(--followup); }
+.kanban-card.muted { opacity: .55; }
+.kanban-card-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+.kanban-card-text { font-size: .78rem; }
+.cam-icon { font-size: .72rem; }
+
+/* ---- Rule of Three ---------------------------------------------------- */
+.ro3-cards { display: flex; flex-direction: column; gap: 12px; max-width: 640px; margin-top: 12px; }
+.ro3-card { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--orange); border-radius: 8px; padding: 12px; }
+.ro3-card .btn-sm { margin-top: 8px; }

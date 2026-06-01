@@ -575,6 +575,50 @@
     return arr;
   }
 
+  /* --------------------------- kanban / Ro3 ---------------------------- */
+
+  // The "Resolved: <date>" marker date, if present.
+  function resolvedDate(e) {
+    const m = (e.body || '').match(/Resolved: (\d{4}-\d{2}-\d{2})/);
+    return m ? m[1] : null;
+  }
+  // True if not resolved, or resolved within the last `months`. (Done-column limit)
+  function doneRecent(e, months) {
+    const d = resolvedDate(e);
+    if (!d) return true;
+    const c = new Date(); c.setMonth(c.getMonth() - months);
+    const p = n => String(n).padStart(2, '0');
+    const cutoff = `${c.getFullYear()}-${p(c.getMonth() + 1)}-${p(c.getDate())}`;
+    return d >= cutoff;
+  }
+
+  // Open task/followup candidates for Ro3: not closed, not muted.
+  function getRo3Candidates() {
+    return collectEntries().filter(e => {
+      const t = e.tags || [];
+      if (!(t.includes('task') || t.includes('followup'))) return false;
+      if (t.some(x => ['resolvedtask', 'obsoletetask', 'resolvedfollowup'].includes(x))) return false;
+      if (isMuted(e)) return false;
+      return true;
+    });
+  }
+
+  // Pick up to 3: one high, one medium, one low; fill from any bucket if empty.
+  function pickRo3(cands, rng) {
+    rng = rng || Math.random;
+    const by = { high: [], medium: [], low: [], none: [] };
+    for (const c of cands) {
+      const p = (c.tags || []).find(t => t === 'high' || t === 'medium' || t === 'low') || 'none';
+      by[p].push(c);
+    }
+    const take = arr => arr.length ? arr.splice(Math.floor(rng() * arr.length), 1)[0] : null;
+    const out = [];
+    for (const p of ['high', 'medium', 'low']) { const x = take(by[p]); if (x) out.push(x); }
+    const rest = [].concat(by.high, by.medium, by.low, by.none);
+    while (out.length < 3 && rest.length) { const x = take(rest); if (x) out.push(x); }
+    return out;
+  }
+
   /* ------------------------------ export ------------------------------- */
 
   Chippy.store = Object.assign(
@@ -585,6 +629,7 @@
       setGoalState, editEntry, getLinks, renameLink, moveEntry, deleteEntry,
       saveImage, getImageUrl,
       ensureAllLoaded, collectEntries, applyUnifiedFilter, getAllNames,
+      getRo3Candidates, pickRo3, doneRecent, resolvedDate,
       // pure helpers exposed for the UI and for tests
       nowISO, mintGoalId, extractInlineTags, autoLinkUrls, extractNameTokens,
       splitTrailingActions, actionLabelFor, extractLinks, parseSearchQuery,

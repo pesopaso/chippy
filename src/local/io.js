@@ -181,6 +181,14 @@
     await writeFileText(dirHandle, NAMES_FILE, fmt.serializeNames(names));
   }
 
+  async function readSummary(dirHandle) {
+    if (!(await fileExists(dirHandle, SUMMARY_FILE))) return null;
+    return readFileText(dirHandle, SUMMARY_FILE);
+  }
+  async function writeSummary(dirHandle, text) {
+    await writeFileText(dirHandle, SUMMARY_FILE, text);
+  }
+
   /* ------------------------------ image store -------------------------- */
 
   const ImageStore = {
@@ -241,6 +249,7 @@
     openFolder, listDiscussions, loadDiscussion, saveDiscussion,
     archiveDiscussion, renameDiscussion,
     loadIndexes, saveNav, saveTags, saveNames,
+    readSummary, writeSummary,
     ImageStore
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

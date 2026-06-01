@@ -619,6 +619,55 @@
     return out;
   }
 
+  /* -------------------------- summary + export ------------------------- */
+
+  const HIDDEN_TAG = /^(task|followup|goal|opentask|inprogresstask|checktask|onholdtask|purgatorytask|resolvedtask|obsoletetask|resolvedfollowup|achievedgoal|canceledgoal|resolvedgoal|high|medium|low|goal-[a-z0-9]{5}|muted:.*)$/;
+
+  function shortId(rng) {
+    rng = rng || Math.random;
+    let s = '';
+    for (let i = 0; i < 5; i++) s += Math.floor(rng() * 36).toString(36);
+    return s;
+  }
+
+  async function loadSummary() {
+    const text = await io().readSummary(state.dirHandle);
+    return text ? Chippy.format.parseSummary(text) : { api_url: null, api_model: null, summaries: [] };
+  }
+  async function saveSummaryConfig(api_url, api_model) {
+    const s = await loadSummary();
+    s.api_url = api_url; s.api_model = api_model;
+    await io().writeSummary(state.dirHandle, Chippy.format.serializeSummary(s));
+  }
+  async function appendSummary(card) {
+    const s = await loadSummary();
+    s.summaries.unshift(card); // newest first
+    await io().writeSummary(state.dirHandle, Chippy.format.serializeSummary(s));
+    emit({ type: 'summarySaved' });
+  }
+  async function deleteSummary(id) {
+    const s = await loadSummary();
+    s.summaries = s.summaries.filter(c => c.id !== id);
+    await io().writeSummary(state.dirHandle, Chippy.format.serializeSummary(s));
+    emit({ type: 'summaryDeleted' });
+  }
+
+  // Build a Markdown contribution summary for a discussion (mid/end-year reviews).
+  function exportContribution(member) {
+    let md = '# ' + member.name + ' — Contribution Summary\n\n';
+    md += 'Generated: ' + nowISO() + '\n';
+    const entries = member.entries || [];
+    if (!entries.length) return md + '\n_No entries._\n';
+    let lastDay = null;
+    for (const e of entries) {
+      const day = (e.created_at || '').slice(0, 10);
+      if (day !== lastDay) { md += '\n## ' + day + '\n\n'; lastDay = day; }
+      const vis = (e.tags || []).filter(t => !HIDDEN_TAG.test(t));
+      md += '- ' + (e.body || '').split('\n')[0] + (vis.length ? '  [' + vis.join(', ') + ']' : '') + '\n';
+    }
+    return md;
+  }
+
   /* ------------------------------ export ------------------------------- */
 
   Chippy.store = Object.assign(
@@ -630,6 +679,7 @@
       saveImage, getImageUrl,
       ensureAllLoaded, collectEntries, applyUnifiedFilter, getAllNames,
       getRo3Candidates, pickRo3, doneRecent, resolvedDate,
+      loadSummary, saveSummaryConfig, appendSummary, deleteSummary, exportContribution, shortId,
       // pure helpers exposed for the UI and for tests
       nowISO, mintGoalId, extractInlineTags, autoLinkUrls, extractNameTokens,
       splitTrailingActions, actionLabelFor, extractLinks, parseSearchQuery,

@@ -23,11 +23,15 @@
     return e;
   }
 
+  const PRINT_SCREENS = new Set(['member', 'allComments', 'allTasks', 'allGoals', 'allImages', 'allLinks', 'allNames']);
+
   function showScreen(name) {
     currentScreen = name;
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const target = document.getElementById(SCREEN_IDS[name] || (name + 'Screen'));
     if (target) target.classList.add('active');
+    const pb = document.getElementById('btnPrintChrome');
+    if (pb) pb.classList.toggle('hidden', !PRINT_SCREENS.has(name)); // hidden on kanban/ro3/activity/summary/welcome
   }
   function getCurrentScreen() { return currentScreen; }
 
@@ -382,10 +386,93 @@
     if (Chippy.dashboard) Chippy.dashboard.render(body);
   }
 
+  /* ----------------------------- AI Summary ---------------------------- */
+
+  function inRange(dateStr, range) {
+    const d = new Date(String(dateStr).replace(' ', 'T'));
+    if (isNaN(d)) return false;
+    const days = { day: 1, week: 7, month: 30 }[range] || 7;
+    const cut = new Date(); cut.setDate(cut.getDate() - days);
+    return d >= cut;
+  }
+  function buildPrompt(entries) {
+    const byDisc = new Map();
+    for (const e of entries) {
+      if (!byDisc.has(e._member)) byDisc.set(e._member, []);
+      byDisc.get(e._member).push((e.created_at || '') + ' — ' + (e.body || '').split('\n')[0]);
+    }
+    let p = 'Summarize the following notebook activity. Return an OVERALL block, then for each ' +
+      'discussion a "DISCUSSION: <name>" line followed by "SUMMARY:" and "ACTIVITY:" blocks.\n\n';
+    for (const [name, lines] of byDisc) p += 'DISCUSSION: ' + name + '\n' + lines.join('\n') + '\n\n';
+    return p;
+  }
+
+  async function openSummary() {
+    const screen = document.getElementById('summaryScreen');
+    if (!screen) return;
+    screen.replaceChildren();
+    screen.append((() => { const h = el('div', 'member-header'); h.append(el('h1', 'member-title', 'AI Summary')); return h; })());
+
+    const cfg = await store().loadSummary();
+    const lsGet = k => { try { return localStorage.getItem(k); } catch (_) { return null; } };
+    const cfgRow = el('div', 'summary-config');
+    const url = el('input', 'summary-input'); url.type = 'text'; url.placeholder = 'http://localhost:11434/v1/chat/completions';
+    url.value = cfg.api_url || lsGet('chippy_api_url') || '';
+    const model = el('input', 'summary-input'); model.type = 'text'; model.placeholder = 'llama3';
+    model.value = cfg.api_model || lsGet('chippy_api_model') || '';
+    cfgRow.append(url, model); screen.append(cfgRow);
+
+    const ctrl = el('div', 'summary-ctrl'); let range = 'week';
+    for (const r of ['day', 'week', 'month']) {
+      const b = el('button', 'btn-sm' + (r === range ? ' active' : ''), 'This ' + r);
+      b.addEventListener('click', () => { range = r; ctrl.querySelectorAll('.btn-sm').forEach(x => x.classList.remove('active')); b.classList.add('active'); });
+      ctrl.append(b);
+    }
+    const gen = el('button', 'btn-primary', 'Generate'); ctrl.append(gen);
+    screen.append(ctrl);
+    const out = el('div', 'summary-output entry-text'); screen.append(out);
+
+    const list = el('div', 'summary-list');
+    for (const c of (cfg.summaries || [])) {
+      const card = el('div', 'summary-card');
+      const meta = el('div', 'entry-meta');
+      meta.append(el('span', 'name-count', (c.range || '') + ' · ' + (c.created_at || '')));
+      const del = el('span', 'icon-btn', '🗑'); del.title = 'Delete'; del.addEventListener('click', async () => { await store().deleteSummary(c.id); openSummary(); });
+      meta.append(del);
+      card.append(meta);
+      const b = el('div', 'entry-text'); ui().safeSetHtml(b, ui().renderEntryText(c.body || '')); card.append(b);
+      list.append(card);
+    }
+    screen.append(list);
+
+    gen.addEventListener('click', async () => {
+      try { localStorage.setItem('chippy_api_url', url.value); localStorage.setItem('chippy_api_model', model.value); } catch (_) {}
+      await store().saveSummaryConfig(url.value, model.value);
+      gen.disabled = true; gen.textContent = 'Generating…'; out.textContent = '';
+      try {
+        const entries = store().collectEntries().filter(e => inRange(e.created_at, range));
+        const res = await fetch(url.value, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: model.value, messages: [{ role: 'user', content: buildPrompt(entries) }], stream: false })
+        });
+        const data = await res.json();
+        const content = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || JSON.stringify(data);
+        ui().safeSetHtml(out, ui().renderEntryText(content));
+        await store().appendSummary({
+          created_at: store().nowISO(), range, id: store().shortId(),
+          model: model.value || null, tokens: (data.usage && data.usage.total_tokens) || null, body: content
+        });
+        openSummary();
+      } catch (err) {
+        out.textContent = 'Error: ' + (err && err.message || err);
+      } finally { gen.disabled = false; gen.textContent = 'Generate'; }
+    });
+  }
+
   const CROSS = {
     allComments: openComments, allTasks: openTasks, allGoals: openGoals,
     allLinks: openLinks, allImages: openImages, allNames: openNames,
-    kanban: openKanban, ro3: openRo3, activity: openActivity
+    kanban: openKanban, ro3: openRo3, activity: openActivity, summary: openSummary
   };
 
   async function openCrossView(name) {

@@ -493,3 +493,22 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .pie-legend { display: flex; flex-direction: column; gap: 3px; }
 .legend-row { display: flex; align-items: center; gap: 6px; font-size: .72rem; }
 .legend-swatch { width: 10px; height: 10px; border-radius: 2px; flex: 0 0 auto; }
+
+/* ---- AI Summary ------------------------------------------------------- */
+.summary-config { display: flex; gap: 8px; margin: 8px 0; }
+.summary-input { flex: 1; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); color: var(--text); font: inherit; font-size: .8rem; }
+.summary-ctrl { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+.summary-ctrl .btn-sm.active { border-color: var(--accent); color: var(--accent); }
+.summary-output { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; min-height: 40px; margin-bottom: 16px; }
+.summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+
+/* ---- Print ------------------------------------------------------------ */
+@media print {
+  #topChrome, #sidebar { display: none !important; }
+  #app { height: auto; display: block; }
+  #main { padding: 0; }
+  .screen { display: none !important; }
+  .screen.active { display: block !important; overflow: visible !important; }
+  .split-right, .entry-box, .prep-edit-btn, .icon-btn, .member-header-actions { display: none !important; }
+  body { background: #fff; color: #000; }
+}

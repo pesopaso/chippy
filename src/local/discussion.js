@@ -90,6 +90,14 @@
       row.append(cancel, del); modal.append(row);
     });
   }
+  function downloadFile(filename, text) {
+    const blob = new Blob([text], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
 
   /* ------------------------------ prep area ---------------------------- */
 
@@ -523,7 +531,11 @@
     const reload = el('span', 'reload-btn', '↻');
     reload.title = 'Reload from disk';
     reload.addEventListener('click', () => store().reloadMember(member.name));
-    actions.append(star, reload);
+    const exp = el('span', 'reload-btn', '⬇');
+    exp.title = 'Export contribution summary (.md)';
+    exp.addEventListener('click', () =>
+      downloadFile(member.name + ' — Contribution Summary.md', store().exportContribution(member)));
+    actions.append(star, reload, exp);
     header.append(actions);
     screen.append(header);
 

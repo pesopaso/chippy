@@ -482,3 +482,14 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .ro3-cards { display: flex; flex-direction: column; gap: 12px; max-width: 640px; margin-top: 12px; }
 .ro3-card { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--orange); border-radius: 8px; padding: 12px; }
 .ro3-card .btn-sm { margin-top: 8px; }
+
+/* ---- Dashboard -------------------------------------------------------- */
+.dashboard-body { padding-bottom: 24px; }
+.chart-grid { display: flex; flex-wrap: wrap; gap: 16px; }
+.chart { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+.chart.wide { width: 100%; margin-top: 16px; }
+.chart-title { font-size: .78rem; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin-bottom: 8px; }
+.pie-wrap { display: flex; gap: 12px; align-items: center; }
+.pie-legend { display: flex; flex-direction: column; gap: 3px; }
+.legend-row { display: flex; align-items: center; gap: 6px; font-size: .72rem; }
+.legend-swatch { width: 10px; height: 10px; border-radius: 2px; flex: 0 0 auto; }

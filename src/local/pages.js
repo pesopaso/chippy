@@ -372,10 +372,20 @@
     screen.append(cont);
   }
 
+  function openActivity() {
+    const screen = document.getElementById('activityScreen');
+    if (!screen) return;
+    screen.replaceChildren();
+    const header = el('div', 'member-header'); header.append(el('h1', 'member-title', 'Activity'));
+    screen.append(header);
+    const body = el('div', 'dashboard-body'); screen.append(body);
+    if (Chippy.dashboard) Chippy.dashboard.render(body);
+  }
+
   const CROSS = {
     allComments: openComments, allTasks: openTasks, allGoals: openGoals,
     allLinks: openLinks, allImages: openImages, allNames: openNames,
-    kanban: openKanban, ro3: openRo3
+    kanban: openKanban, ro3: openRo3, activity: openActivity
   };
 
   async function openCrossView(name) {

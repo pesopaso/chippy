@@ -437,3 +437,31 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 /* ---- Delete confirm --------------------------------------------------- */
 .modal-preview { color: var(--muted); font-size: .82rem; margin-bottom: 4px; }
 .btn-primary.danger { background: var(--red); }
+
+/* ---- Sidebar cross-view nav ------------------------------------------- */
+.sidebar-nav { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px; border-top: 1px solid var(--border); }
+.nav-btn {
+  padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--card); color: var(--text); font-size: .72rem; cursor: pointer;
+}
+.nav-btn:hover { border-color: var(--accent); }
+
+/* ---- Cross-discussion list screens ------------------------------------ */
+.list-search-wrap { position: relative; margin: 8px 0 12px; }
+.list-search {
+  width: 100%; padding: 7px 24px 7px 10px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--card); color: var(--text); font: inherit; font-size: .82rem;
+}
+.list-search.filter-active { border-color: var(--orange); }
+.list-search-wrap .search-clear { position: absolute; right: 8px; top: 6px; border: none; background: none; color: var(--muted); cursor: pointer; font-size: 1.1rem; }
+.cross-entry { padding: 8px 0; border-bottom: 1px solid var(--border); }
+.member-name-label { color: var(--purple); font-weight: 600; font-size: .78rem; cursor: pointer; }
+.member-name-label:hover { text-decoration: underline; }
+
+/* ---- All Names -------------------------------------------------------- */
+.all-names-item { padding: 6px 0; border-bottom: 1px solid var(--border); }
+.all-names-summary { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; cursor: pointer; list-style: none; }
+.all-names-summary::-webkit-details-marker { display: none; }
+.name-count { font-size: .72rem; color: var(--muted); }
+.name-discs { font-size: .72rem; color: var(--muted); }
+.name-excerpt { font-size: .8rem; margin: 4px 0 0 16px; color: var(--text); }

@@ -495,6 +495,86 @@
   async function saveImage(name, blob) { return io().ImageStore.saveImage(state.dirHandle, name, blob); }
   async function getImageUrl(ref) { return io().ImageStore.getImageUrl(state.dirHandle, ref); }
 
+  /* --------------------- cross-discussion + search --------------------- */
+
+  // Lazy-load every non-archived discussion (for cross-views), caching each.
+  async function ensureAllLoaded() {
+    for (const d of state.nav.discussions) {
+      if (!d.archived && state.members.get(d.name) === null) {
+        state.members.set(d.name, await io().loadDiscussion(state.dirHandle, d.name));
+      }
+    }
+  }
+
+  // All loaded entries, each shallow-tagged with its _member (read-only views).
+  function collectEntries() {
+    const out = [];
+    for (const [name, m] of state.members) {
+      if (!m) continue;
+      for (const e of (m.entries || [])) out.push(Object.assign({ _member: name }, e));
+    }
+    return out;
+  }
+
+  // Parse a unified query: "#tag", "@Name"/"@[Full Name]", and freetext.
+  function parseSearchQuery(q) {
+    const tags = [], names = [], rest = [];
+    const re = /@\[([^\]]+)\]|@(\S+)|#(\S+)|(\S+)/g;
+    let m;
+    while ((m = re.exec(String(q || '')))) {
+      if (m[1] != null) names.push(m[1].toLowerCase());
+      else if (m[2] != null) names.push(m[2].toLowerCase());
+      else if (m[3] != null) tags.push(m[3].toLowerCase());
+      else if (m[4] != null) rest.push(m[4]);
+    }
+    return { tags, names, text: rest.join(' ').toLowerCase() };
+  }
+
+  // Does an entry satisfy a parsed query? Tags AND names AND freetext.
+  function entryMatches(e, parsed) {
+    const tags = (e.tags || []).map(t => t.toLowerCase());
+    for (const t of parsed.tags) if (!tags.some(x => x.includes(t))) return false;
+    if (parsed.names.length) {
+      const en = extractNameTokens(e.body || '').map(x => x.toLowerCase());
+      for (const n of parsed.names) if (!en.some(x => x.includes(n))) return false;
+    }
+    if (parsed.text && !(e.body || '').toLowerCase().includes(parsed.text)) return false;
+    return true;
+  }
+
+  function applyUnifiedFilter(entries, query) {
+    const parsed = parseSearchQuery(query);
+    return entries.filter(e => entryMatches(e, parsed));
+  }
+
+  // Aggregate @[Name] references across all loaded entries: count, last-seen,
+  // discussions, and recent excerpts. Registry names with zero mentions go last.
+  function getAllNames() {
+    const map = new Map();
+    for (const n of state.names) map.set(n, { name: n, count: 0, lastSeen: null, discussions: new Set(), excerpts: [] });
+    for (const [mname, m] of state.members) {
+      if (!m) continue;
+      for (const e of (m.entries || [])) {
+        for (const nm of extractNameTokens(e.body || '')) {
+          if (!map.has(nm)) map.set(nm, { name: nm, count: 0, lastSeen: null, discussions: new Set(), excerpts: [] });
+          const rec = map.get(nm);
+          rec.count++;
+          rec.discussions.add(mname);
+          if (!rec.lastSeen || (e.created_at || '') > rec.lastSeen) rec.lastSeen = e.created_at;
+          rec.excerpts.push({ date: e.created_at, discussion: mname, body: e.body });
+        }
+      }
+    }
+    const arr = [...map.values()];
+    arr.forEach(r => {
+      r.discussions = [...r.discussions];
+      r.excerpts.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+      r.excerpts = r.excerpts.slice(0, 10);
+    });
+    arr.sort((a, b) => (b.lastSeen || '').localeCompare(a.lastSeen || '') || a.name.localeCompare(b.name));
+    return arr;
+  }
+
   /* ------------------------------ export ------------------------------- */
 
   Chippy.store = Object.assign(
@@ -504,9 +584,10 @@
       setTaskState, cyclePriority, setDue, appendAction, toggleMute, isMuted,
       setGoalState, editEntry, getLinks, renameLink, moveEntry, deleteEntry,
       saveImage, getImageUrl,
+      ensureAllLoaded, collectEntries, applyUnifiedFilter, getAllNames,
       // pure helpers exposed for the UI and for tests
       nowISO, mintGoalId, extractInlineTags, autoLinkUrls, extractNameTokens,
-      splitTrailingActions, actionLabelFor, extractLinks,
+      splitTrailingActions, actionLabelFor, extractLinks, parseSearchQuery,
       _state: state
     },
     selectors

@@ -96,6 +96,8 @@
         star.title = 'Toggle favorite';
         star.addEventListener('click', (e) => { e.stopPropagation(); store().toggleFavorite(d.name); });
         item.append(star);
+        const m = store().getMember(d.name);
+        if (m && m.entries) item.append(el('span', 'member-count-badge', String(m.entries.length)));
         item.addEventListener('click', () => store().selectMember(d.name));
         grp.append(item);
       }

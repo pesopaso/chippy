@@ -254,13 +254,17 @@
     async function save() {
       const text = ta.value.trim();
       if (!text && !selectedTags.length) return;
-      await store().addEntry(member.name, {
+      const payload = {
         text, tags: selectedTags.slice(),
         goalLinkId: goalSel.value || null,
         due: due.value || null
-      });
+      };
+      // Clear the field, chips, and draft BEFORE awaiting: addEntry emits
+      // 'entryAdded', which re-renders the discussion and rebuilds this box from
+      // the stored draft. Clearing first means the rebuilt box comes up empty.
       ta.value = ''; selectedTags = []; due.value = ''; goalSel.value = '';
       renderChips(); clearDraft(); hideDropdown();
+      await store().addEntry(member.name, payload);
       if (ui().showToast) ui().showToast('Comment saved', 'success');
       if (onSaved) onSaved();
     }
@@ -271,7 +275,11 @@
     });
 
     renderChips();
-    box.append(chips, ta, dropdown, controls);
+    // Textarea first; below it a footer row with tag chips on the left and the
+    // goal link / due date / Save controls pushed to the right.
+    const footer = el('div', 'entry-footer');
+    footer.append(chips, controls);
+    box.append(ta, dropdown, footer);
     return box;
   }
 
@@ -467,6 +475,8 @@
 
     const header = el('div', 'member-header');
     header.append(el('h1', 'member-title', member.name));
+    const count = (member.entries || []).length;
+    header.append(el('span', 'member-count', count + (count === 1 ? ' comment' : ' comments')));
     const actions = el('div', 'member-header-actions');
     const star = el('span', 'favorite-btn' + (isFavorite(member.name) ? ' on' : ''),
       isFavorite(member.name) ? '★' : '☆');
@@ -481,12 +491,14 @@
       downloadFile(member.name + ' — Contribution Summary.md', store().exportContribution(member)));
     actions.append(star, reload, exp);
     header.append(actions);
-    screen.append(header);
 
     const split = el('div', 'split-view');
     const left = el('div', 'split-left');
     const right = el('div', 'split-right');
 
+    // Header lives at the top of the middle column so both columns run all the
+    // way up to the top chrome (no full-width band pushing them down).
+    left.append(header);
     left.append(renderPrep(member));
     left.append(renderEntryBox(member));
     left.append(renderHistory(member));

@@ -9,7 +9,7 @@
 
   // Single source of truth for the version. Used for display and as the cache-bust
   // query param on the CSS/JS tags in app.html (bump both together on release).
-  const VERSION = '3.0.0-dev.26';
+  const VERSION = '3.0.0-dev.33';
   Chippy.VERSION = VERSION;
 
   const THEME_KEY = 'chippy_theme';
@@ -129,6 +129,11 @@
             }
             if (pages) { pages.renderSidebar(); pages.showScreen('welcome'); }
             cleanupOrphanDrafts();
+            // Load every discussion in the background so the sidebar can show
+            // per-discussion comment counts, then re-render once they're in.
+            if (store.ensureAllLoaded) {
+              store.ensureAllLoaded().then(() => { if (pages) pages.renderSidebar(); }).catch(() => {});
+            }
             break;
           case 'memberSelected':
             if (pages) { pages.noteRecent(cs.name); pages.renderSidebar(); pages.renderRecent(); }
@@ -151,6 +156,10 @@
           case 'summaryDeleted':
           case 'summaryMoved':
             if (pages) pages.refresh();
+            // Comment counts in the sidebar can change with these mutations.
+            if (pages && (cs.type === 'entryAdded' || cs.type === 'entryDeleted' || cs.type === 'entryMoved')) {
+              pages.renderSidebar();
+            }
             break;
           case 'favoriteToggled':
             if (pages) pages.renderSidebar();

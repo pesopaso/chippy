@@ -57,6 +57,13 @@
 /* ---- Reset / base ------------------------------------------------------ */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Thin scrollbars throughout. */
+* { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
 html, body { height: 100%; }
 
 body {
@@ -240,6 +247,13 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
   font-size: .62rem; letter-spacing: .5px;
   border: 1px solid var(--border);
 }
+.member-count-badge {
+  flex: 0 0 auto; margin-left: auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 22px; height: 18px; padding: 0 6px;
+  background: var(--card); color: var(--muted);
+  border-radius: 9px; font-size: .66rem; font-variant-numeric: tabular-nums;
+}
 .member-name { flex: 1; min-width: 0; font-size: .85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fav-star { flex: 0 0 auto; color: var(--muted); cursor: pointer; opacity: 0; font-size: .85rem; }
 .member-item:hover .fav-star { opacity: 1; }
@@ -256,8 +270,9 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 
 /* ---- Member screen ----------------------------------------------------- */
 .member-header { display: flex; align-items: center; gap: 12px; padding-top: 12px; }
-.member-title { font-size: 1.4rem; font-weight: 600; flex: 1; min-width: 0; }
-.member-header-actions { display: flex; gap: 8px; align-items: center; }
+.member-title { font-size: 1.4rem; font-weight: 600; min-width: 0; }
+.member-count { font-size: .8rem; color: var(--muted); }
+.member-header-actions { display: flex; gap: 8px; align-items: center; margin-left: auto; }
 .favorite-btn, .reload-btn {
   cursor: pointer; color: var(--muted); font-size: 1rem; user-select: none;
 }
@@ -267,6 +282,16 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .split-view { display: flex; gap: 16px; margin-top: 12px; align-items: flex-start; }
 .split-left { flex: 1; min-width: 0; }
 .split-right { flex: 0 0 280px; }
+
+/* Discussion page: both columns run up to the top chrome (no top padding). The
+   header sits inside the middle column and sticks to the top while it scrolls;
+   each column gets its own scrollbar (only when its content overflows). */
+#memberScreen.active { display: flex; flex-direction: column; overflow: hidden; padding: 0; }
+#memberScreen .split-view { flex: 1 1 auto; min-height: 0; margin-top: 0; align-items: stretch; }
+#memberScreen .split-left,
+#memberScreen .split-right { min-height: 0; overflow-y: auto; padding-bottom: 24px; }
+#memberScreen .member-header { position: sticky; top: 0; z-index: 5; background: var(--bg); padding-top: 12px; }
+#memberScreen .split-right { padding-top: 12px; }
 .panel-placeholder { color: var(--muted); font-size: .82rem; border: 1px dashed var(--border); border-radius: 8px; padding: 12px; }
 
 .section-label { font-size: .72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
@@ -298,7 +323,11 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 
 /* ---- Entry input ------------------------------------------------------- */
 .entry-box { margin: 14px 0; position: relative; }
-.entry-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+.entry-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+/* Below the textarea: chips left, controls (goal link / due / Save) right. */
+.entry-footer { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.entry-footer .entry-chips { flex: 1 1 auto; min-width: 0; }
+.entry-footer .entry-controls { flex: 0 0 auto; margin-left: auto; margin-top: 0; }
 .tag-chip {
   display: inline-flex; align-items: center; gap: 4px;
   background: rgba(81,142,170,.08); color: var(--accent);
@@ -529,6 +558,11 @@ body.slim #sidebar { width: 100%; flex: none; border-right: none; border-bottom:
 body.slim .split-view { flex-direction: column; }
 body.slim .split-right { flex: none; width: 100%; }
 body.slim .kanban-board { flex-wrap: wrap; }
+/* Slim stacks the columns, so the whole screen scrolls as one again. */
+body.slim #memberScreen.active { display: block; overflow-y: auto; }
+body.slim #memberScreen .split-view { align-items: stretch; }
+body.slim #memberScreen .split-left,
+body.slim #memberScreen .split-right { overflow-y: visible; padding-bottom: 0; }
 
 /* ---- Unified entry card (comment box) --------------------------------- */
 .entry-card { background: var(--surface); border-radius: 0; padding: 8px 10px; margin-bottom: 5px; }

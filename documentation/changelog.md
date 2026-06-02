@@ -26,6 +26,55 @@ harness status when `format.js`/`io.js` change; reference the requirement (`R#`)
 
 ## Build history
 
+### v3.0.0-dev.33 — 2026-06-02 — Discussion columns reach the top chrome
+
+> Removed the full-width header band and top padding so both columns start at the top.
+
+- The member header (title, count, actions) moved into the top of the middle column; the previous full-width band above the columns is gone.
+- Dropped the discussion screen's top padding and the split-view top margin, so the middle and right sections run all the way up to the top chrome.
+- The in-column header is sticky, so the title/actions stay visible while the comments scroll.
+
+### v3.0.0-dev.32 — 2026-06-02 — Sidebar comment count as a right-aligned chip
+
+> Moved the sidebar count from left of the name into a small pill on the far right.
+
+- `.member-count-badge` is now a rounded chip (pill) pushed to the right edge of each discussion row, matching the requested style.
+
+### v3.0.0-dev.31 — 2026-06-02 — Thinner scrollbars
+
+> Slimmed the scrollbars app-wide.
+
+- 6px WebKit scrollbars with a transparent track and a `--border` thumb (hover `--muted`); Firefox `scrollbar-width: thin` with a matching color.
+
+### v3.0.0-dev.30 — 2026-06-02 — Comment counts in title and sidebar
+
+> Show how many comments each discussion has.
+
+- Discussion page: the comment count appears next to the title (e.g. "42 comments"); the header actions move to the far right.
+- Sidebar: each discussion shows its comment count just left of the name. All discussions are loaded in the background on folder open so counts are available; counts refresh live on add/delete/move.
+
+### v3.0.0-dev.29 — 2026-06-02 — Entry box: chips and controls below the textarea
+
+> Reorganized the comment entry box layout.
+
+- Tag chips moved from above the textarea to below it, left-aligned.
+- Goal-link dropdown, due-date picker, and Save button now sit on the same row, pushed to the right.
+- New `.entry-footer` flex row holds chips (left) and controls (right).
+
+### v3.0.0-dev.28 — 2026-06-02 — Independent scroll for discussion columns
+
+> The discussion page scrolled as one block; the right panels drifted off with the history.
+
+- `#memberScreen` is now a flex column: the member header stays fixed, and the middle (comments) and right (tasks/goals/links/gallery) columns each get their own scrollbar, shown only when that column overflows.
+- Slim mode (<800px) stacks the columns, so it reverts to a single page-level scrollbar.
+
+### v3.0.0-dev.27 — 2026-06-02 — Clear the entry box after saving
+
+> After saving, the text and tag chips lingered in the input.
+
+- The clear ran after `await addEntry`, but `addEntry` emits `entryAdded` mid-await, which re-renders the discussion and rebuilds the entry box from the still-present draft — so the new box restored the old content.
+- Now the textarea, tag chips, due date, goal link, and the saved draft are all cleared *before* the await, so the rebuilt box comes up empty.
+
 ### v3.0.0-dev.26 — 2026-06-02 — Fix inline images in comments
 
 > Inline images showed a broken-image icon in discussions and the cross-views.

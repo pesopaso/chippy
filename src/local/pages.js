@@ -23,7 +23,7 @@
     return e;
   }
 
-  const PRINT_SCREENS = new Set(['member', 'allComments', 'allTasks', 'allGoals', 'allImages', 'allLinks', 'allNames']);
+  const PRINT_SCREENS = new Set(['member', 'allComments', 'allTasks', 'allGoals', 'allImages', 'allLinks', 'allNames', 'allTags']);
 
   function showScreen(name) {
     currentScreen = name;
@@ -264,6 +264,21 @@
     });
   }
 
+  function openTags() {
+    crossScreen('allTagsScreen', 'All Tags', (c, q) => {
+      const ql = q.trim().toLowerCase().replace(/^#/, '');
+      const tags = store().getAllTags().filter(t => !ql || t.tag.toLowerCase().includes(ql));
+      if (!tags.length) { c.append(el('div', 'panel-empty', 'No tags.')); return; }
+      for (const t of tags) {
+        const row = el('div', 'all-tags-item');
+        row.append(el('span', 'tag-chip', t.tag));
+        row.append(el('span', 'name-count', t.count + (t.count === 1 ? ' use' : ' uses')));
+        if (t.lastUsed) row.append(el('span', 'entry-time', 'last ' + t.lastUsed.slice(0, 10)));
+        c.append(row);
+      }
+    });
+  }
+
   /* ------------------------------ kanban ------------------------------- */
 
   const KANBAN_COLS = [['open', 'OPEN'], ['inprogress', 'WIP'], ['check', 'CHK'],
@@ -281,11 +296,21 @@
   }
   function prioOf(tags) { return tags.find(t => t === 'high' || t === 'medium' || t === 'low') || 'low'; }
 
+  // The card currently being dragged. Relying on this instead of dataTransfer
+  // makes drops reliable on file:// (where getData can come back empty) and
+  // immune to the drag starting on a child node (e.g. an image in the card).
+  let kanbanDrag = null;
+
   function kanbanCard(e) {
     const card = el('div', 'kanban-card' + (e.tags.includes('followup') ? ' followup' : '') + (store().isMuted(e) ? ' muted' : ''));
     card.draggable = true;
-    card.addEventListener('dragstart', ev =>
-      ev.dataTransfer.setData('application/json', JSON.stringify({ m: e._member, id: e.created_at })));
+    const ref = { m: e._member, id: e.created_at, idx: e._idx };
+    card.addEventListener('dragstart', ev => {
+      kanbanDrag = ref;
+      ev.dataTransfer.effectAllowed = 'move';
+      try { ev.dataTransfer.setData('text/plain', JSON.stringify(ref)); } catch (_) {}
+    });
+    card.addEventListener('dragend', () => { kanbanDrag = null; });
     const meta = el('div', 'kanban-card-meta');
     const p = prioOf(e.tags);
     meta.append(el('span', 'prio-square prio-' + p, PRIO_LABEL[p]));
@@ -294,6 +319,7 @@
     card.append(meta);
     const txt = el('div', 'kanban-card-text');
     ui().safeSetHtml(txt, ui().renderEntryText((e.body || '').split('\n')[0]));
+    txt.querySelectorAll('img').forEach(i => { i.draggable = false; });
     card.append(txt);
     return card;
   }
@@ -320,13 +346,16 @@
         return ma !== mb ? ma - mb : rank(a) - rank(b);
       });
       for (const e of colTasks) col.append(kanbanCard(e));
-      col.addEventListener('dragover', ev => { ev.preventDefault(); col.classList.add('drag-over'); });
+      col.addEventListener('dragover', ev => { ev.preventDefault(); ev.dataTransfer.dropEffect = 'move'; col.classList.add('drag-over'); });
       col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
       col.addEventListener('drop', async ev => {
         ev.preventDefault(); col.classList.remove('drag-over');
+        let ref = kanbanDrag;
+        if (!ref) { try { ref = JSON.parse(ev.dataTransfer.getData('text/plain')); } catch (_) {} }
+        kanbanDrag = null;
+        if (!ref || !ref.id) return;
         try {
-          const { m, id } = JSON.parse(ev.dataTransfer.getData('application/json'));
-          await store().setTaskState(m, id, key);
+          await store().setTaskState(ref.m, ref.id, key, ref.idx);
           openKanban();
         } catch (_) {}
       });
@@ -458,7 +487,7 @@
 
   const CROSS = {
     allComments: openComments, allTasks: openTasks, allGoals: openGoals,
-    allLinks: openLinks, allImages: openImages, allNames: openNames,
+    allLinks: openLinks, allImages: openImages, allNames: openNames, allTags: openTags,
     kanban: openKanban, ro3: openRo3, activity: openActivity, summary: openSummary
   };
 

@@ -297,15 +297,16 @@
     const entries = member.entries || [];
     if (!entries.length) { wrap.append(el('div', 'history-empty', 'No entries yet.')); return wrap; }
 
+    const today = (store().nowISO ? store().nowISO() : new Date().toISOString()).slice(0, 10);
     let lastDay = null, dayGroup = null;
     for (const e of entries.slice().reverse()) { // newest day + entry first
       const day = (e.created_at || '').slice(0, 10);
       if (day !== lastDay) {
         dayGroup = el('div', 'day-group');
-        dayGroup.append(el('div', 'day-label', day));
+        dayGroup.append(el('div', 'day-label', day === today ? 'Today' : day));
         wrap.append(dayGroup); lastDay = day;
       }
-      dayGroup.append(ui().entryCard(e, { member: member.name }));
+      dayGroup.append(ui().entryCard(e, { member: member.name, timeOnly: true }));
     }
     return wrap;
   }
@@ -489,7 +490,22 @@
     exp.title = 'Export contribution summary (.md)';
     exp.addEventListener('click', () =>
       downloadFile(member.name + ' — Contribution Summary.md', store().exportContribution(member)));
-    actions.append(star, reload, exp);
+    const arc = el('span', 'reload-btn', '🗄');
+    arc.title = 'Archive this discussion';
+    arc.addEventListener('click', () => {
+      ui().showModal('Archive discussion?', (modal, close) => {
+        const p = el('p');
+        p.textContent = 'Archive "' + member.name + '"? Its file is renamed to *.archive.md and ' +
+          'removed from the list. Nothing is deleted — restore it by renaming the file back.';
+        modal.append(p);
+        const row = el('div', 'modal-actions');
+        const cancel = el('button', 'btn-sm', 'Cancel'); cancel.addEventListener('click', close);
+        const ok = el('button', 'btn-primary danger', 'Archive');
+        ok.addEventListener('click', async () => { close(); try { await store().archiveDiscussion(member.name); } catch (err) { if (ui().showToast) ui().showToast('Archive failed: ' + (err && err.message || err), 'error'); } });
+        row.append(cancel, ok); modal.append(row);
+      });
+    });
+    actions.append(star, reload, exp, arc);
     header.append(actions);
 
     const split = el('div', 'split-view');

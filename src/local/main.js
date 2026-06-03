@@ -9,7 +9,7 @@
 
   // Single source of truth for the version. Used for display and as the cache-bust
   // query param on the CSS/JS tags in app.html (bump both together on release).
-  const VERSION = '3.0.0-dev.33';
+  const VERSION = '3.0.0-dev.46';
   Chippy.VERSION = VERSION;
 
   const THEME_KEY = 'chippy_theme';
@@ -163,6 +163,9 @@
             break;
           case 'favoriteToggled':
             if (pages) pages.renderSidebar();
+            break;
+          case 'discussionArchived':
+            if (pages) { pages.renderSidebar(); pages.showScreen('welcome'); }
             break;
         }
       });

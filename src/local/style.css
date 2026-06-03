@@ -279,7 +279,7 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .favorite-btn.on { color: var(--yellow); }
 .favorite-btn:hover, .reload-btn:hover { color: var(--accent); }
 
-.split-view { display: flex; gap: 16px; margin-top: 12px; align-items: flex-start; }
+.split-view { display: flex; gap: 10px; margin-top: 12px; align-items: flex-start; }
 .split-left { flex: 1; min-width: 0; }
 .split-right { flex: 0 0 280px; }
 
@@ -289,7 +289,7 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 #memberScreen.active { display: flex; flex-direction: column; overflow: hidden; padding: 0; }
 #memberScreen .split-view { flex: 1 1 auto; min-height: 0; margin-top: 0; align-items: stretch; }
 #memberScreen .split-left,
-#memberScreen .split-right { min-height: 0; overflow-y: auto; padding-bottom: 24px; }
+#memberScreen .split-right { min-height: 0; overflow-y: auto; padding-bottom: 24px; scrollbar-gutter: stable; }
 #memberScreen .member-header { position: sticky; top: 0; z-index: 5; background: var(--bg); padding-top: 12px; }
 #memberScreen .split-right { padding-top: 12px; }
 .panel-placeholder { color: var(--muted); font-size: .82rem; border: 1px dashed var(--border); border-radius: 8px; padding: 12px; }
@@ -378,7 +378,7 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .history-entry.closed { opacity: .6; }
 
 /* ---- Right-panel tasks ------------------------------------------------- */
-.tasks-section { margin-bottom: 18px; }
+.tasks-section { margin-bottom: 5px; }
 .panel-empty { color: var(--muted); font-size: .82rem; padding: 4px 2px; }
 .task-item { padding: 6px 0; border-bottom: 1px solid var(--border); border-left: 3px solid var(--orange); padding-left: 8px; }
 .task-item.followup { border-left-color: var(--followup); }
@@ -428,7 +428,7 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 }
 
 /* ---- Goals panel ------------------------------------------------------ */
-.goals-section { margin-bottom: 18px; }
+.goals-section { margin-bottom: 5px; }
 .goal-item { padding: 6px 0; border-bottom: 1px solid var(--border); border-left: 3px solid var(--goal); padding-left: 8px; }
 .goal-text { font-size: .82rem; }
 .goal-meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
@@ -442,15 +442,21 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
   border: 1px solid var(--border); border-radius: 6px; padding: 8px; font: inherit;
 }
 .entry-edit-btn { margin-left: auto; }
+.entry-edit-tags { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 6px; }
+.entry-edit-chips { display: contents; }
+.entry-tag-add {
+  flex: 1; min-width: 80px; background: var(--card); color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px; font: inherit; font-size: .76rem;
+}
 .history-entry.flash { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 
 /* ---- Links panel ------------------------------------------------------ */
-.links-section { margin-bottom: 18px; }
+.links-section { margin-bottom: 5px; }
 .link-item { display: flex; align-items: center; gap: 6px; padding: 3px 0; }
 .link-item .md-link { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .8rem; }
 
 /* ---- Gallery ---------------------------------------------------------- */
-.gallery-section { margin-bottom: 18px; }
+.gallery-section { margin-bottom: 5px; }
 .gallery-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
 .gallery-thumb { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; cursor: pointer; background: var(--card); }
 
@@ -498,6 +504,7 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .all-names-summary { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; cursor: pointer; list-style: none; }
 .all-names-summary::-webkit-details-marker { display: none; }
 .name-count { font-size: .72rem; color: var(--muted); }
+.all-tags-item { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
 .name-discs { font-size: .72rem; color: var(--muted); }
 .name-excerpt { font-size: .8rem; margin: 4px 0 0 16px; color: var(--text); }
 

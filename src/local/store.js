@@ -176,6 +176,18 @@
     return member;
   }
 
+  // Archive a discussion: rename its file to *.archive.md on disk, drop it from
+  // the navigation index (so it's no longer listed or loaded), and forget any
+  // cached copy. (R-archive)
+  async function archiveDiscussion(name) {
+    await io().archiveDiscussion(state.dirHandle, name);
+    state.nav.discussions = state.nav.discussions.filter(d => d.name !== name);
+    state.members.delete(name);
+    if (state.activeMemberName === name) state.activeMemberName = null;
+    await io().saveNav(state.dirHandle, state.nav);
+    emit({ type: 'discussionArchived', name });
+  }
+
   async function setPrep(name, prep) {
     const m = state.members.get(name);
     if (!m) return;
@@ -260,10 +272,19 @@
     return { pre: lines.slice(0, k + 1).join('\n').replace(/\n+$/, ''), bullets };
   }
 
-  function findEntry(name, entryId) {
+  // Locate an entry by created_at. When several entries share a timestamp the
+  // optional idx hint (the entry's position in m.entries) disambiguates them —
+  // it's only trusted if that slot still carries the same created_at, otherwise
+  // we fall back to the first timestamp match.
+  function findEntry(name, entryId, idx) {
     const m = state.members.get(name);
     if (!m) return [null, null];
-    return [m, (m.entries || []).find(e => e.created_at === entryId) || null];
+    const entries = m.entries || [];
+    if (typeof idx === 'number' && idx >= 0 && idx < entries.length &&
+        entries[idx] && entries[idx].created_at === entryId) {
+      return [m, entries[idx]];
+    }
+    return [m, entries.find(e => e.created_at === entryId) || null];
   }
 
   async function ensureTagsInUnion(tags) {
@@ -281,8 +302,8 @@
   // Set a task/followup state: strip every state tag, add the one new tag
   // (resolved on a followup -> resolvedfollowup), and append Resolved:/Obsolete:
   // markers before any action section. (datadefinition §2.1-2.2)
-  async function setTaskState(name, entryId, stateKey) {
-    const [m, e] = findEntry(name, entryId);
+  async function setTaskState(name, entryId, stateKey, idx) {
+    const [m, e] = findEntry(name, entryId, idx);
     if (!e) return;
     const isFollowup = e.tags.includes('followup');
     e.tags = e.tags.filter(t =>
@@ -407,7 +428,10 @@
     const s = String(text || '');
     let m;
     const md = /\[([^\]]+)\]\(([^)]+)\)/g;
-    while ((m = md.exec(s))) if (!seen.has(m[2])) { seen.add(m[2]); out.push({ label: m[1], url: m[2] }); }
+    while ((m = md.exec(s))) {
+      if (s[m.index - 1] === '!') continue; // image reference ![alt](src), not a link
+      if (!seen.has(m[2])) { seen.add(m[2]); out.push({ label: m[1], url: m[2] }); }
+    }
     const bare = /(^|\s)(https?:\/\/[^\s)]+)/g;
     while ((m = bare.exec(s))) if (!seen.has(m[2])) {
       seen.add(m[2]); out.push({ label: m[2].replace(/^https?:\/\//, '').split('/')[0], url: m[2] });
@@ -517,7 +541,7 @@
     const out = [];
     for (const [name, m] of state.members) {
       if (!m) continue;
-      for (const e of (m.entries || [])) out.push(Object.assign({ _member: name }, e));
+      (m.entries || []).forEach((e, i) => out.push(Object.assign({ _member: name, _idx: i }, e)));
     }
     return out;
   }
@@ -578,6 +602,27 @@
       r.excerpts = r.excerpts.slice(0, 10);
     });
     arr.sort((a, b) => (b.lastSeen || '').localeCompare(a.lastSeen || '') || a.name.localeCompare(b.name));
+    return arr;
+  }
+
+  // Aggregate user-facing #tags across all loaded entries: total count and the
+  // most recent use. Reserved/state/priority/goal-id/muted tags are excluded.
+  function getAllTags() {
+    const map = new Map();
+    for (const [, m] of state.members) {
+      if (!m) continue;
+      for (const e of (m.entries || [])) {
+        for (const t of (e.tags || [])) {
+          if (HIDDEN_TAG.test(t)) continue;
+          if (!map.has(t)) map.set(t, { tag: t, count: 0, lastUsed: null });
+          const rec = map.get(t);
+          rec.count++;
+          if (!rec.lastUsed || (e.created_at || '') > rec.lastUsed) rec.lastUsed = e.created_at;
+        }
+      }
+    }
+    const arr = [...map.values()];
+    arr.sort((a, b) => (b.lastUsed || '').localeCompare(a.lastUsed || '') || a.tag.localeCompare(b.tag));
     return arr;
   }
 
@@ -696,11 +741,11 @@
   Chippy.store = Object.assign(
     {
       subscribe, openFolder, selectMember, setActiveScreen, setTheme,
-      toggleFavorite, reloadMember, setPrep, addEntry,
+      toggleFavorite, reloadMember, archiveDiscussion, setPrep, addEntry,
       setTaskState, cyclePriority, setDue, appendAction, toggleMute, isMuted,
       setGoalState, editEntry, getLinks, renameLink, moveEntry, deleteEntry,
       saveImage, getImageUrl,
-      ensureAllLoaded, collectEntries, applyUnifiedFilter, getAllNames,
+      ensureAllLoaded, collectEntries, applyUnifiedFilter, getAllNames, getAllTags,
       getRo3Candidates, pickRo3, doneRecent, resolvedDate,
       loadSummary, saveSummaryConfig, appendSummary, deleteSummary, updateSummary, moveSummaryToDiscussion, exportContribution, shortId,
       // pure helpers exposed for the UI and for tests

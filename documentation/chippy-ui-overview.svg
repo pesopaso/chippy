@@ -1,0 +1,260 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1480 1060" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <style>
+      .lbl{fill:#e3e7f0;font-size:11px}
+      .mut{fill:#92a3b9;font-size:10px}
+      .badge{fill:#518eaa}
+      .bnum{fill:#fff;font-size:11px;font-weight:700;text-anchor:middle}
+      .leg{fill:#e3e7f0;font-size:12.5px}
+      .legm{fill:#92a3b9;font-size:11px}
+      .grp{fill:#7fb2cc;font-size:12.5px;font-weight:700;letter-spacing:.5px}
+      .chip{fill:#518eaa}
+    </style>
+  </defs>
+
+  <!-- canvas -->
+  <rect x="0" y="0" width="1480" height="1060" fill="#0b0f1f"/>
+  <text x="32" y="36" fill="#e3e7f0" font-size="22" font-weight="700">Chippy — interface overview</text>
+  <text x="32" y="55" class="mut" font-size="12">Every element labelled with its name and CSS class · discussion (main) screen · v3.0.0-dev.46</text>
+
+  <!-- ====================== APP MOCKUP ====================== -->
+  <g>
+    <!-- app frame -->
+    <rect x="24" y="72" width="916" height="956" rx="6" fill="#10152a" stroke="#46556b"/>
+
+    <!-- top chrome -->
+    <rect x="24" y="72" width="916" height="32" rx="6" fill="#3730a3"/>
+    <rect x="24" y="90" width="916" height="14" fill="#3730a3"/>
+    <text x="40" y="93" fill="#fff" font-size="13" font-weight="700">Chippy <tspan fill="#c7d2fe" font-size="10" font-weight="400">v3.0.0-dev.46</tspan></text>
+    <rect x="360" y="80" width="120" height="16" rx="3" fill="#4f46c7"/>
+    <text x="368" y="92" fill="#dfe3f7" font-size="9">Recent ▸ Alpha · Beta</text>
+    <circle cx="872" cy="88" r="10" fill="#4f46c7"/><text x="872" y="92" fill="#fff" font-size="11" text-anchor="middle">🖶</text>
+    <circle cx="900" cy="88" r="10" fill="#4f46c7"/><text x="900" y="92" fill="#fff" font-size="11" text-anchor="middle">☀</text>
+    <circle cx="922" cy="88" r="10" fill="#4f46c7"/><text x="922" y="92" fill="#fff" font-size="11" text-anchor="middle">?</text>
+
+    <!-- sidebar -->
+    <rect x="24" y="104" width="186" height="924" fill="#20293a"/>
+    <line x1="210" y1="104" x2="210" y2="1028" stroke="#46556b"/>
+    <text x="36" y="124" class="mut" letter-spacing="1">DISCUSSIONS</text>
+    <rect x="34" y="132" width="166" height="22" rx="6" fill="#334253" stroke="#46556b"/>
+    <text x="42" y="147" class="mut">Search discussions…</text>
+
+    <text x="36" y="178" class="mut" letter-spacing="1">WORK</text>
+    <!-- discussion item -->
+    <rect x="32" y="186" width="170" height="26" rx="6" fill="#334253"/>
+    <rect x="38" y="191" width="22" height="16" rx="4" fill="#20293a" stroke="#46556b"/><text x="49" y="203" class="mut" text-anchor="middle" font-size="8">PA</text>
+    <text x="66" y="203" class="lbl">Project Alpha</text>
+    <text x="150" y="203" class="mut">☆</text>
+    <rect x="166" y="193" width="30" height="14" rx="7" fill="#334253" stroke="#46556b"/><text x="181" y="203" class="mut" text-anchor="middle" font-size="9">42</text>
+    <rect x="32" y="216" width="170" height="24" rx="6" fill="none"/>
+    <rect x="38" y="221" width="22" height="16" rx="4" fill="#20293a" stroke="#46556b"/><text x="49" y="233" class="mut" text-anchor="middle" font-size="8">BB</text>
+    <text x="66" y="233" class="lbl">Beta Build</text>
+    <rect x="166" y="223" width="30" height="14" rx="7" fill="#334253" stroke="#46556b"/><text x="181" y="233" class="mut" text-anchor="middle" font-size="9">7</text>
+
+    <!-- nav buttons -->
+    <g>
+      <text x="36" y="270" class="mut" letter-spacing="1">PAGES</text>
+      <!-- two columns of nav pills -->
+      <g fill="#334253" stroke="#46556b">
+        <rect x="34" y="278" width="80" height="20" rx="6"/><rect x="120" y="278" width="80" height="20" rx="6"/>
+        <rect x="34" y="302" width="80" height="20" rx="6"/><rect x="120" y="302" width="80" height="20" rx="6"/>
+        <rect x="34" y="326" width="80" height="20" rx="6"/><rect x="120" y="326" width="80" height="20" rx="6"/>
+        <rect x="34" y="350" width="80" height="20" rx="6"/><rect x="120" y="350" width="80" height="20" rx="6"/>
+        <rect x="34" y="374" width="80" height="20" rx="6"/><rect x="120" y="374" width="80" height="20" rx="6"/>
+        <rect x="34" y="398" width="80" height="20" rx="6"/>
+      </g>
+      <g class="lbl" font-size="10" text-anchor="middle" fill="#cdd6e6">
+        <text x="74" y="292">Comments</text><text x="160" y="292">Tasks</text>
+        <text x="74" y="316">Goals</text><text x="160" y="316">Links</text>
+        <text x="74" y="340">Images</text><text x="160" y="340">Names</text>
+        <text x="74" y="364">Tags</text><text x="160" y="364">Kanban</text>
+        <text x="74" y="388">Ro3</text><text x="160" y="388">Activity</text>
+        <text x="74" y="412">Summary</text>
+      </g>
+    </g>
+
+    <!-- open folder + status -->
+    <line x1="30" y1="966" x2="204" y2="966" stroke="#46556b"/>
+    <rect x="34" y="976" width="166" height="26" rx="6" fill="#334253" stroke="#46556b"/>
+    <text x="117" y="993" class="lbl" text-anchor="middle">Open Folder</text>
+    <text x="36" y="1018" class="mut" fill="#5fae7e">Connected: 12 discussions · 8 tags</text>
+
+    <!-- ===== main: middle column ===== -->
+    <!-- sticky header -->
+    <text x="226" y="128" fill="#e3e7f0" font-size="17" font-weight="700">Project Alpha</text>
+    <text x="356" y="128" class="mut" font-size="12">42 comments</text>
+    <g font-size="13"><text x="610" y="128" fill="#e1c025">★</text><text x="634" y="128" class="mut">↻</text><text x="656" y="128" class="mut">⬇</text><text x="678" y="128" class="mut">🗄</text></g>
+    <line x1="222" y1="138" x2="694" y2="138" stroke="#46556b" stroke-dasharray="2 3"/>
+
+    <!-- preparation -->
+    <text x="226" y="158" class="mut" letter-spacing="1">PREPARATION <tspan fill="#92a3b9">✎</tspan></text>
+    <text x="226" y="174" class="mut" font-size="10" font-style="italic">No preparation notes yet.</text>
+
+    <!-- entry box -->
+    <rect x="226" y="184" width="468" height="54" rx="6" fill="#20293a" stroke="#46556b"/>
+    <text x="236" y="206" class="mut">Write a note…  #tag to classify, @ to mention</text>
+    <!-- footer -->
+    <rect x="226" y="244" width="60" height="16" rx="3" fill="#1c2f38" stroke="#3c6a85"/><text x="256" y="256" class="chip" text-anchor="middle" font-size="9" fill="#7fc0dd">design ×</text>
+    <rect x="470" y="244" width="86" height="18" rx="6" fill="#334253" stroke="#46556b"/><text x="513" y="257" class="mut" text-anchor="middle" font-size="9">No goal link</text>
+    <rect x="562" y="244" width="64" height="18" rx="6" fill="#334253" stroke="#46556b"/><text x="594" y="257" class="mut" text-anchor="middle" font-size="9">due</text>
+    <rect x="632" y="244" width="62" height="18" rx="6" fill="#518eaa"/><text x="663" y="257" fill="#fff" text-anchor="middle" font-size="9">Save</text>
+
+    <!-- day label -->
+    <text x="226" y="288" class="mut" letter-spacing="1" font-weight="700">TODAY</text>
+
+    <!-- comment card (open) -->
+    <rect x="222" y="298" width="472" height="96" fill="#20293a"/>
+    <rect x="222" y="298" width="3" height="96" fill="#e19a25"/>
+    <!-- meta row -->
+    <text x="234" y="316" class="mut" font-size="10">14:22:07</text>
+    <rect x="286" y="307" width="34" height="13" rx="2" fill="#e19a25"/><text x="303" y="317" fill="#1b1b1b" font-size="8" text-anchor="middle">OPEN</text>
+    <rect x="326" y="307" width="22" height="13" rx="2" fill="#c25a5a"/><text x="337" y="317" fill="#fff" font-size="8" text-anchor="middle">HI</text>
+    <rect x="354" y="307" width="48" height="13" rx="3" fill="#1c2f38" stroke="#3c6a85"/><text x="378" y="317" fill="#7fc0dd" font-size="8" text-anchor="middle">backend</text>
+    <g font-size="11" fill="#92a3b9"><text x="560" y="317">✎</text><text x="578" y="317">⚡</text><text x="596" y="317">🔇</text><text x="614" y="317">✓</text><text x="632" y="317">➜</text><text x="650" y="317">🗑</text></g>
+    <!-- body -->
+    <text x="234" y="338" class="lbl">Investigate the cache-busting strategy for the asset</text>
+    <text x="234" y="354" class="lbl">pipeline and document the findings.</text>
+    <rect x="234" y="362" width="56" height="24" rx="3" fill="#334253" stroke="#46556b"/><text x="262" y="377" class="mut" font-size="8" text-anchor="middle">🖼 image</text>
+
+    <!-- comment card (finished/collapsed) -->
+    <rect x="222" y="400" width="472" height="30" fill="#20293a" opacity="0.6"/>
+    <rect x="222" y="400" width="3" height="30" fill="#e19a25"/>
+    <text x="234" y="419" class="mut" font-size="10">09:05:11</text>
+    <rect x="286" y="410" width="34" height="13" rx="2" fill="#5fae7e"/><text x="303" y="420" fill="#0b0f1f" font-size="8" text-anchor="middle">DONE</text>
+    <text x="340" y="419" class="lbl" opacity="0.7">Rename cache files…</text>
+    <text x="676" y="419" class="mut">▸</text>
+
+    <!-- ===== main: right column ===== -->
+    <line x1="700" y1="116" x2="700" y2="1020" stroke="#46556b" stroke-dasharray="1 4"/>
+    <!-- open tasks -->
+    <text x="712" y="128" class="mut" letter-spacing="1">OPEN TASKS</text>
+    <rect x="710" y="136" width="216" height="34" fill="#20293a"/><rect x="710" y="136" width="3" height="34" fill="#e19a25"/>
+    <rect x="720" y="144" width="28" height="12" rx="2" fill="#e19a25"/><text x="734" y="153" fill="#1b1b1b" font-size="7" text-anchor="middle">OPEN</text>
+    <rect x="752" y="144" width="18" height="12" rx="2" fill="#c25a5a"/><text x="761" y="153" fill="#fff" font-size="7" text-anchor="middle">HI</text>
+    <text x="720" y="166" class="lbl" font-size="9">Investigate cache-busting…</text>
+
+    <!-- goals -->
+    <text x="712" y="196" class="mut" letter-spacing="1">GOALS</text>
+    <rect x="710" y="204" width="216" height="30" fill="#20293a"/><rect x="710" y="204" width="3" height="30" fill="#7d6cc4"/>
+    <text x="720" y="223" class="lbl" font-size="9">Ship v3.0 to production</text>
+
+    <!-- links -->
+    <text x="712" y="258" class="mut" letter-spacing="1">LINKS</text>
+    <text x="712" y="276" fill="#518eaa" font-size="10">My Chippy</text>
+    <text x="712" y="292" fill="#518eaa" font-size="10">Chippy Digital</text>
+
+    <!-- images -->
+    <text x="712" y="320" class="mut" letter-spacing="1">IMAGES</text>
+    <g fill="#334253" stroke="#46556b"><rect x="712" y="328" width="40" height="40" rx="3"/><rect x="758" y="328" width="40" height="40" rx="3"/><rect x="804" y="328" width="40" height="40" rx="3"/></g>
+
+    <!-- scrollbars -->
+    <rect x="690" y="120" width="4" height="120" rx="2" fill="#46556b"/>
+    <rect x="930" y="120" width="4" height="90" rx="2" fill="#46556b"/>
+  </g>
+
+  <!-- ====================== CALLOUT BADGES ====================== -->
+  <g>
+    <!-- top chrome -->
+    <circle cx="40" cy="62" r="9" class="badge"/><text x="40" y="66" class="bnum">1</text>
+    <circle cx="360" cy="70" r="9" class="badge"/><text x="360" y="74" class="bnum">2</text>
+    <circle cx="872" cy="64" r="9" class="badge"/><text x="872" y="68" class="bnum">3</text>
+    <circle cx="900" cy="64" r="9" class="badge"/><text x="900" y="68" class="bnum">4</text>
+    <circle cx="922" cy="64" r="9" class="badge"/><text x="922" y="68" class="bnum">5</text>
+    <!-- sidebar -->
+    <circle cx="120" cy="120" r="9" class="badge"/><text x="120" y="124" class="bnum">6</text>
+    <circle cx="200" cy="143" r="9" class="badge"/><text x="200" y="147" class="bnum">7</text>
+    <circle cx="20" cy="178" r="9" class="badge"/><text x="20" y="182" class="bnum">8</text>
+    <circle cx="14" cy="199" r="9" class="badge"/><text x="14" y="203" class="bnum">9</text>
+    <circle cx="14" cy="340" r="9" class="badge"/><text x="14" y="344" class="bnum">10</text>
+    <circle cx="14" cy="989" r="9" class="badge"/><text x="14" y="993" class="bnum">11</text>
+    <circle cx="14" cy="1014" r="9" class="badge"/><text x="14" y="1018" class="bnum">12</text>
+    <!-- middle -->
+    <circle cx="300" cy="118" r="9" class="badge"/><text x="300" y="122" class="bnum">13</text>
+    <circle cx="356" cy="114" r="9" class="badge"/><text x="356" y="118" class="bnum">14</text>
+    <circle cx="678" cy="114" r="9" class="badge"/><text x="678" y="118" class="bnum">15</text>
+    <circle cx="226" cy="148" r="9" class="badge"/><text x="226" y="152" class="bnum">16</text>
+    <circle cx="684" cy="196" r="9" class="badge"/><text x="684" y="200" class="bnum">17</text>
+    <circle cx="256" cy="234" r="9" class="badge"/><text x="256" y="238" class="bnum">18</text>
+    <circle cx="663" cy="234" r="9" class="badge"/><text x="663" y="238" class="bnum">19</text>
+    <circle cx="226" cy="278" r="9" class="badge"/><text x="226" y="282" class="bnum">20</text>
+    <!-- comment box -->
+    <circle cx="214" cy="346" r="9" class="badge"/><text x="214" y="350" class="bnum">21</text>
+    <circle cx="234" cy="306" r="9" class="badge"/><text x="234" y="310" class="bnum">22</text>
+    <circle cx="650" cy="306" r="9" class="badge"/><text x="650" y="310" class="bnum">23</text>
+    <circle cx="540" cy="338" r="9" class="badge"/><text x="540" y="342" class="bnum">24</text>
+    <circle cx="300" cy="374" r="9" class="badge"/><text x="300" y="378" class="bnum">25</text>
+    <circle cx="676" cy="406" r="9" class="badge"/><text x="676" y="410" class="bnum">26</text>
+    <!-- right column -->
+    <circle cx="712" cy="120" r="9" class="badge"/><text x="712" y="124" class="bnum">27</text>
+    <circle cx="712" cy="188" r="9" class="badge"/><text x="712" y="192" class="bnum">28</text>
+    <circle cx="712" cy="250" r="9" class="badge"/><text x="712" y="254" class="bnum">29</text>
+    <circle cx="712" cy="312" r="9" class="badge"/><text x="712" y="316" class="bnum">30</text>
+    <circle cx="690" cy="110" r="9" class="badge"/><text x="690" y="114" class="bnum">31</text>
+  </g>
+
+  <!-- ====================== LEGEND ====================== -->
+  <g>
+    <rect x="966" y="72" width="490" height="956" rx="6" fill="#10152a" stroke="#46556b"/>
+    <text x="986" y="98" fill="#e3e7f0" font-size="14" font-weight="700">Element index</text>
+    <text x="986" y="115" class="legm">number — Name (CSS class / selector)</text>
+
+    <!-- Top chrome -->
+    <text x="986" y="142" class="grp">TOP CHROME  (.top-chrome / #topChrome)</text>
+    <text x="986" y="160" class="leg">1  App title + version badge (.app-version, #appVersion)</text>
+    <text x="986" y="178" class="leg">2  Recent-discussion bar (.recent-bar, #recentBar)</text>
+    <text x="986" y="196" class="leg">3  Print button (.chrome-btn, #btnPrintChrome)</text>
+    <text x="986" y="214" class="leg">4  Theme toggle — dark/light (.chrome-btn, #btnThemeToggle)</text>
+    <text x="986" y="232" class="leg">5  Help button (.chrome-btn, #btnHelp)</text>
+
+    <!-- Sidebar -->
+    <text x="986" y="258" class="grp">SIDEBAR  (#sidebar)</text>
+    <text x="986" y="276" class="leg">6  Sidebar header "Discussions" (.sidebar-header)</text>
+    <text x="986" y="294" class="leg">7  Discussion search + clear (.sidebar-search / .search-clear)</text>
+    <text x="986" y="312" class="leg">8  Tag group header (.member-group / .member-group-header)</text>
+    <text x="986" y="330" class="leg">9  Discussion item (.member-item):</text>
+    <text x="1004" y="346" class="legm">avatar (.member-avatar) · name (.member-name) ·</text>
+    <text x="1004" y="361" class="legm">favourite (.fav-star) · count chip (.member-count-badge)</text>
+    <text x="986" y="379" class="leg">10  Cross-view nav buttons (.nav-btn):</text>
+    <text x="1004" y="395" class="legm">Comments·Tasks·Goals·Links·Images·Names·Tags·</text>
+    <text x="1004" y="410" class="legm">Kanban·Ro3·Activity·Summary</text>
+    <text x="986" y="428" class="leg">11  Open Folder button (.btn-open-folder, #btnOpenFolder)</text>
+    <text x="986" y="446" class="leg">12  Folder status line (.folder-status, #folderStatus)</text>
+
+    <!-- Middle column -->
+    <text x="986" y="472" class="grp">DISCUSSION — MIDDLE COLUMN  (.split-left)</text>
+    <text x="986" y="490" class="leg">13  Member title — sticky header (.member-title)</text>
+    <text x="986" y="508" class="leg">14  Comment count (.member-count)</text>
+    <text x="986" y="526" class="leg">15  Header actions (.member-header-actions):</text>
+    <text x="1004" y="542" class="legm">favourite ★ · reload ↻ · export ⬇ · archive 🗄</text>
+    <text x="986" y="560" class="leg">16  Preparation section (.prep-section / .section-label, ✎ edit)</text>
+    <text x="986" y="578" class="leg">17  Entry textarea (.entry-input) + autocomplete (.ac-dropdown)</text>
+    <text x="986" y="596" class="leg">18  Entry footer chips (.entry-footer / .entry-chips / .tag-chip)</text>
+    <text x="986" y="614" class="leg">19  Entry controls (.entry-controls):</text>
+    <text x="1004" y="630" class="legm">goal link (.goal-link) · due date (.entry-due) · Save (.btn-primary)</text>
+    <text x="986" y="648" class="leg">20  Day-group label (.day-group / .day-label — shows "Today")</text>
+
+    <!-- Comment box -->
+    <text x="986" y="674" class="grp">COMMENT BOX — same everywhere  (.entry-card)</text>
+    <text x="986" y="692" class="leg">21  Comment card (.entry-card; left stripe = task/followup/goal)</text>
+    <text x="986" y="710" class="leg">22  Meta row (.entry-meta):</text>
+    <text x="1004" y="726" class="legm">time (.entry-time) · state square (.state-square) ·</text>
+    <text x="1004" y="741" class="legm">priority square (.prio-square) · tags (.tag-chip)</text>
+    <text x="986" y="759" class="leg">23  Action icons (.icon-btn):</text>
+    <text x="1004" y="775" class="legm">edit ✎ · action ⚡ · mute 🔇 · resolve ✓ · move ➜ · delete 🗑</text>
+    <text x="986" y="793" class="leg">24  Body — rendered markdown (.entry-text)</text>
+    <text x="986" y="811" class="leg">25  Inline image (.entry-image — click = carousel)</text>
+    <text x="986" y="829" class="leg">26  Expand triangle (.expand-tri — finished items collapse)</text>
+
+    <!-- Right column -->
+    <text x="986" y="855" class="grp">DISCUSSION — RIGHT COLUMN  (.split-right)</text>
+    <text x="986" y="873" class="leg">27  Open Tasks panel (.tasks-section)</text>
+    <text x="986" y="891" class="leg">28  Goals panel (.goals-section)</text>
+    <text x="986" y="909" class="leg">29  Links panel (.links-section — images excluded)</text>
+    <text x="986" y="927" class="leg">30  Images gallery (.gallery-section)</text>
+    <text x="986" y="945" class="leg">31  Independent scrollbars (middle &amp; right columns)</text>
+
+    <text x="986" y="985" class="legm">Cross-view pages (Comments, Tasks, Goals, Kanban, Ro3,</text>
+    <text x="986" y="1001" class="legm">Activity, AI Summary, All Tags…) reuse the same comment box</text>
+    <text x="986" y="1017" class="legm">(.entry-card) and search bar (.list-search).</text>
+  </g>
+</svg>

@@ -340,3 +340,11 @@ reference the requirement (`R#`) / plan step.
 > Documentation only — no app code or cache-bust change.
 
 - Added `documentation/chippy-ui-overview.svg`: an annotated diagram of the discussion (main) screen with all 31 elements numbered on a mockup and named in an index, each labelled with its CSS class/selector (top chrome, sidebar, middle column, comment box, right panel).
+
+### v3.0.0-dev.47 — 2026-06-04 — Slim-mode region tabs (<800px)
+
+> On narrow screens the sidebar, comments, and right panel competed for space; now three tabs switch between them.
+
+- Added a tab bar under the top chrome, shown only in slim mode (`.slim-tabs`): **Navigation** (sidebar), **Discussion** (middle column), **Tasks & Goals** (right column). Body classes `slim-nav`/`slim-mid`/`slim-right` reveal exactly one region.
+- `main.setSlimTab` (exposed as `Chippy.setSlimTab`) drives the tabs; defaults to Discussion. Selecting a discussion or opening a cross-view in slim mode auto-switches to the Discussion tab so the chosen content is visible.
+- Wide screens are unaffected — the tab bar is hidden and the two-column layout is unchanged.

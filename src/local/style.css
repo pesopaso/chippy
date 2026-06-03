@@ -559,17 +559,37 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .modal p { font-size: .82rem; color: var(--text); line-height: 1.5; }
 .modal { max-width: 480px; max-height: 80vh; overflow-y: auto; }
 
-/* ---- Slim mode (<800px) ----------------------------------------------- */
+/* ---- Slim mode (<800px): region tabs ---------------------------------- */
+/* Under the top chrome, three tabs switch which single region is shown:
+   Navigation (sidebar), Discussion (middle column), Tasks & Goals (right column). */
+.slim-tabs { display: none; }
+body.slim .slim-tabs {
+  display: flex; background: var(--surface);
+  border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 30;
+}
+.slim-tab {
+  flex: 1; padding: 9px 6px; background: none; border: none;
+  border-bottom: 2px solid transparent; color: var(--muted);
+  font: inherit; font-size: .8rem; cursor: pointer;
+}
+.slim-tab.active { color: var(--text); border-bottom-color: var(--accent); }
+
 body.slim #app { flex-direction: column; height: auto; }
-body.slim #sidebar { width: 100%; flex: none; border-right: none; border-bottom: 1px solid var(--border); max-height: 42vh; }
+body.slim #sidebar { width: 100%; flex: none; border-right: none; border-bottom: 1px solid var(--border); max-height: none; }
 body.slim .split-view { flex-direction: column; }
 body.slim .split-right { flex: none; width: 100%; }
 body.slim .kanban-board { flex-wrap: wrap; }
-/* Slim stacks the columns, so the whole screen scrolls as one again. */
 body.slim #memberScreen.active { display: block; overflow-y: auto; }
 body.slim #memberScreen .split-view { align-items: stretch; }
 body.slim #memberScreen .split-left,
 body.slim #memberScreen .split-right { overflow-y: visible; padding-bottom: 0; }
+
+/* Show exactly one region, per the active tab. */
+body.slim.slim-nav   #main { display: none; }
+body.slim.slim-mid   #sidebar,
+body.slim.slim-right #sidebar { display: none; }
+body.slim.slim-mid   #memberScreen .split-right { display: none; }
+body.slim.slim-right #memberScreen .split-left { display: none; }
 
 /* ---- Unified entry card (comment box) --------------------------------- */
 .entry-card { background: var(--surface); border-radius: 0; padding: 8px 10px; margin-bottom: 5px; }

@@ -496,6 +496,8 @@
     await store().ensureAllLoaded();
     CROSS[name]();
     showScreen(name);
+    // Slim mode: cross-views are single-column — show them on the Discussion tab.
+    if (document.body.classList.contains('slim') && Chippy.setSlimTab) Chippy.setSlimTab('mid');
   }
 
   // Re-render whatever screen is active (after a card mutation).

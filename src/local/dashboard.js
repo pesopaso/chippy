@@ -136,6 +136,19 @@
     ['purgatory', '--muted', 'PRGT'], ['resolved', '--green', 'DONE'],
     ['obsolete', '--border', 'OBSL']
   ];
+  // Consecutive YYYY-MM-DD strings from start to end inclusive.
+  function daysBetween(start, end) {
+    const out = [];
+    const d = new Date(start + 'T00:00:00'), e = new Date(end + 'T00:00:00');
+    let guard = 0;
+    while (d <= e && guard++ < 4000) { out.push(d.toISOString().slice(0, 10)); d.setDate(d.getDate() + 1); }
+    return out;
+  }
+  function emptyExecRow(day) {
+    const r = { day, total: 0 };
+    for (const [k] of EXEC_STATES) r[k] = 0;
+    return r;
+  }
   function taskExecution(entries) {
     const map = new Map();
     for (const e of entries) {
@@ -143,15 +156,14 @@
       if (!(t.includes('task') || t.includes('followup'))) continue;
       const day = (e.created_at || '').slice(0, 10);
       if (!day) continue;
-      if (!map.has(day)) {
-        const r = { day, total: 0 };
-        for (const [k] of EXEC_STATES) r[k] = 0;
-        map.set(day, r);
-      }
+      if (!map.has(day)) map.set(day, emptyExecRow(day));
       const r = map.get(day);
       r[stateKeyOf(t)]++; r.total++;
     }
-    return [...map.values()].sort((a, b) => a.day.localeCompare(b.day));
+    const days = [...map.keys()].sort();
+    if (!days.length) return [];
+    // Fill every calendar day in the span, so days with no tasks show as gaps.
+    return daysBetween(days[0], days[days.length - 1]).map(day => map.get(day) || emptyExecRow(day));
   }
 
   /* ------------------------------- SVG --------------------------------- */
@@ -248,6 +260,7 @@
     box.append(el('div', 'chart-title', 'Tasks created per day (by current state)'));
     if (!rows.length) { box.append(el('div', 'panel-empty', 'No data.')); return box; }
     const n = rows.length, bw = 16, gap = 8, pad = 24, H = 170;
+    const labelStep = Math.ceil(n / 12); // thin the x-axis labels when many days
     const W = Math.max(320, pad * 2 + n * (bw + gap));
     const max = Math.max(1, ...rows.map(r => r.total));
     const scale = (H - 2 * pad) / max;
@@ -263,10 +276,14 @@
         const tt = svg('title'); tt.textContent = `${r.day} · ${label}: ${c}`; rect.append(tt);
         s.append(rect);
       }
-      const total = svg('text', { x: x + bw / 2, y: (H - pad) - r.total * scale - 3, fill: VAR('--muted'), 'font-size': 9, 'text-anchor': 'middle' });
-      total.textContent = String(r.total); s.append(total);
-      const dl = svg('text', { x: x + bw / 2, y: H - pad + 10, fill: VAR('--muted'), 'font-size': 8, 'text-anchor': 'end', transform: `rotate(-60 ${x + bw / 2} ${H - pad + 10})` });
-      dl.textContent = r.day.slice(5); s.append(dl);
+      if (r.total > 0) {
+        const total = svg('text', { x: x + bw / 2, y: (H - pad) - r.total * scale - 3, fill: VAR('--muted'), 'font-size': 9, 'text-anchor': 'middle' });
+        total.textContent = String(r.total); s.append(total);
+      }
+      if (i % labelStep === 0) {
+        const dl = svg('text', { x: x + bw / 2, y: H - pad + 10, fill: VAR('--muted'), 'font-size': 8, 'text-anchor': 'end', transform: `rotate(-60 ${x + bw / 2} ${H - pad + 10})` });
+        dl.textContent = r.day.slice(5); s.append(dl);
+      }
     });
     box.append(s);
     const legend = el('div', 'pie-legend');
@@ -318,6 +335,6 @@
     render,
     // pure aggregations exposed for tests
     inflowByRange, taskStateCounts, goalStateCounts, monthlyTimeline, cumulative, entryType,
-    taskBurndown, closedMonthOf, monthsBetween, taskExecution
+    taskBurndown, closedMonthOf, monthsBetween, taskExecution, daysBetween
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

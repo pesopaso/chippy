@@ -386,3 +386,10 @@ reference the requirement (`R#`) / plan step.
 > Right-column goal controls now align to the bottom right.
 
 - `.goal-meta` uses `justify-content: flex-end`, so the goal action (⚡), edit (✎), achieved (✓), and canceled (✕) buttons sit at the bottom-right under the goal text.
+
+### v3.0.0-dev.54 — 2026-06-04 — Task execution chart: show every day
+
+> The chart skipped days with no tasks; now the x-axis is continuous.
+
+- `dashboard.taskExecution` fills every calendar day between the first and last activity (`daysBetween`), so days with no tasks created appear as empty gaps rather than being collapsed out.
+- To keep the axis readable, x-axis date labels are thinned (~12 max) and the per-bar total label is hidden on empty days.

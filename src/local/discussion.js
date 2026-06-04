@@ -358,22 +358,28 @@
     txt.addEventListener('dblclick', () => scrollToEntry(t.created_at));
 
     const top = el('div', 'task-top');
-    top.append(ps, ss, txt);
+    top.append(txt);
 
+    // All controls live on the bottom row, so the text up top gets the full width.
     const meta = el('div', 'task-meta');
+    meta.append(ps, ss);
+    // Spacer pushes the remaining controls (age, due, action, mute) to the right.
+    meta.append(el('span', 'meta-spacer'));
     const age = ageDays(t.created_at);
     if (age != null) meta.append(el('span', 'task-age', age + 'd'));
     const due = el('input', 'task-due'); due.type = 'date'; if (t.due) due.value = t.due;
     due.title = 'Due date';
     due.addEventListener('change', () => store().setDue(member.name, t.created_at, due.value || null));
+    // No due date → collapse the field to just its calendar icon (CSS); a set
+    // date shows the full field.
+    if (!t.due) due.classList.add('collapsed');
+    meta.append(due);
     const act = el('span', 'icon-btn act', '⚡'); act.title = 'Add action';
     act.addEventListener('click', () =>
       ui().showActionModal('Add action', (text) => store().appendAction(member.name, t.created_at, text)));
     const mute = el('span', 'icon-btn', '🔇'); mute.title = muted ? 'Unmute' : 'Mute 5 days';
     mute.addEventListener('click', () => store().toggleMute(member.name, t.created_at));
-    const done = el('span', 'icon-btn done', '✓'); done.title = 'Resolve';
-    done.addEventListener('click', () => store().setTaskState(member.name, t.created_at, 'resolved'));
-    meta.append(due, act, mute, done);
+    meta.append(act, mute);
 
     row.append(top, meta);
     return row;
@@ -435,6 +441,7 @@
     wrap.append(el('div', 'section-label', 'Links'));
     const links = store().getLinks(member);
     if (!links.length) { wrap.append(el('div', 'panel-empty', 'No links.')); return wrap; }
+    const box = el('div', 'link-list');
     for (const l of links) {
       const row = el('div', 'link-item');
       const a = el('a', 'md-link', l.label);
@@ -443,8 +450,9 @@
       edit.addEventListener('click', () =>
         ui().showActionModal('Rename link', (newLabel) => store().renameLink(member.name, l.url, newLabel)));
       row.append(a, edit);
-      wrap.append(row);
+      box.append(row);
     }
+    wrap.append(box);
     return wrap;
   }
 

@@ -281,7 +281,7 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 
 .split-view { display: flex; gap: 10px; margin-top: 12px; align-items: flex-start; }
 .split-left { flex: 1; min-width: 0; }
-.split-right { flex: 0 0 280px; }
+.split-right { flex: 0 0 280px; display: flex; flex-direction: column; gap: 5px; }
 
 /* Discussion page: both columns run up to the top chrome (no top padding). The
    header sits inside the middle column and sticks to the top while it scrolls;
@@ -378,9 +378,9 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .history-entry.closed { opacity: .6; }
 
 /* ---- Right-panel tasks ------------------------------------------------- */
-.tasks-section { margin-bottom: 5px; }
+.tasks-section { margin-bottom: 0; }
 .panel-empty { color: var(--muted); font-size: .82rem; padding: 4px 2px; }
-.task-item { padding: 6px 0; border-bottom: 1px solid var(--border); border-left: 3px solid var(--orange); padding-left: 8px; }
+.task-item { padding: 6px 8px; border-left: 3px solid var(--orange); background: var(--surface); margin-bottom: 5px; }
 .task-item.followup { border-left-color: var(--followup); }
 .task-item.muted { opacity: .55; }
 .task-top { display: flex; align-items: flex-start; gap: 6px; }
@@ -392,9 +392,15 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .prio-high { background: var(--red); }
 .prio-medium { background: var(--yellow); }
 .prio-low { background: var(--orange); }
-.task-meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; padding-left: 2px; }
+.task-meta { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; margin-top: 6px; padding-left: 2px; }
+.meta-spacer { flex: 1 1 auto; }
 .task-age { font-size: .68rem; color: var(--muted); }
 .task-due { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 4px; font-size: .68rem; padding: 1px 4px; }
+/* Empty due date: show only the native calendar icon, not the tt.mm.jjjj field. */
+.task-due.collapsed { width: 18px; padding: 0; border: none; background: none; color: transparent; }
+.task-due.collapsed::-webkit-datetime-edit { display: none; }
+.task-due.collapsed::-webkit-inner-spin-button { display: none; }
+.task-due.collapsed::-webkit-calendar-picker-indicator { margin: 0; opacity: .85; cursor: pointer; }
 .icon-btn { cursor: pointer; font-size: .82rem; opacity: .8; }
 .icon-btn:hover { opacity: 1; }
 
@@ -428,10 +434,10 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 }
 
 /* ---- Goals panel ------------------------------------------------------ */
-.goals-section { margin-bottom: 5px; }
-.goal-item { padding: 6px 0; border-bottom: 1px solid var(--border); border-left: 3px solid var(--goal); padding-left: 8px; }
+.goals-section { margin-bottom: 0; }
+.goal-item { padding: 6px 8px; border-left: 3px solid var(--goal); background: var(--surface); margin-bottom: 5px; }
 .goal-text { font-size: .82rem; }
-.goal-meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.goal-meta { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 4px; }
 .icon-btn.cancel:hover { color: var(--red); }
 .icon-btn.done:hover { color: var(--green); }
 
@@ -451,12 +457,13 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .history-entry.flash { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 
 /* ---- Links panel ------------------------------------------------------ */
-.links-section { margin-bottom: 5px; }
+.links-section { margin-bottom: 0; }
+.link-list { background: var(--surface); padding: 6px 8px; }
 .link-item { display: flex; align-items: center; gap: 6px; padding: 3px 0; }
 .link-item .md-link { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .8rem; }
 
 /* ---- Gallery ---------------------------------------------------------- */
-.gallery-section { margin-bottom: 5px; }
+.gallery-section { margin-bottom: 0; }
 .gallery-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
 .gallery-thumb { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; cursor: pointer; background: var(--card); }
 

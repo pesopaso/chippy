@@ -348,3 +348,41 @@ reference the requirement (`R#`) / plan step.
 - Added a tab bar under the top chrome, shown only in slim mode (`.slim-tabs`): **Navigation** (sidebar), **Discussion** (middle column), **Tasks & Goals** (right column). Body classes `slim-nav`/`slim-mid`/`slim-right` reveal exactly one region.
 - `main.setSlimTab` (exposed as `Chippy.setSlimTab`) drives the tabs; defaults to Discussion. Selecting a discussion or opening a cross-view in slim mode auto-switches to the Discussion tab so the chosen content is visible.
 - Wide screens are unaffected — the tab bar is hidden and the two-column layout is unchanged.
+
+### v3.0.0-dev.48 — 2026-06-04 — Reliable 5px gap between right-panel sections
+
+> The dev.46 per-section `margin-bottom` didn't reliably render a visible gap between Tasks and Goals.
+
+- The right column (`.split-right`) is now a flex column with `gap: 5px`, and the per-section bottom margins (`.tasks-section`/`.goals-section`/`.links-section`/`.gallery-section`) are zeroed — guaranteeing an exact, consistent 5px separation between Tasks, Goals, Links, and Images.
+
+### v3.0.0-dev.49 — 2026-06-04 — 5px gap between right-panel task/goal items
+
+> dev.46/48 spaced the right-panel *sections*, but the task (and goal) *items within* a section still ran together as one continuous stripe.
+
+- `.task-item` / `.goal-item` now use a filled `var(--surface)` background with `margin-bottom: 5px` and no bottom divider — matching the comment-box look — so each task and each goal sits in its own card 5px from the next.
+
+### v3.0.0-dev.50 — 2026-06-04 — Right-panel task row: controls on the bottom
+
+> Reorganized the Open Tasks rows so the text gets the full width and all controls live on one bottom row.
+
+- Priority and state squares moved from beside the text into the bottom control row (`task-meta`), leaving the task text full-width up top (`task-top`). The bottom row now wraps.
+- Empty due date shows only the native calendar icon instead of the full `tt.mm.jjjj` field (`.task-due.collapsed`); a set date still shows the full field.
+- Removed the redundant resolve (✓) button from both the task row and the unified comment box — the state square already sets DONE.
+
+### v3.0.0-dev.51 — 2026-06-04 — Background box behind the right-panel Links
+
+> The Links list now sits in its own filled box, like the task cards.
+
+- Link rows are wrapped in a `.link-list` container with the task `var(--surface)` background and padding, giving the right-column Links section the same filled-box look as the tasks.
+
+### v3.0.0-dev.52 — 2026-06-04 — Task row: chips left, functions right
+
+> Split the task control row so priority/state sit on the left and everything else on the right.
+
+- Added a flex spacer (`.meta-spacer`) after the priority and state squares in `task-meta`, pushing age, due date, action (⚡), and mute (🔇) to the right edge of the row.
+
+### v3.0.0-dev.53 — 2026-06-04 — Goal row: buttons bottom-right
+
+> Right-column goal controls now align to the bottom right.
+
+- `.goal-meta` uses `justify-content: flex-end`, so the goal action (⚡), edit (✎), achieved (✓), and canceled (✕) buttons sit at the bottom-right under the goal text.

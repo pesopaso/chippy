@@ -298,22 +298,49 @@
     return '';
   }
 
-  function renderHistory(member) {
+  // Optional `query` filters to matching comments within this discussion only
+  // (same #tag / @name / freetext syntax as the cross-views). The entry index
+  // passed to entryCard is always the position in the full list, so mutations
+  // still target the right entry even when filtered.
+  function renderHistory(member, query) {
     const wrap = el('div', 'history-list');
-    const entries = member.entries || [];
-    if (!entries.length) { wrap.append(el('div', 'history-empty', 'No entries yet.')); return wrap; }
-
+    const all = member.entries || [];
+    const match = (query && query.trim()) ? new Set(store().applyUnifiedFilter(all, query)) : null;
     const today = (store().nowISO ? store().nowISO() : new Date().toISOString()).slice(0, 10);
     let lastDay = null, dayGroup = null;
-    for (const e of entries.slice().reverse()) { // newest day + entry first
+    const indexed = all.map((e, i) => ({ e, i }));
+    for (const { e, i } of indexed.reverse()) { // newest day + entry first
+      if (match && !match.has(e)) continue;
       const day = (e.created_at || '').slice(0, 10);
       if (day !== lastDay) {
         dayGroup = el('div', 'day-group');
         dayGroup.append(el('div', 'day-label', day === today ? 'Today' : day));
         wrap.append(dayGroup); lastDay = day;
       }
-      dayGroup.append(ui().entryCard(e, { member: member.name, timeOnly: true, idx: (member.entries || []).indexOf(e) }));
+      dayGroup.append(ui().entryCard(e, { member: member.name, timeOnly: true, idx: i }));
     }
+    if (!wrap.children.length) {
+      wrap.append(el('div', 'history-empty', match ? 'No matching comments.' : 'No entries yet.'));
+    }
+    return wrap;
+  }
+
+  // Search box that filters this discussion's comment history.
+  function makeDiscSearch(onChange) {
+    const wrap = el('div', 'list-search-wrap');
+    const inp = el('input', 'list-search'); inp.type = 'text';
+    inp.placeholder = 'Search this discussion…  #tag or @name';
+    const clr = el('button', 'search-clear hidden', '×');
+    inp.addEventListener('input', () => {
+      clr.classList.toggle('hidden', !inp.value);
+      inp.classList.toggle('filter-active', !!inp.value);
+      onChange(inp.value);
+    });
+    clr.addEventListener('click', () => {
+      inp.value = ''; clr.classList.add('hidden'); inp.classList.remove('filter-active');
+      onChange(''); inp.focus();
+    });
+    wrap.append(inp, clr);
     return wrap;
   }
 
@@ -579,7 +606,13 @@
     left.append(header);
     left.append(renderPrep(member));
     left.append(renderEntryBox(member));
-    left.append(renderHistory(member));
+    // Per-discussion comment search: filters the history below it.
+    const histHost = el('div', 'history-host');
+    let histQuery = '';
+    const drawHistory = () => histHost.replaceChildren(renderHistory(member, histQuery));
+    left.append(makeDiscSearch(q => { histQuery = q; drawHistory(); }));
+    drawHistory();
+    left.append(histHost);
     right.append(renderTasksPanel(member));
     right.append(renderGoalsPanel(member));
     right.append(renderLinksPanel(member));

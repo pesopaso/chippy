@@ -9,7 +9,7 @@
 
   // Single source of truth for the version. Used for display and as the cache-bust
   // query param on the CSS/JS tags in app.html (bump both together on release).
-  const VERSION = '3.0.0-dev.63';
+  const VERSION = '3.0.0-dev.66';
   Chippy.VERSION = VERSION;
 
   const THEME_KEY = 'chippy_theme';
@@ -45,39 +45,120 @@
     } catch (_) { /* ignore */ }
   }
 
-  // Help dialog listing the cross-discussion pages and key behaviors (R49).
+  // Help dialog: a sectioned reference for the whole app (R49).
   function showHelp() {
     const ui = Chippy.ui;
     if (!ui || !ui.showModal) return;
     const mk = (tag, text) => { const e = document.createElement(tag); if (text != null) e.textContent = text; return e; };
-    const PAGES = [
-      ['Comments', 'every entry across all discussions'],
-      ['Tasks', 'open tasks across all discussions'],
-      ['Goals', 'open goals across all discussions'],
-      ['Links', 'deduped links from entries + prep (rename inline)'],
-      ['Images', 'all images; click for the full-screen carousel'],
-      ['Names', '@[Name] references — counts, last-seen, drill-down'],
-      ['Kanban', 'drag cards between state columns'],
-      ['Ro3', 'three tasks (one per priority); Refresh re-rolls'],
-      ['Activity', 'charts: comment inflow, task/goal states, timeline'],
-      ['AI Summary', 'generate a summary via a local LLM endpoint']
-    ];
+
     ui.showModal('Chippy — Help', (modal, close) => {
-      modal.appendChild(mk('p', 'Cross-discussion pages (sidebar buttons):'));
-      const ul = mk('ul'); ul.className = 'help-list';
-      for (const [n, d] of PAGES) {
-        const li = mk('li'); const b = mk('strong', n + ' — '); li.appendChild(b);
-        li.appendChild(document.createTextNode(d)); ul.appendChild(li);
+      // section(title, introText|null, [[term, description], …])
+      function section(title, intro, items) {
+        modal.appendChild(Object.assign(mk('h4', title), { className: 'help-h' }));
+        if (intro) modal.appendChild(mk('p', intro));
+        if (items && items.length) {
+          const ul = mk('ul'); ul.className = 'help-list';
+          for (const [term, desc] of items) {
+            const li = mk('li');
+            li.appendChild(mk('strong', term + ' — '));
+            li.appendChild(document.createTextNode(desc));
+            ul.appendChild(li);
+          }
+          modal.appendChild(ul);
+        }
       }
-      modal.appendChild(ul);
-      modal.appendChild(mk('p', 'Authoring: type #tag to classify, @ to mention a name, ' +
-        'paste an image with Ctrl+V. Tasks have a state square (click for the menu), a priority ' +
-        'square (click to cycle), due dates, ⚡ actions, mute, and ✓ resolve. Double-click a ' +
-        'task/goal to jump to its entry; the ✎ pencil edits an entry inline. "Updated:" is added ' +
-        'only when an entry is edited on a later day than it was created.'));
-      const row = mk('div'); row.className = 'modal-actions';
+      // Render the actual coloured chips so they're recognisable.
+      // items: [[className, chipText, meaning], …]
+      function chipLegend(subTitle, items) {
+        modal.appendChild(Object.assign(mk('div', subTitle), { className: 'help-sub' }));
+        const ul = mk('ul'); ul.className = 'help-list help-chips';
+        for (const [cls, text, meaning] of items) {
+          const li = mk('li');
+          li.appendChild(Object.assign(mk('span', text), { className: cls }));
+          li.appendChild(document.createTextNode(' ' + meaning));
+          ul.appendChild(li);
+        }
+        modal.appendChild(ul);
+      }
+
+      section('Navigation', 'The left sidebar lists your discussions and opens the cross-discussion pages.', [
+        ['Discussions', 'grouped by tag; favourites (★) are pinned on top; each row shows a comment-count chip on the right.'],
+        ['Search discussions', 'filters the sidebar list by name (× clears).'],
+        ['Page buttons', 'open the overview pages — see "Page overview" below.'],
+        ['Open Folder', 'connect your local data folder; the status line then shows discussion / tag / name counts.'],
+        ['Narrow screens (<800px)', 'three tabs under the top bar — Navigation, Discussion, Tasks & Goals — switch which panel is shown.']
+      ]);
+
+      section('Discussion', 'The middle column is where you read and write a discussion.', [
+        ['Title & actions', 'the discussion name with its comment count; on the right: ★ favourite, ↻ reload from disk, ⬇ export a contribution summary, 🗄 archive (renames the file to *.archive.md — nothing is deleted).'],
+        ['Description', 'editable notes for the discussion (✎ at the top-right); the "Description" label hides once it has text.'],
+        ['New comment', 'type a note — #tag to classify, @ to mention a name, Ctrl+V to paste an image. Below the box: tag chips on the left; goal link, due date and Save on the right. The box clears after saving.'],
+        ['Search this discussion', 'filters the comments below by #tag / @name / free text.'],
+        ['History', 'comments grouped by day, newest first; today reads "Today".']
+      ]);
+
+      section('Right column', 'A live summary of the discussion, each section scrolls on its own.', [
+        ['Open Tasks', 'your open tasks — priority and state squares on the left, controls on the right.'],
+        ['Goals', 'highlighted with a goal tint; ⚡ action, ✎ edit, ✓ achieved, ✕ canceled at the bottom-right.'],
+        ['Links', 'links found in the comments and description, deduped (images excluded); ✎ renames a link.'],
+        ['Images', 'a gallery of pasted images; click one for the full-screen carousel.']
+      ]);
+
+      section('Comments — functions & special tags',
+        'Comments support Markdown (headings, bold/italic, lists, code, quotes), auto-linked URLs, @[Name] mentions and inline images.', [
+        ['Actions', '✎ edit inline (tags are editable here — type #tag or use "+ tag"; × removes one), ⚡ add a dated action, 🔇 mute, ➜ move to another discussion, 🗑 delete.'],
+        ['"Updated:"', 'added automatically when you edit a comment on a later day than it was created.'],
+        ['Classify', '#task, #followup or #goal turn a comment into that item type.'],
+        ['Priority', '#high / #medium / #low (the priority square cycles them).'],
+        ['Reserved tags (hidden from the chip row)', 'state tags (opentask, inprogresstask, checktask, onholdtask, purgatorytask, resolvedtask, obsoletetask, resolvedfollowup), goal states (achievedgoal, canceledgoal), muted:<date> (temporary mute) and goal-<id> (links a comment to a goal).']
+      ]);
+      chipLegend('Priority chips (click to cycle):', [
+        ['prio-square prio-high', 'HI', 'high'],
+        ['prio-square prio-medium', 'MI', 'medium'],
+        ['prio-square prio-low', 'LO', 'low (default)']
+      ]);
+
+      section('Tasks, FollowUps & Goals', 'Classified comments gain a state machine and controls.', [
+        ['Task states', 'OPEN, WIP (in progress), CHK (check), HOLD (on hold), PRGT (purgatory), DONE (resolved), OBSL (obsolete) — click the state square for the menu.'],
+        ['Collapse', 'DONE / OBSL (and achieved/canceled goals) collapse to one line; click ▸ to expand.'],
+        ['FollowUps', 'behave like tasks; resolving one marks it resolvedfollowup.'],
+        ['Goals', '✓ achieve or ✕ cancel writes an "Achieved:" / "Canceled:" marker; goals are visually highlighted. Link a comment to a goal, and double-click any task/goal to jump to its source entry.'],
+        ['Mute', 'hides a task for 5 days (muted:<date>) to cut noise in Ro3 and the kanban.']
+      ]);
+      chipLegend('Task-state chips (click the square for the menu):', [
+        ['state-square state-open', 'OPEN', 'open'],
+        ['state-square state-inprogresstask', 'WIP', 'in progress'],
+        ['state-square state-checktask', 'CHK', 'needs a check'],
+        ['state-square state-onholdtask', 'HOLD', 'on hold'],
+        ['state-square state-purgatorytask', 'PRGT', 'purgatory'],
+        ['state-square state-resolvedtask', 'DONE', 'resolved'],
+        ['state-square state-obsoletetask', 'OBSL', 'obsolete']
+      ]);
+
+      section('Page overview', 'Sidebar buttons open these cross-discussion pages, each with the unified #tag / @name / free-text search.', [
+        ['Comments', 'every comment across all discussions.'],
+        ['Tasks', 'all open tasks.'],
+        ['Goals', 'all open goals.'],
+        ['Links', 'all links, deduped (images excluded), renameable.'],
+        ['Images', 'every image; click for the carousel.'],
+        ['Names', '@[Name] references — counts, last-seen and a drill-down.'],
+        ['Tags', 'every tag with its total uses and the date last used.'],
+        ['Kanban', 'drag tasks between state columns; the DONE column shows ~2 months.'],
+        ['Ro3', 'Rule of Three — one task per priority; Refresh re-rolls.'],
+        ['Activity', 'charts: comment inflow, task/goal states, monthly timeline, an open-task burndown, and tasks-created-per-day by state.'],
+        ['AI Summary', 'generate a summary of your comments via a local LLM.']
+      ]);
+
+      section('AI Summary — settings', 'The Summary page talks to a local, OpenAI-compatible LLM endpoint.', [
+        ['Endpoint & model', 'set the API URL and model name; both are saved to summary.md and your browser.'],
+        ['Range', 'choose day, week or month of comments to summarise.'],
+        ['Generate', 'posts the selected comments to the endpoint and renders the reply (sanitised).'],
+        ['Saved summaries', 'each generated summary is kept as a card you can edit, delete, or move into a discussion as a comment.']
+      ]);
+
+      const rowEl = mk('div'); rowEl.className = 'modal-actions';
       const ok = mk('button', 'Close'); ok.className = 'btn-primary'; ok.addEventListener('click', close);
-      row.appendChild(ok); modal.appendChild(row);
+      rowEl.appendChild(ok); modal.appendChild(rowEl);
     });
   }
 

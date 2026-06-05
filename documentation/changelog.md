@@ -446,6 +446,26 @@ reference the requirement (`R#`) / plan step.
 
 - Entry-box controls (goal link, due date, Save) reduced from 30px to 22px, with vertical padding zeroed so the text still fits.
 
+### v3.0.0-dev.64 — 2026-06-04 — Per-discussion comment search
+
+> A search box in the discussion that filters only this discussion's comments.
+
+- Added a search box above the comment history (reusing the cross-view search styling) that filters the current discussion's comments with the same `#tag` / `@name` / freetext syntax. Empty result shows "No matching comments."
+- `renderHistory(member, query)` filters via `store.applyUnifiedFilter` while still passing each entry's true index to `entryCard`, so state/edit/etc. mutations target the right entry even while filtered. Day-group headers only appear for days with a match.
+
+### v3.0.0-dev.65 — 2026-06-04 — Detailed, sectioned help dialog
+
+> Expanded the help dialog into structured sections.
+
+- The Help dialog (?) is now split into: Navigation, Discussion, Right column, Comments — functions & special tags, Tasks/FollowUps/Goals, Page overview, and AI Summary — settings. Each section lists its elements with concise descriptions (including the reserved/special tags and the Summary page's endpoint/model/range settings).
+- Added a `.help-h` section-heading style.
+
+### v3.0.0-dev.66 — 2026-06-04 — Colored chips in the help dialog
+
+> The help now shows the actual priority and state chips.
+
+- Added a "Priority chips" legend (HI/MI/LO) to the Comments section and a "Task-state chips" legend (OPEN/WIP/CHK/HOLD/PRGT/DONE/OBSL) to the Tasks section — each rendered with its real colour and a short meaning, so users can match the swatch to what they see in the app.
+
 ### v3.0.0-dev.57 — 2026-06-04 — Goals stand out with a goal-tinted background
 
 > Goals are the reason for many discussions, so they should catch the eye.

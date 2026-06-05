@@ -393,3 +393,61 @@ reference the requirement (`R#`) / plan step.
 
 - `dashboard.taskExecution` fills every calendar day between the first and last activity (`daysBetween`), so days with no tasks created appear as empty gaps rather than being collapsed out.
 - To keep the axis readable, x-axis date labels are thinned (~12 max) and the per-bar total label is hidden on empty days.
+
+### v3.0.0-dev.55 — 2026-06-04 — Fix task state change: wrong entry & scroll jump
+
+> Changing a task/followup state could hit a different task, and the view jumped to the top.
+
+- **Wrong entry:** state changes from the discussion history, cross-views, and the right-panel Open Tasks now pass the entry index hint to `setTaskState` (like the kanban fix in dev.40), so when two entries share a `created_at` the exact selected one is changed — not the first match.
+- **Scroll jump:** `discussion.render` now preserves each column's scroll position across the re-render and focuses the entry box with `preventScroll`, instead of auto-scrolling to the top. A fresh discussion open still starts at the top (`render(member, { fresh: true })`).
+
+### v3.0.0-dev.56 — 2026-06-04 — In-place card update keeps the view perfectly still
+
+> dev.55 reduced the jump but a full re-render still reflowed images, so it wasn't exact.
+
+- Single-entry mutations (state, priority, due, action, mute, goal state, edit) now update **only that entry's card in place** via `discussion.refreshEntry(entryId)` rather than re-rendering the whole discussion. Nothing above the card reflows, so its top stays exactly put; if the change collapses the card, only the content below it shifts. A pure state change leaves everything exactly in place.
+- The right panel is refreshed in place with its scroll preserved. Adds/deletes/moves and cross-views still do a full refresh.
+
+### v3.0.0-dev.58 — 2026-06-04 — Edit/priority/mute/goal changes hit the right entry
+
+> Adding a tag to a comment (or editing it) could land on a different entry that shared its timestamp, so the edited comment never showed the change.
+
+- Extended the dev.40/55 index-hint fix to the remaining entry mutations: `editEntry`, `cyclePriority`, `setDue`, `appendAction`, `toggleMute`, and `setGoalState` now accept the entry's index and pass it to `findEntry`, so the exact selected entry is changed even when two share a `created_at`.
+- All call sites updated to pass the index: the comment card (`entryCard`), the right-panel task rows, and the goal rows.
+
+### v3.0.0-dev.59 — 2026-06-04 — "Preparation" → "Description", title hides when filled
+
+> Renamed the per-discussion preparation area and let it shed its label once used.
+
+- The preparation section is now labelled **Description** (empty state: "No description yet.", tooltip "Edit description").
+- The "Description" title is hidden as soon as the field has text — the content speaks for itself — and reappears when the field is empty. The ✎ edit affordance stays.
+
+### v3.0.0-dev.60 — 2026-06-04 — Description edit pencil to the top-right
+
+> Moved the description ✎ to the right edge of the middle column.
+
+- `.prep-edit-btn` is now absolutely positioned at the top-right of the description section (`.prep-section` is the positioning context), level with the top of the description text. The description content gets a little right padding so the pencil never overlaps it.
+
+### v3.0.0-dev.61 — 2026-06-04 — Nudge the description edit pencil
+
+> Fine-tuned the pencil position.
+
+- `.prep-edit-btn` moved 4px down and 3px left (`top: 4px; right: 3px`).
+
+### v3.0.0-dev.62 — 2026-06-04 — Align entry-box controls to one height
+
+> The goal link, due date, and Save button were slightly different heights.
+
+- The goal-link dropdown, due-date selector, and Save button in the comment entry box now share a fixed 30px height (scoped to `.entry-controls`, with `box-sizing: border-box`), so they line up evenly. Other primary buttons are unaffected.
+
+### v3.0.0-dev.63 — 2026-06-04 — Slimmer entry-box controls (22px)
+
+> Reduced the shared control height.
+
+- Entry-box controls (goal link, due date, Save) reduced from 30px to 22px, with vertical padding zeroed so the text still fits.
+
+### v3.0.0-dev.57 — 2026-06-04 — Goals stand out with a goal-tinted background
+
+> Goals are the reason for many discussions, so they should catch the eye.
+
+- New `--goal-bg` theme variable — the surface colour with a hint of the goal teal (`#203043` dark, `#e6ecf2` light). Applied to goal comment cards (`.entry-card.entry-goal`) and right-panel goal items (`.goal-item`), so goals read as distinct from tasks/comments in both themes while keeping the goal left stripe.

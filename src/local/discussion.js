@@ -104,16 +104,22 @@
   function renderPrep(member) {
     const wrap = el('div', 'prep-section');
     const bar = el('div', 'prep-bar');
-    bar.append(el('span', 'section-label', 'Preparation'));
+    const label = el('span', 'section-label', 'Description');
+    bar.append(label);
     const editBtn = el('span', 'prep-edit-btn', '✎');
-    editBtn.title = 'Edit preparation';
+    editBtn.title = 'Edit description';
     bar.append(editBtn);
     wrap.append(bar);
 
     const view = el('div', 'prep-view');
     function renderView() {
-      if (member.prep) ui().safeSetHtml(view, ui().renderEntryText(member.prep));
-      else view.replaceChildren(el('span', 'prep-empty', 'No preparation notes yet.'));
+      if (member.prep) {
+        ui().safeSetHtml(view, ui().renderEntryText(member.prep));
+        label.style.display = 'none';          // title redundant once there's text
+      } else {
+        view.replaceChildren(el('span', 'prep-empty', 'No description yet.'));
+        label.style.display = '';
+      }
     }
     renderView();
     wrap.append(view);
@@ -306,7 +312,7 @@
         dayGroup.append(el('div', 'day-label', day === today ? 'Today' : day));
         wrap.append(dayGroup); lastDay = day;
       }
-      dayGroup.append(ui().entryCard(e, { member: member.name, timeOnly: true }));
+      dayGroup.append(ui().entryCard(e, { member: member.name, timeOnly: true, idx: (member.entries || []).indexOf(e) }));
     }
     return wrap;
   }
@@ -339,19 +345,20 @@
 
   function renderTaskRow(member, t) {
     const muted = store().isMuted(t);
+    const idx = (member.entries || []).indexOf(t); // disambiguates same-timestamp entries
     const row = el('div', 'task-item' + (t.tags.includes('followup') ? ' followup' : '') + (muted ? ' muted' : ''));
 
     const prio = priorityOf(t.tags) || 'low';
     const ps = el('span', 'prio-square prio-' + prio, PRIO_LABEL[prio]);
     ps.title = 'Change priority';
-    ps.addEventListener('click', () => store().cyclePriority(member.name, t.created_at));
+    ps.addEventListener('click', () => store().cyclePriority(member.name, t.created_at, idx));
 
     const sk = stateKeyOf(t.tags);
     const [slabel, scls] = STATE_SQUARE[sk];
     const ss = el('span', 'state-square ' + scls, slabel);
     ss.title = 'Change state';
     ss.addEventListener('click', () =>
-      ui().showStateDropdown(ss, sk, (key) => store().setTaskState(member.name, t.created_at, key)));
+      ui().showStateDropdown(ss, sk, (key) => store().setTaskState(member.name, t.created_at, key, idx)));
 
     const txt = el('div', 'task-text');
     ui().safeSetHtml(txt, ui().renderEntryText(firstLine(t.body)));
@@ -369,16 +376,16 @@
     if (age != null) meta.append(el('span', 'task-age', age + 'd'));
     const due = el('input', 'task-due'); due.type = 'date'; if (t.due) due.value = t.due;
     due.title = 'Due date';
-    due.addEventListener('change', () => store().setDue(member.name, t.created_at, due.value || null));
+    due.addEventListener('change', () => store().setDue(member.name, t.created_at, due.value || null, idx));
     // No due date → collapse the field to just its calendar icon (CSS); a set
     // date shows the full field.
     if (!t.due) due.classList.add('collapsed');
     meta.append(due);
     const act = el('span', 'icon-btn act', '⚡'); act.title = 'Add action';
     act.addEventListener('click', () =>
-      ui().showActionModal('Add action', (text) => store().appendAction(member.name, t.created_at, text)));
+      ui().showActionModal('Add action', (text) => store().appendAction(member.name, t.created_at, text, idx)));
     const mute = el('span', 'icon-btn', '🔇'); mute.title = muted ? 'Unmute' : 'Mute 5 days';
-    mute.addEventListener('click', () => store().toggleMute(member.name, t.created_at));
+    mute.addEventListener('click', () => store().toggleMute(member.name, t.created_at, idx));
     meta.append(act, mute);
 
     row.append(top, meta);
@@ -403,6 +410,7 @@
   /* --------------------------- goals panel ----------------------------- */
 
   function renderGoalRow(member, g) {
+    const idx = (member.entries || []).indexOf(g); // disambiguates same-timestamp entries
     const row = el('div', 'goal-item');
     const txt = el('div', 'goal-text');
     ui().safeSetHtml(txt, ui().renderEntryText(firstLine(g.body)));
@@ -412,13 +420,13 @@
     if (g.due) meta.append(el('span', 'task-age', 'due ' + g.due));
     const act = el('span', 'icon-btn', '⚡'); act.title = 'Add action';
     act.addEventListener('click', () =>
-      ui().showActionModal('Add action', (text) => store().appendAction(member.name, g.created_at, text)));
+      ui().showActionModal('Add action', (text) => store().appendAction(member.name, g.created_at, text, idx)));
     const edit = el('span', 'icon-btn', '✎'); edit.title = 'Edit goal';
     edit.addEventListener('click', () => scrollToEntry(g.created_at, true));
     const ach = el('span', 'icon-btn done', '✓'); ach.title = 'Achieved';
-    ach.addEventListener('click', () => store().setGoalState(member.name, g.created_at, 'achieved'));
+    ach.addEventListener('click', () => store().setGoalState(member.name, g.created_at, 'achieved', idx));
     const can = el('span', 'icon-btn cancel', '✕'); can.title = 'Canceled';
-    can.addEventListener('click', () => store().setGoalState(member.name, g.created_at, 'canceled'));
+    can.addEventListener('click', () => store().setGoalState(member.name, g.created_at, 'canceled', idx));
     meta.append(act, edit, ach, can);
 
     row.append(txt, meta);
@@ -477,9 +485,55 @@
 
   /* ------------------------------- render ------------------------------ */
 
-  function render(member) {
+  // Update just one entry's card in place (and the right panel) instead of
+  // re-rendering the whole discussion — so the changed task's top stays exactly
+  // where it is and nothing above it reflows. Returns false if it can't (then
+  // the caller falls back to a full render).
+  function refreshEntry(entryId) {
+    const screen = document.getElementById('memberScreen');
+    const member = store().getActiveMember();
+    if (!screen || !member || !entryId) return false;
+    const idx = (member.entries || []).findIndex(e => e.created_at === entryId);
+    if (idx < 0) return false;
+    const e = member.entries[idx];
+
+    const list = screen.querySelector('.history-list');
+    let replaced = false;
+    if (list) {
+      const cards = list.querySelectorAll('.entry-card');
+      for (const old of cards) {
+        if (old.dataset.entryId === entryId) {
+          old.replaceWith(ui().entryCard(e, { member: member.name, timeOnly: true, idx }));
+          replaced = true;
+          break;
+        }
+      }
+    }
+    if (!replaced) return false;
+
+    // The right panel lists can change membership; re-render them but keep scroll.
+    const right = screen.querySelector('.split-right');
+    if (right) {
+      const sc = right.scrollTop;
+      right.replaceChildren(
+        renderTasksPanel(member), renderGoalsPanel(member),
+        renderLinksPanel(member), renderGallery(member));
+      right.scrollTop = sc;
+    }
+    return true;
+  }
+
+  function render(member, opts) {
+    opts = opts || {};
     const screen = document.getElementById('memberScreen');
     if (!screen || !member) return;
+    // Preserve scroll across a re-render (a mutation shouldn't jump the view).
+    // On a fresh discussion open (opts.fresh) we start at the top instead.
+    const prevLeft = screen.querySelector('.split-left');
+    const prevRight = screen.querySelector('.split-right');
+    const sLeft = opts.fresh ? 0 : (prevLeft ? prevLeft.scrollTop : 0);
+    const sRight = opts.fresh ? 0 : (prevRight ? prevRight.scrollTop : 0);
+    const sScreen = opts.fresh ? 0 : screen.scrollTop;
     screen.replaceChildren();
 
     const header = el('div', 'member-header');
@@ -534,9 +588,13 @@
     split.append(left, right);
     screen.append(split);
 
+    // Restore the prior scroll, then focus the entry box without scrolling to it.
+    left.scrollTop = sLeft;
+    right.scrollTop = sRight;
+    screen.scrollTop = sScreen;
     const input = document.getElementById('entryInput');
-    if (input) setTimeout(() => input.focus(), 0);
+    if (input) setTimeout(() => { try { input.focus({ preventScroll: true }); } catch (_) { input.focus(); } }, 0);
   }
 
-  Chippy.discussion = { render };
+  Chippy.discussion = { render, refreshEntry };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

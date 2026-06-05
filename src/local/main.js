@@ -9,7 +9,7 @@
 
   // Single source of truth for the version. Used for display and as the cache-bust
   // query param on the CSS/JS tags in app.html (bump both together on release).
-  const VERSION = '3.0.0-dev.54';
+  const VERSION = '3.0.0-dev.63';
   Chippy.VERSION = VERSION;
 
   const THEME_KEY = 'chippy_theme';
@@ -149,20 +149,28 @@
             break;
           case 'memberSelected':
             if (pages) { pages.noteRecent(cs.name); pages.renderSidebar(); pages.renderRecent(); }
-            if (Chippy.discussion) Chippy.discussion.render(store.getActiveMember());
+            if (Chippy.discussion) Chippy.discussion.render(store.getActiveMember(), { fresh: true });
             if (pages) pages.showScreen('member');
             // Slim mode: jump from the Navigation tab to the Discussion tab.
             if (document.body.classList.contains('slim')) setSlimTab('mid');
             break;
-          case 'memberReloaded':
-          case 'entryAdded':
+          // Single-entry mutations: update just that card in place on the
+          // discussion screen (keeps scroll exactly put); full refresh elsewhere.
           case 'taskStateChanged':
           case 'priorityChanged':
           case 'dueChanged':
           case 'actionAppended':
           case 'muteToggled':
           case 'goalStateChanged':
-          case 'entryEdited':
+          case 'entryEdited': {
+            const onMember = pages && pages.getCurrentScreen && pages.getCurrentScreen() === 'member';
+            const handled = onMember && Chippy.discussion && Chippy.discussion.refreshEntry &&
+              Chippy.discussion.refreshEntry(cs.entryId);
+            if (!handled && pages) pages.refresh();
+            break;
+          }
+          case 'memberReloaded':
+          case 'entryAdded':
           case 'entryMoved':
           case 'entryDeleted':
           case 'linkRenamed':

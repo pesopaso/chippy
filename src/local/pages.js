@@ -167,7 +167,7 @@
 
   // Every cross-view row is the shared, fully-interactive comment card.
   function entryRow(e) {
-    return ui().entryCard(e, { member: e._member, showMember: true });
+    return ui().entryCard(e, { member: e._member, showMember: true, idx: e._idx });
   }
 
   function openComments() {
@@ -370,7 +370,7 @@
 
   function ro3Card(e) {
     // No outer wrapper — the unified comment box is the whole card (avoids a double box).
-    return ui().entryCard(e, { member: e._member, showMember: true });
+    return ui().entryCard(e, { member: e._member, showMember: true, idx: e._idx });
   }
 
   function openRo3() {

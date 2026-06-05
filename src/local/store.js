@@ -324,8 +324,8 @@
     emit({ type: 'taskStateChanged', name, entryId, stateKey });
   }
 
-  async function cyclePriority(name, entryId) {
-    const [m, e] = findEntry(name, entryId);
+  async function cyclePriority(name, entryId, idx) {
+    const [m, e] = findEntry(name, entryId, idx);
     if (!e) return;
     const order = ['high', 'medium', 'low'];
     const cur = e.tags.find(t => order.includes(t));
@@ -337,8 +337,8 @@
     emit({ type: 'priorityChanged', name, entryId, priority: next });
   }
 
-  async function setDue(name, entryId, due) {
-    const [m, e] = findEntry(name, entryId);
+  async function setDue(name, entryId, due, idx) {
+    const [m, e] = findEntry(name, entryId, idx);
     if (!e) return;
     e.due = due || null;
     await io().saveDiscussion(state.dirHandle, m);
@@ -347,8 +347,8 @@
 
   // Append a dated action bullet, consolidating into one action section at the
   // end of the body. (skill resolution-actions rules / datadefinition §2.1)
-  async function appendAction(name, entryId, text) {
-    const [m, e] = findEntry(name, entryId);
+  async function appendAction(name, entryId, text, idx) {
+    const [m, e] = findEntry(name, entryId, idx);
     if (!e) return;
     const { pre, bullets } = splitTrailingActions(e.body);
     bullets.push('- ' + nowISO().slice(0, 10) + ' : ' + text);
@@ -358,8 +358,8 @@
   }
 
   // Toggle a 5-day mute (muted:<expiry>). (v2.3)
-  async function toggleMute(name, entryId) {
-    const [m, e] = findEntry(name, entryId);
+  async function toggleMute(name, entryId, idx) {
+    const [m, e] = findEntry(name, entryId, idx);
     if (!e) return;
     const muted = e.tags.find(t => t.startsWith('muted:'));
     if (muted) e.tags = e.tags.filter(t => t !== muted);
@@ -387,8 +387,8 @@
 
   // Goal state: 'achieved' (achievedgoal + Achieved: marker), 'canceled'
   // (canceledgoal + Canceled:), or 'open' (no closed tag). (datadefinition §2.2)
-  async function setGoalState(name, entryId, stateKey) {
-    const [m, e] = findEntry(name, entryId);
+  async function setGoalState(name, entryId, stateKey, idx) {
+    const [m, e] = findEntry(name, entryId, idx);
     if (!e) return;
     e.tags = e.tags.filter(t => !GOAL_STATE_TAGS.includes(t));
     if (stateKey === 'achieved') { e.tags.push('achievedgoal'); e.body = insertMarker(e, 'Achieved'); }
@@ -400,9 +400,9 @@
 
   // Edit an entry's body (and optionally tags). Appends an "Updated:" marker only
   // when edited on a different calendar day than its creation. (R41 / v1.42)
-  async function editEntry(name, entryId, opts) {
+  async function editEntry(name, entryId, opts, idx) {
     opts = opts || {};
-    const [m, e] = findEntry(name, entryId);
+    const [m, e] = findEntry(name, entryId, idx);
     if (!e) return;
     if (Array.isArray(opts.tags)) e.tags = opts.tags.slice();
     if (opts.text != null) {

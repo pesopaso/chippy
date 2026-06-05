@@ -27,6 +27,7 @@
   --pink: #b32794;
   --followup: #d9a3bc;
   --goal: #225a7a;
+  --goal-bg: #203043; /* surface with a hint of goal teal (dark) */
 
   /* Task-state fills (WIP/CHK are dedicated; others reuse accents) */
   --state-open: var(--orange);
@@ -52,6 +53,7 @@
   --muted: #63768b;
   --accent: #384057;
   --name: #214937;
+  --goal-bg: #e6ecf2; /* surface with a hint of goal teal (light) */
 }
 
 /* ---- Reset / base ------------------------------------------------------ */
@@ -295,10 +297,13 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .panel-placeholder { color: var(--muted); font-size: .82rem; border: 1px dashed var(--border); border-radius: 8px; padding: 12px; }
 
 .section-label { font-size: .72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
-.prep-section { margin-bottom: 14px; }
+.prep-section { margin-bottom: 14px; position: relative; }
 .prep-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-.prep-edit-btn { cursor: pointer; color: var(--muted); }
+/* Edit pencil pinned to the top-right of the middle section, level with the top
+   of the description. */
+.prep-edit-btn { position: absolute; top: 4px; right: 3px; cursor: pointer; color: var(--muted); }
 .prep-edit-btn:hover { color: var(--accent); }
+.prep-view, .prep-empty { padding-right: 20px; }
 .prep-empty { color: var(--muted); font-style: italic; font-size: .85rem; }
 .prep-edit, .entry-input {
   width: 100%; min-height: 64px; resize: vertical;
@@ -343,6 +348,10 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
   padding: 5px 14px; border-radius: 6px; border: none;
   background: var(--accent); color: #fff; font-size: .76rem; cursor: pointer;
 }
+/* Goal link, due date, and Save share one height so they line up (box-sizing:border-box). */
+.entry-controls .goal-link,
+.entry-controls .entry-due,
+.entry-controls #btnSaveEntry { height: 22px; padding-top: 0; padding-bottom: 0; }
 .btn-primary:hover { filter: brightness(1.08); }
 
 /* Autocomplete dropdown */
@@ -435,7 +444,7 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 
 /* ---- Goals panel ------------------------------------------------------ */
 .goals-section { margin-bottom: 0; }
-.goal-item { padding: 6px 8px; border-left: 3px solid var(--goal); background: var(--surface); margin-bottom: 5px; }
+.goal-item { padding: 6px 8px; border-left: 3px solid var(--goal); background: var(--goal-bg); margin-bottom: 5px; }
 .goal-text { font-size: .82rem; }
 .goal-meta { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 4px; }
 .icon-btn.cancel:hover { color: var(--red); }
@@ -602,7 +611,7 @@ body.slim.slim-right #memberScreen .split-left { display: none; }
 .entry-card { background: var(--surface); border-radius: 0; padding: 8px 10px; margin-bottom: 5px; }
 .entry-card.entry-task { border-left: 3px solid var(--orange); }
 .entry-card.entry-followup { border-left: 3px solid var(--followup); }
-.entry-card.entry-goal { border-left: 3px solid var(--goal); }
+.entry-card.entry-goal { border-left: 3px solid var(--goal); background: var(--goal-bg); }
 .entry-card.closed { opacity: .6; }
 .entry-card.collapsed .entry-text { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 .entry-card .entry-meta { flex-wrap: wrap; }

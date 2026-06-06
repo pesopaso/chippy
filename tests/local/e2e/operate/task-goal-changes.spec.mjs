@@ -118,6 +118,24 @@ test.describe('task & goal changes across surfaces', () => {
       await app.clickPriority(card);
       await expect.poll(() => app.readDiscussion(member)).not.toBe(before);
     });
+
+    // TEST-FIRST: documents the desired behavior. Ro3 currently caches its pick
+    // and only re-rolls on the ↻ Refresh button, so this is expected to FAIL until
+    // the app auto-backfills on mute. Precondition: the seed has >3 open,
+    // non-muted tasks, so a replacement exists.
+    test('mute: muting a focus task removes it and backfills a replacement', async ({ app }) => {
+      await app.screen('ro3');
+      const cards = app.page.locator('#ro3Screen .entry-card');
+      await expect(cards).toHaveCount(3);
+      const target = cards.first();
+      const mutedId = await target.getAttribute('data-entry-id');
+
+      await app.toggleMute(target);
+
+      // The muted task disappears and Ro3 still shows three (a new one slid in).
+      await expect(app.page.locator('#ro3Screen .entry-card')).toHaveCount(3);
+      await expect(app.page.locator(`#ro3Screen .entry-card[data-entry-id="${mutedId}"]`)).toHaveCount(0);
+    });
     test('add an activity: action modal submits without error', async ({ app }) => {
       await app.screen('ro3');
       const row = app.page.locator('.entry-card').first();

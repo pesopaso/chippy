@@ -55,7 +55,8 @@
 
   // created_at with seconds, local time: "YYYY-MM-DD HH:MM:SS".
   function nowISO(d) {
-    d = d || new Date();
+    // Test-only seam: window.__chippyTest.now() supplies a deterministic clock.
+    d = d || (root.__chippyTest && root.__chippyTest.now && root.__chippyTest.now()) || new Date();
     const p = n => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ` +
            `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
@@ -63,7 +64,8 @@
 
   // A goal's unique identity tag: goal-<5 base36 chars>.
   function mintGoalId(rng) {
-    rng = rng || Math.random;
+    // Test-only seam: window.__chippyTest.rng supplies a deterministic PRNG.
+    rng = rng || (root.__chippyTest && root.__chippyTest.rng) || Math.random;
     let s = '';
     for (let i = 0; i < 5; i++) s += Math.floor(rng() * 36).toString(36);
     return 'goal-' + s;

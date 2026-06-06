@@ -1,0 +1,16 @@
+# Test toolchain — dev-only, never shipped with the app (src/local stays clean).
+node_modules/
+
+# Playwright
+/playwright-report/
+/test-results/
+/blob-report/
+/.playwright/
+
+# Test runtime artifacts: the seeded dataset each app's pipeline builds.
+# Wiped at the start of every run and persisted afterward for inspection.
+# One per app namespace: tests/local/.tmp/, tests/<future-app>/.tmp/, ...
+tests/**/.tmp/
+
+# Editor/script backups (e.g. mount could not unlink during a session)
+*.bak

@@ -368,6 +368,18 @@
 
   let ro3Pick = null; // session-persistent selection
 
+  // Re-resolve a picked entry to the live store entry, so a card reflects the
+  // current state after a mutation (the pick is a shallow copy whose tags array
+  // goes stale when setTaskState reassigns the original's tags).
+  function liveEntry(p) {
+    const m = store().getMember && store().getMember(p._member);
+    const entries = (m && m.entries) || [];
+    let live = (typeof p._idx === 'number' && entries[p._idx] && entries[p._idx].created_at === p.created_at)
+      ? entries[p._idx]
+      : entries.find(x => x.created_at === p.created_at);
+    return live ? Object.assign({ _member: p._member, _idx: entries.indexOf(live) }, live) : p;
+  }
+
   function ro3Card(e) {
     // No outer wrapper — the unified comment box is the whole card (avoids a double box).
     return ui().entryCard(e, { member: e._member, showMember: true, idx: e._idx });
@@ -386,7 +398,7 @@
     if (!ro3Pick || !ro3Pick.length) ro3Pick = store().pickRo3(store().getRo3Candidates());
     const cont = el('div', 'ro3-cards');
     if (!ro3Pick.length) cont.append(el('div', 'panel-empty', 'No open tasks.'));
-    else for (const e of ro3Pick) cont.append(ro3Card(e));
+    else for (const e of ro3Pick) cont.append(ro3Card(liveEntry(e)));
     screen.append(cont);
   }
 

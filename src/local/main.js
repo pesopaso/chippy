@@ -9,7 +9,7 @@
 
   // Single source of truth for the version. Used for display and as the cache-bust
   // query param on the CSS/JS tags in app.html (bump both together on release).
-  const VERSION = '3.0.0-dev.66';
+  const VERSION = '3.0.0-dev.69';
   Chippy.VERSION = VERSION;
 
   const THEME_KEY = 'chippy_theme';
@@ -67,6 +67,17 @@
           modal.appendChild(ul);
         }
       }
+      // Render rows as <code>syntax</code> — description.
+      function codeList(items) {
+        const ul = mk('ul'); ul.className = 'help-list help-md';
+        for (const [syntax, desc] of items) {
+          const li = mk('li');
+          li.appendChild(mk('code', syntax));
+          li.appendChild(document.createTextNode(' — ' + desc));
+          ul.appendChild(li);
+        }
+        modal.appendChild(ul);
+      }
       // Render the actual coloured chips so they're recognisable.
       // items: [[className, chipText, meaning], …]
       function chipLegend(subTitle, items) {
@@ -116,6 +127,26 @@
         ['prio-square prio-high', 'HI', 'high'],
         ['prio-square prio-medium', 'MI', 'medium'],
         ['prio-square prio-low', 'LO', 'low (default)']
+      ]);
+
+      section('Markdown syntax', 'Comment and description text is rendered as Markdown.', null);
+      codeList([
+        ['# H1  …  ###### H6', 'headings'],
+        ['**bold**   __bold__', 'bold'],
+        ['*italic*   _italic_', 'italic'],
+        ['~~strike~~', 'strikethrough'],
+        ['`code`', 'inline code'],
+        ['``` … ```', 'fenced code block (fences on their own lines)'],
+        ['> quote', 'blockquote'],
+        ['- item   * item', 'bullet list'],
+        ['1. item', 'numbered list'],
+        ['---', 'horizontal rule'],
+        ['[label](https://…)', 'link'],
+        ['![alt](path.jpg)', 'image — or just paste with Ctrl+V'],
+        ['https://…', 'bare URLs link automatically'],
+        ['@[Full Name]', 'name mention (becomes a chip)'],
+        ['#tag', 'tag — classifies the comment'],
+        ['blank line', 'separates paragraphs']
       ]);
 
       section('Tasks, FollowUps & Goals', 'Classified comments gain a state machine and controls.', [

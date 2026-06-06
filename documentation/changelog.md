@@ -466,6 +466,24 @@ reference the requirement (`R#`) / plan step.
 
 - Added a "Priority chips" legend (HI/MI/LO) to the Comments section and a "Task-state chips" legend (OPEN/WIP/CHK/HOLD/PRGT/DONE/OBSL) to the Tasks section — each rendered with its real colour and a short meaning, so users can match the swatch to what they see in the app.
 
+### v3.0.0-dev.67 — 2026-06-04 — App icon
+
+> Added the Chippy icon to the app.
+
+- Vendored `chippy-icon.svg` into `src/local/` (copied from `documentation/chippy-icon-v1.svg`); set as the browser favicon and shown in the top bar to the left of the "Chippy" title (`.app-icon`, 22px).
+
+### v3.0.0-dev.68 — 2026-06-04 — Markdown syntax help section
+
+> Added a Markdown cheat-sheet to the help dialog.
+
+- New "Markdown syntax" section listing the supported syntax as `code` samples with descriptions: headings, bold/italic/strike, inline & fenced code, blockquote, bullet/numbered lists, rules, links, images (and Ctrl+V paste), auto-linked URLs, `@[Name]` mentions, `#tag`, and paragraph breaks.
+
+### v3.0.0-dev.69 — 2026-06-04 — Ro3 cards reflect task changes
+
+> Changing a task's state/priority on the Rule of Three page didn't update the card there.
+
+- The Ro3 selection holds shallow copies of entries; `setTaskState` (etc.) reassigns the original's `tags`, leaving the copy stale. `openRo3` now re-resolves each pick to the live store entry (`liveEntry`) on render, so the card shows the current state/priority after a change.
+
 ### v3.0.0-dev.57 — 2026-06-04 — Goals stand out with a goal-tinted background
 
 > Goals are the reason for many discussions, so they should catch the eye.

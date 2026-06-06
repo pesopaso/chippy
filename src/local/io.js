@@ -79,6 +79,11 @@
   /* ------------------------------ open folder -------------------------- */
 
   async function openFolder() {
+    // Test-only seam: a harness may inject a directory handle (e.g. an OPFS root)
+    // via window.__chippyTest.dirHandle to bypass the OS picker. Never set in
+    // production, so the picker path is unchanged for real users.
+    const t = root.__chippyTest;
+    if (t && t.dirHandle) return t.dirHandle;
     return await window.showDirectoryPicker({ mode: 'readwrite' });
   }
 

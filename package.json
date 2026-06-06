@@ -1,0 +1,19 @@
+{
+  "name": "chippy-tests",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Dev-only test toolchain for Chippy. The app itself (src/local) stays build-free and dependency-free; only the test apparatus has dependencies.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "test": "node tests/local/run.mjs",
+    "test:local": "node tests/local/run.mjs",
+    "test:local:unit": "node --test \"tests/local/unit/**/*.test.mjs\"",
+    "test:local:create": "playwright test --project=local tests/local/e2e/create",
+    "test:local:operate": "playwright test --project=local tests/local/e2e/operate",
+    "test:local:data": "node --test \"tests/local/data/**/*.test.mjs\""
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0"
+  }
+}

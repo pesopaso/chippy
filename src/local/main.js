@@ -45,6 +45,87 @@
     } catch (_) { /* ignore */ }
   }
 
+  // About dialog: version, licence, and project link.
+  function showAbout() {
+    const ui = Chippy.ui;
+    if (!ui || !ui.showModal) return;
+    ui.showModal('', (modal, close) => {
+      modal.classList.add('modal-about');
+      const mk = (tag, cls, text) => {
+        const e = document.createElement(tag);
+        if (cls)  e.className   = cls;
+        if (text != null) e.textContent = text;
+        return e;
+      };
+      const mkLink = (text, href) => {
+        const a = mk('a', 'md-link', text);
+        a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer';
+        return a;
+      };
+
+      // Header row: title + version top-left, icon right.
+      const header = mk('div', 'about-header');
+      const titleCol = mk('div', 'about-title-col');
+      titleCol.appendChild(mk('div', 'about-title', 'About Chippy'));
+      titleCol.appendChild(mk('div', 'about-version', 'Version ' + VERSION));
+      const logo = document.createElement('img');
+      logo.src = 'chippy-icon.svg?v=' + VERSION;
+      logo.alt = 'Chippy'; logo.className = 'about-logo';
+      header.append(titleCol, logo);
+      modal.appendChild(header);
+
+      // Description paragraphs.
+      const paras = [
+        'Chippy takes its name from the fish-and-chips shop.',
+        'Chippy supports you to gather chips of information from discussions and exchanges. ' +
+        'Set and progress on goals you care about. Track and execute tasks you want — or need — ' +
+        'to move forward. Follow up on things outside your direct control. Over time, those chips ' +
+        'add up into something solid you can act on.',
+        'The name also carries a nod to putting the fish on the table — the discipline of naming ' +
+        'the difficult thing directly rather than leaving it to fester. A team that can surface ' +
+        'what’s really going on, and work through it honestly, gets somewhere.',
+        'Chippy keeps you close to what’s actually happening — across your topics, your goals, ' +
+        'your exchanges — so when the moment comes, you’re ready.'
+      ];
+      for (const text of paras) modal.appendChild(mk('p', 'about-desc', text));
+
+      // Separator.
+      modal.appendChild(mk('hr', 'about-sep'));
+
+      // External References.
+      const compHead = mk('div', 'about-meta-head', 'External References');
+      modal.appendChild(compHead);
+      const compList = mk('ul', 'about-meta-list');
+      const compItem = mk('li');
+      compItem.appendChild(mkLink('DOMPurify 3.2.6', 'https://github.com/cure53/DOMPurify'));
+      compItem.appendChild(document.createTextNode(' — HTML sanitisation by Cure53'));
+      compList.appendChild(compItem);
+      modal.appendChild(compList);
+
+      // Licence.
+      const linksRow = mk('div', 'about-links-row');
+      linksRow.appendChild(mkLink('Apache 2.0 Licence', 'https://www.apache.org/licenses/LICENSE-2.0'));
+      modal.appendChild(linksRow);
+
+      // Separator before repository.
+      modal.appendChild(mk('hr', 'about-sep'));
+
+      // Repository.
+      modal.appendChild(mk('div', 'about-meta-head', 'Repository'));
+      const repoList = mk('ul', 'about-meta-list');
+      const repoItem = mk('li');
+      repoItem.appendChild(mkLink('Chippy GitHub Repo', 'https://github.com/pesopaso/chippy'));
+      repoList.appendChild(repoItem);
+      modal.appendChild(repoList);
+
+      const row = mk('div', 'modal-actions');
+      const ok  = mk('button', 'btn-primary', 'Close');
+      ok.addEventListener('click', close);
+      row.appendChild(ok);
+      modal.appendChild(row);
+    });
+  }
+
   // Help dialog: a sectioned reference for the whole app (R49).
   function showHelp() {
     const ui = Chippy.ui;
@@ -219,6 +300,9 @@
         applyTheme(currentTheme() === 'light' ? 'dark' : 'light');
       });
     }
+
+    const about = document.getElementById('btnAbout');
+    if (about) about.addEventListener('click', showAbout);
 
     const help = document.getElementById('btnHelp');
     if (help) help.addEventListener('click', showHelp);

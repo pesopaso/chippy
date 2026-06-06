@@ -41,6 +41,11 @@ test.describe('task & goal changes across surfaces', () => {
       await app.setDue(app.taskRow(TASK), '2026-07-01');
       await expect.poll(() => app.readDiscussion(MARIA)).toContain('due: 2026-07-01');
     });
+    test('mute: 🔇 toggles a muted: tag on the task', async ({ app }) => {
+      await app.open(MARIA);
+      await app.toggleMute(app.taskRow(TASK));
+      await expect.poll(() => app.readDiscussion(MARIA)).toContain('muted:');
+    });
   });
 
   test.describe('Discussion right column — goal row', () => {

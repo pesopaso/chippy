@@ -78,6 +78,7 @@ export const test = base.extend({
         await page.locator('.modal-input').fill(text);
         await page.locator('.modal-actions .btn-primary', { hasText: 'Add' }).click();
       },
+      async toggleMute(row) { await row.locator('.icon-btn', { hasText: '🔇' }).first().click(); },
       async achieveGoal(row) { await row.locator('.icon-btn.done').first().click(); },
       async cancelGoal(row) { await row.locator('.icon-btn.cancel').first().click(); },
       async moveComment(row, target) {

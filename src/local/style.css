@@ -585,6 +585,22 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .help-list li { margin-bottom: 3px; font-size: .82rem; }
 .modal p { font-size: .82rem; color: var(--text); line-height: 1.5; }
 .modal { max-width: 480px; max-height: 80vh; overflow-y: auto; }
+/* ---- About dialog -------------------------------------------------------- */
+.modal-about { max-width: 520px; }
+.modal-about .modal-title { display: none; }
+.about-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
+.about-logo { width: 123px; height: 123px; flex-shrink: 0; }
+.about-title-col { display: flex; flex-direction: column; gap: 4px; }
+.about-title { font-size: 1.15rem; font-weight: 700; color: var(--text); }
+.about-version { font-size: .8rem; color: var(--text-muted); }
+.about-desc { margin: 0 0 10px; line-height: 1.6; }
+.about-desc:first-of-type { font-weight: 500; margin-bottom: 6px; }
+.about-sep { border: none; border-top: 1px solid var(--border); margin: 14px 0 10px; }
+.about-meta-head { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); margin-bottom: 4px; }
+.about-meta-list { list-style: none; margin: 0 0 12px; padding: 0; font-size: .82rem; color: var(--text); }
+.about-meta-list li { margin-bottom: 3px; }
+.about-links-row { display: flex; align-items: center; gap: 8px; font-size: .82rem; margin-bottom: 4px; }
+.about-links-sep { color: var(--text-muted); }
 
 /* ---- Slim mode (<800px): region tabs ---------------------------------- */
 /* Under the top chrome, three tabs switch which single region is shown:

@@ -640,6 +640,7 @@ body.slim.slim-right #memberScreen .split-left { display: none; }
 .entry-card.entry-followup { border-left: 3px solid var(--followup); }
 .entry-card.entry-goal { border-left: 3px solid var(--goal); background: var(--goal-bg); }
 .entry-card.closed { opacity: .6; }
+.entry-card.dimmed { opacity: .55; }
 .entry-card.collapsed .entry-text { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 .entry-card .entry-meta { flex-wrap: wrap; }
 .summary-meta { font-size: .72rem; color: var(--muted); margin-bottom: 4px; }

@@ -411,7 +411,7 @@
     const act = el('span', 'icon-btn act', '⚡'); act.title = 'Add action';
     act.addEventListener('click', () =>
       ui().showActionModal('Add action', (text) => store().appendAction(member.name, t.created_at, text, idx)));
-    const mute = el('span', 'icon-btn', '🔇'); mute.title = muted ? 'Unmute' : 'Mute 5 days';
+    const mute = el('span', 'icon-btn', muted ? '🔈' : '🔇'); mute.title = muted ? 'Unmute' : 'Mute 5 days';
     mute.addEventListener('click', () => store().toggleMute(member.name, t.created_at, idx));
     meta.append(act, mute);
 

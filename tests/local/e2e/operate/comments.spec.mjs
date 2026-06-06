@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 // Phase 3 — All Comments page (#allCommentsScreen): aggregation, unified search,
-// and comment CRUD (move / delete / edit). Task-row state/priority/activity are
-// covered in task-goal-changes.spec.mjs.
+// and comment edit. Task-row state/priority/activity are covered in
+// task-goal-changes.spec.mjs.
 
 import { test, expect } from '../fixtures/operate.mjs';
 
@@ -34,20 +34,6 @@ test.describe('All Comments page', () => {
     const screen = app.page.locator('#allCommentsScreen');
     await expect(screen).toContainText('Define the rollback runbook');
     await expect(screen).not.toContainText('Kickoff');
-  });
-
-  test('move a comment to another discussion persists', async ({ app }) => {
-    await app.screen('allComments');
-    await app.moveComment(app.card('Kickoff: aligned on Q2'), '1-1 James Okafor');
-    await expect.poll(() => app.readDiscussion('1-1 James Okafor')).toContain('Kickoff: aligned on Q2');
-    expect(await app.readDiscussion('1-1 Maria Lopez')).not.toContain('Kickoff: aligned on Q2');
-    expect(await app.readDiscussion('1-1 James Okafor')).toContain('Moved from');
-  });
-
-  test('delete a comment removes it from the .md', async ({ app }) => {
-    await app.screen('allComments');
-    await app.deleteComment(app.card('validate the staging cutover'));
-    await expect.poll(() => app.readDiscussion('Cloud Migration')).not.toContain('validate the staging cutover');
   });
 
   test('edit a comment body persists', async ({ app }) => {

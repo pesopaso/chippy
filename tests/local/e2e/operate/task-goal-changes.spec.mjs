@@ -46,6 +46,11 @@ test.describe('task & goal changes across surfaces', () => {
       await app.toggleMute(app.taskRow(TASK));
       await expect.poll(() => app.readDiscussion(MARIA)).toContain('muted:');
     });
+    test('mute: 🔇 toggles a muted: tag on a followup', async ({ app }) => {
+      await app.open('1-1 James Okafor');
+      await app.toggleMute(app.taskRow('Follow up on the training budget'));
+      await expect.poll(() => app.readDiscussion('1-1 James Okafor')).toContain('muted:');
+    });
   });
 
   test.describe('Discussion right column — goal row', () => {
@@ -98,6 +103,25 @@ test.describe('task & goal changes across surfaces', () => {
       await app.screen('allTasks');
       await app.addAction(app.card(RUNBOOK), 'Drafted runbook');
       await expect.poll(() => app.readDiscussion(CLOUD)).toContain('Drafted runbook');
+    });
+
+    // TEST-FIRST: documents the desired behavior. entryCard has no muted styling
+    // and openTasks sorts by date only, so this is expected to FAIL until muting
+    // dims the card (like done tasks) and sorts it to the bottom.
+    test('mute: muting a task dims it and sends it to the bottom of the list', async ({ app }) => {
+      await app.screen('allTasks');
+      const cards = app.page.locator('#allTasksScreen .entry-card');
+      await expect(cards.first()).toBeVisible();
+      const top = cards.first();
+      const id = await top.getAttribute('data-entry-id');
+
+      await app.toggleMute(top);
+
+      // dimmed like done tasks (reduced opacity)
+      const muted = app.page.locator(`#allTasksScreen .entry-card[data-entry-id="${id}"]`);
+      await expect.poll(() => muted.evaluate(el => parseFloat(getComputedStyle(el).opacity))).toBeLessThan(1);
+      // and moved to the bottom of the list
+      await expect(cards.last()).toHaveAttribute('data-entry-id', id);
     });
   });
 

@@ -25,11 +25,19 @@ export function parseTap(text, phase) {
 export function parsePlaywright(json, phase) {
   const out = [];
   const norm = s => (s === 'passed' ? 'passed' : s === 'skipped' ? 'skipped' : 'failed');
+  // The suite that directly contains a spec is its describe block — the page/
+  // surface. Use it as context unless it's the file-level suite (path/filename).
+  const isFileSuite = t => !t || t.includes('/') || /\.(spec|test)\.[mc]?js$/.test(t);
   const walk = suite => {
+    const ctx = isFileSuite(suite.title) ? '' : suite.title;
     for (const spec of (suite.specs || [])) {
       const res = ((spec.tests || [])[0] || {}).results || [];
       const st = res.length ? res[res.length - 1].status : 'skipped';
-      out.push({ phase, name: spec.title, status: spec.ok && st === 'passed' ? 'passed' : norm(st) });
+      out.push({
+        phase,
+        name: ctx ? `${ctx} › ${spec.title}` : spec.title,
+        status: spec.ok && st === 'passed' ? 'passed' : norm(st)
+      });
     }
     for (const sub of (suite.suites || [])) walk(sub);
   };

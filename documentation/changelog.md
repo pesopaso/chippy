@@ -529,6 +529,37 @@ reference the requirement (`R#`) / plan step.
 
 - Re-vendored `src/local/chippy-icon.svg` from `documentation/chippy-icon-v2.svg` (favicon + top-bar icon); the cache-bust bump forces the new icon to load.
 
+### v3.0.0-dev.77 — 2026-06-04 — Ro3: muting a task swaps in a replacement
+
+> Muting a Rule-of-Three task now removes it and pulls in a fresh one.
+
+- `openRo3` now reconciles the picks each render: muted picks are dropped and the slate is backfilled to three from the candidate pool (open/non-closed/non-muted, excluding ones already shown). Resolved/obsolete picks are kept so their final state stays visible until the next refresh, matching dev.69.
+
+### v3.0.0-dev.78 — 2026-06-04 — Right-panel mute icon reflects state
+
+> The right-panel task mute button always showed 🔇.
+
+- The right-panel Open Tasks mute icon now shows 🔈 when the task is muted and 🔇 when it isn't (matching the comment card).
+
+### v3.0.0-dev.79 — 2026-06-06 — All Comments shows a total count
+
+> The All Comments page now shows how many comments exist across all discussions.
+
+- `crossScreen` accepts an optional count rendered next to the title; All Comments passes the total entry count (`collectEntries().length`) — equal to the sum of every discussion's comments in the navigation.
+
+### v3.0.0-dev.80 — 2026-06-06 — All Tasks: muted dimmed and sorted last
+
+> Muted tasks now sink to the bottom of All Tasks and render dimmed.
+
+- All Tasks already showed only open/WIP/CHK/HOLD/PRGT (non-closed) task/followups; now muted ones sort to the end and render with reduced opacity (new `entryCard` `dim` option → `.entry-card.dimmed`).
+
+### v3.0.0-dev.81 — 2026-06-06 — Followups use the same states as tasks
+
+> A resolved followup no longer becomes a special `resolvedfollowup` state.
+
+- `setTaskState` now writes `resolvedtask` when resolving a followup (same as a task) instead of `resolvedfollowup`; followups follow the identical state machine and only dim/collapse when done or obsolete.
+- Legacy `resolvedfollowup` tags are still stripped on re-state and still read as DONE everywhere (state map, kanban, dashboard, closed/collapse), so existing data is unaffected and the format/harness need no change.
+
 ### v3.0.0-dev.57 — 2026-06-04 — Goals stand out with a goal-tinted background
 
 > Goals are the reason for many discussions, so they should catch the eye.

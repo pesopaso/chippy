@@ -301,17 +301,17 @@
     return t.slice('muted:'.length) >= nowISO().slice(0, 10); // expired -> not muted
   }
 
-  // Set a task/followup state: strip every state tag, add the one new tag
-  // (resolved on a followup -> resolvedfollowup), and append Resolved:/Obsolete:
-  // markers before any action section. (datadefinition §2.1-2.2)
+  // Set a task/followup state: strip every state tag, add the one new tag, and
+  // append Resolved:/Obsolete: markers before any action section. Followups now
+  // use the same states as tasks (resolved -> resolvedtask, no resolvedfollowup);
+  // legacy resolvedfollowup is still stripped and still read as DONE elsewhere.
+  // (datadefinition §2.1-2.2)
   async function setTaskState(name, entryId, stateKey, idx) {
     const [m, e] = findEntry(name, entryId, idx);
     if (!e) return;
-    const isFollowup = e.tags.includes('followup');
     e.tags = e.tags.filter(t =>
       !STATE_TAGS.includes(t) && !LEGACY_STATE.includes(t) && t !== 'resolvedfollowup');
-    let newTag = STATE_TO_TAG[stateKey];
-    if (stateKey === 'resolved' && isFollowup) newTag = 'resolvedfollowup';
+    const newTag = STATE_TO_TAG[stateKey];
     if (newTag) e.tags.push(newTag);
 
     if (stateKey === 'resolved' || stateKey === 'obsolete') {

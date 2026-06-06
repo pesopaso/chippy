@@ -20,10 +20,12 @@ test.describe('task & goal lifecycle workflows', () => {
     expect((after.match(new RegExp(gid, 'g')) || []).length).toBeGreaterThanOrEqual(2);
   });
 
-  test('resolve an open followup (resolvedfollowup + Resolved: marker)', async ({ app }) => {
+  // Followups use the identical state machine as tasks (dev.81): resolving one
+  // writes resolvedtask (not the legacy resolvedfollowup) plus a Resolved: marker.
+  test('resolve an open followup (resolvedtask + Resolved: marker)', async ({ app }) => {
     await app.open('1-1 James Okafor');
     await app.chooseState(app.taskRow('Follow up on the training budget'), 'DONE');
-    await expect.poll(() => app.readDiscussion('1-1 James Okafor')).toContain('resolvedfollowup');
+    await expect.poll(() => app.readDiscussion('1-1 James Okafor')).toContain('resolvedtask');
     expect(await app.readDiscussion('1-1 James Okafor')).toContain('Resolved:');
   });
 });

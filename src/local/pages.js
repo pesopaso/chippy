@@ -153,12 +153,13 @@
     return wrap;
   }
 
-  function crossScreen(id, title, build) {
+  function crossScreen(id, title, build, count) {
     const screen = document.getElementById(id);
     if (!screen) return;
     screen.replaceChildren();
     const header = el('div', 'member-header');
     header.append(el('h1', 'member-title', title));
+    if (count != null) header.append(el('span', 'member-count', count + (count === 1 ? ' comment' : ' comments')));
     screen.append(header);
     const body = el('div', 'cross-body');
     screen.append(makeSearchBar(q => { body.replaceChildren(); build(body, q); }), body);
@@ -177,20 +178,26 @@
   const GOAL_OVERVIEW_OPTS = { hideEdit: true, hideMove: true, hideDelete: true, controlsRight: true, goalControls: true };
 
   function openComments() {
+    // Counter = the sum of every discussion's comments (all loaded entries).
+    const total = store().collectEntries().length;
     crossScreen('allCommentsScreen', 'All Comments', (c, q) => {
       const items = store().applyUnifiedFilter(store().collectEntries(), q)
         .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
       if (!items.length) { c.append(el('div', 'panel-empty', 'No comments.')); return; }
       for (const e of items) c.append(entryRow(e, OVERVIEW_OPTS));
-    });
+    }, total);
   }
   function openTasks() {
     crossScreen('allTasksScreen', 'All Tasks', (c, q) => {
       const items = store().applyUnifiedFilter(store().collectEntries(), q)
         .filter(e => (e.tags || []).some(t => t === 'task' || t === 'followup') && !(e.tags || []).some(t => CLOSED_TASK.includes(t)))
-        .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')); // newest first
+        .sort((a, b) => {
+          const ma = store().isMuted(a) ? 1 : 0, mb = store().isMuted(b) ? 1 : 0;
+          if (ma !== mb) return ma - mb;                                // muted go to the bottom
+          return (b.created_at || '').localeCompare(a.created_at || ''); // else newest first
+        });
       if (!items.length) { c.append(el('div', 'panel-empty', 'No open tasks.')); return; }
-      for (const e of items) c.append(entryRow(e, OVERVIEW_OPTS));
+      for (const e of items) c.append(entryRow(e, Object.assign({}, OVERVIEW_OPTS, { dim: store().isMuted(e) })));
     });
   }
   function openGoals() {
@@ -411,6 +418,25 @@
       hideEdit: true, hideMove: true, hideDelete: true, controlsRight: true });
   }
 
+  const ro3Key = p => p._member + '|' + p.created_at;
+
+  // Keep the current picks, but drop any that have been muted and backfill from
+  // the candidate pool (open/non-closed/non-muted) up to 3. Resolved/obsolete
+  // picks are kept so their final state stays visible until the next refresh.
+  function reconcileRo3() {
+    const picks = (ro3Pick || []).map(liveEntry);
+    const kept = picks.filter(p => !store().isMuted(p));
+    const keys = new Set(kept.map(ro3Key));
+    if (kept.length < 3) {
+      const pool = store().getRo3Candidates().filter(c => !keys.has(ro3Key(c)));
+      for (const f of store().pickRo3(pool)) {
+        if (kept.length >= 3) break;
+        if (!keys.has(ro3Key(f))) { kept.push(f); keys.add(ro3Key(f)); }
+      }
+    }
+    ro3Pick = kept;
+  }
+
   function openRo3() {
     const screen = document.getElementById('ro3Screen');
     if (!screen) return;
@@ -421,7 +447,7 @@
     refresh.addEventListener('click', () => { ro3Pick = store().pickRo3(store().getRo3Candidates()); openRo3(); });
     header.append(refresh);
     screen.append(header);
-    if (!ro3Pick || !ro3Pick.length) ro3Pick = store().pickRo3(store().getRo3Candidates());
+    reconcileRo3(); // drop muted picks, backfill to 3
     const cont = el('div', 'ro3-cards');
     if (!ro3Pick.length) cont.append(el('div', 'panel-empty', 'No open tasks.'));
     else for (const e of ro3Pick) cont.append(ro3Card(liveEntry(e)));

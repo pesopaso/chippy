@@ -5,16 +5,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Chippy</title>
-  <link rel="icon" type="image/svg+xml" href="chippy-icon.svg?v=3.0.0-dev.75" />
-  <link rel="stylesheet" href="style.css?v=3.0.0-dev.75" />
+  <link rel="icon" type="image/svg+xml" href="chippy-icon.svg?v=3.0.0-dev.76" />
+  <link rel="stylesheet" href="style.css?v=3.0.0-dev.76" />
   <!-- DOMPurify is vendored flat (no subfolder). Loaded before the app so the global is ready. -->
-  <script src="dompurify.min.js?v=3.0.0-dev.75"></script>
+  <script src="dompurify.min.js?v=3.0.0-dev.76"></script>
 </head>
 <body>
   <!-- Top chrome: 36px bar across the viewport (R56). Hardcoded indigo, identical in both themes. -->
   <div id="topChrome" class="top-chrome">
     <div class="tc-left">
-      <img class="app-icon" src="chippy-icon.svg?v=3.0.0-dev.75" alt="" />
+      <img class="app-icon" src="chippy-icon.svg?v=3.0.0-dev.76" alt="" />
       <h2>Chippy <span id="appVersion" class="app-version"></span></h2>
     </div>
     <div class="tc-middle">
@@ -88,13 +88,13 @@
   <!-- Classic scripts (no ES modules) so the app runs directly from file://.
        Load order matters: each file attaches to the global Chippy namespace,
        and later files depend on earlier ones (io needs format; main needs all). -->
-  <script src="format.js?v=3.0.0-dev.75"></script>
-  <script src="io.js?v=3.0.0-dev.75"></script>
-  <script src="store.js?v=3.0.0-dev.75"></script>
-  <script src="ui.js?v=3.0.0-dev.75"></script>
-  <script src="discussion.js?v=3.0.0-dev.75"></script>
-  <script src="pages.js?v=3.0.0-dev.75"></script>
-  <script src="dashboard.js?v=3.0.0-dev.75"></script>
-  <script src="main.js?v=3.0.0-dev.75"></script>
+  <script src="format.js?v=3.0.0-dev.76"></script>
+  <script src="io.js?v=3.0.0-dev.76"></script>
+  <script src="store.js?v=3.0.0-dev.76"></script>
+  <script src="ui.js?v=3.0.0-dev.76"></script>
+  <script src="discussion.js?v=3.0.0-dev.76"></script>
+  <script src="pages.js?v=3.0.0-dev.76"></script>
+  <script src="dashboard.js?v=3.0.0-dev.76"></script>
+  <script src="main.js?v=3.0.0-dev.76"></script>
 </body>
 </html>

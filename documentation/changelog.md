@@ -523,6 +523,12 @@ reference the requirement (`R#`) / plan step.
 - **Columns** now flex (`flex: 1 1 200px; min-width: 200px`): at least 200px each, expanding proportionally to fill the available width; the board scrolls horizontally only when they can't all fit.
 - **Discussion link**: each card's discussion name is now clickable and opens that discussion (without starting a drag).
 
+### v3.0.0-dev.76 — 2026-06-04 — Icon v2
+
+> Updated the app icon to version 2.
+
+- Re-vendored `src/local/chippy-icon.svg` from `documentation/chippy-icon-v2.svg` (favicon + top-bar icon); the cache-bust bump forces the new icon to load.
+
 ### v3.0.0-dev.57 — 2026-06-04 — Goals stand out with a goal-tinted background
 
 > Goals are the reason for many discussions, so they should catch the eye.

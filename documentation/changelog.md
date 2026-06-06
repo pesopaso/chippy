@@ -484,6 +484,45 @@ reference the requirement (`R#`) / plan step.
 
 - The Ro3 selection holds shallow copies of entries; `setTaskState` (etc.) reassigns the original's `tags`, leaving the copy stale. `openRo3` now re-resolves each pick to the live store entry (`liveEntry`) on render, so the card shows the current state/priority after a change.
 
+### v3.0.0-dev.70 — 2026-06-04 — Ro3: no edit/move buttons
+
+> The Rule of Three is a focus view, so editing and moving don't belong there.
+
+- `entryCard` gained `hideEdit` and `hideMove` options; Ro3 cards pass both, dropping the ✎ edit and ➜ move buttons (state, priority, ⚡ action, mute, and 🗑 delete remain). Other views are unchanged.
+
+### v3.0.0-dev.71 — 2026-06-04 — Ro3: drop delete, right-align action/mute
+
+> Further trimmed the Ro3 card.
+
+- `entryCard` gained `hideDelete` and `controlsRight` options. Ro3 cards now also drop the 🗑 delete button and push the remaining ⚡ action and 🔇 mute icons to the right of the row (via a `meta-spacer`). State and priority squares stay on the left.
+
+### v3.0.0-dev.72 — 2026-06-04 — All Comments / All Tasks: overview-style cards
+
+> Made the two big list pages read-only-ish overviews.
+
+- Cards on All Comments and All Tasks now hide the ✎ edit, ➜ move, and 🗑 delete buttons; the remaining ⚡ action and 🔇 mute controls are right-aligned (shared `OVERVIEW_OPTS`). State and priority stay editable on the left. All Goals and the discussion view keep the full button set.
+
+### v3.0.0-dev.73 — 2026-06-04 — Kanban cards: action & mute
+
+> Added quick controls to the kanban cards.
+
+- Each kanban card now has ⚡ action and 🔇 mute icons pushed to the right of its meta row. They stop drag propagation (so using them doesn't start a drag), and the mute icon reflects/toggles the muted state. The board re-renders after either action.
+
+### v3.0.0-dev.74 — 2026-06-04 — All Goals: achieve/cancel controls
+
+> Tuned the All Goals cards.
+
+- Added an opt-gated goal-controls block to `entryCard`: for goals it renders ✓ achieved and ✕ canceled (via `setGoalState`, with the index hint).
+- All Goals cards now hide ✎ edit, ➜ move and 🗑 delete, and show ⚡ action, ✓ achieved and ✕ canceled right-aligned (`GOAL_OVERVIEW_OPTS`).
+
+### v3.0.0-dev.75 — 2026-06-04 — Kanban: Focus toggle, flexible columns, discussion links
+
+> Several kanban refinements.
+
+- **Focus button** (top-right of the board, toggle): hides the HOLD and PRGT columns when on, to focus on the active flow.
+- **Columns** now flex (`flex: 1 1 200px; min-width: 200px`): at least 200px each, expanding proportionally to fill the available width; the board scrolls horizontally only when they can't all fit.
+- **Discussion link**: each card's discussion name is now clickable and opens that discussion (without starting a drag).
+
 ### v3.0.0-dev.57 — 2026-06-04 — Goals stand out with a goal-tinted background
 
 > Goals are the reason for many discussions, so they should catch the eye.

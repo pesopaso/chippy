@@ -166,16 +166,22 @@
   }
 
   // Every cross-view row is the shared, fully-interactive comment card.
-  function entryRow(e) {
-    return ui().entryCard(e, { member: e._member, showMember: true, idx: e._idx });
+  function entryRow(e, extra) {
+    return ui().entryCard(e, Object.assign({ member: e._member, showMember: true, idx: e._idx }, extra || {}));
   }
+
+  // All Comments / All Tasks are overview pages: drop edit/move/delete and keep
+  // the action/mute controls on the right.
+  const OVERVIEW_OPTS = { hideEdit: true, hideMove: true, hideDelete: true, controlsRight: true };
+  // All Goals: same trimming, plus the achieve (✓) / cancel (✕) controls.
+  const GOAL_OVERVIEW_OPTS = { hideEdit: true, hideMove: true, hideDelete: true, controlsRight: true, goalControls: true };
 
   function openComments() {
     crossScreen('allCommentsScreen', 'All Comments', (c, q) => {
       const items = store().applyUnifiedFilter(store().collectEntries(), q)
         .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
       if (!items.length) { c.append(el('div', 'panel-empty', 'No comments.')); return; }
-      for (const e of items) c.append(entryRow(e));
+      for (const e of items) c.append(entryRow(e, OVERVIEW_OPTS));
     });
   }
   function openTasks() {
@@ -184,7 +190,7 @@
         .filter(e => (e.tags || []).some(t => t === 'task' || t === 'followup') && !(e.tags || []).some(t => CLOSED_TASK.includes(t)))
         .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')); // newest first
       if (!items.length) { c.append(el('div', 'panel-empty', 'No open tasks.')); return; }
-      for (const e of items) c.append(entryRow(e, { firstLineOnly: true }));
+      for (const e of items) c.append(entryRow(e, OVERVIEW_OPTS));
     });
   }
   function openGoals() {
@@ -193,7 +199,7 @@
         .filter(e => (e.tags || []).includes('goal') && !(e.tags || []).some(t => CLOSED_GOAL.includes(t)))
         .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')); // newest first
       if (!items.length) { c.append(el('div', 'panel-empty', 'No open goals.')); return; }
-      for (const e of items) c.append(entryRow(e, { firstLineOnly: true }));
+      for (const e of items) c.append(entryRow(e, GOAL_OVERVIEW_OPTS));
     });
   }
   function openLinks() {
@@ -284,6 +290,7 @@
   const KANBAN_COLS = [['open', 'OPEN'], ['inprogress', 'WIP'], ['check', 'CHK'],
                        ['onhold', 'HOLD'], ['purgatory', 'PRGT'], ['resolved', 'DONE']];
   const PRIO_LABEL = { high: 'HI', medium: 'MI', low: 'LO' };
+  let kanbanFocus = false; // when on, hide the HOLD and PRGT columns
 
   function stateKeyOf(tags) {
     if (tags.includes('inprogresstask') || tags.includes('inprogress')) return 'inprogress';
@@ -314,8 +321,20 @@
     const meta = el('div', 'kanban-card-meta');
     const p = prioOf(e.tags);
     meta.append(el('span', 'prio-square prio-' + p, PRIO_LABEL[p]));
-    meta.append(el('span', 'member-name-label', e._member));
+    const who = el('span', 'member-name-label', e._member); who.title = 'Open this discussion';
+    who.addEventListener('mousedown', ev => ev.stopPropagation());
+    who.addEventListener('click', ev => { ev.stopPropagation(); store().selectMember(e._member); });
+    meta.append(who);
     if (/!\[[^\]]*\]\(/.test(e.body || '')) meta.append(el('span', 'cam-icon', '📷'));
+    // Action + mute, pushed to the right (don't let them start a drag).
+    meta.append(el('span', 'meta-spacer'));
+    const stop = (el2) => { el2.draggable = false; el2.addEventListener('mousedown', ev => ev.stopPropagation()); };
+    const act = el('span', 'icon-btn act', '⚡'); act.title = 'Add action'; stop(act);
+    act.addEventListener('click', (ev) => { ev.stopPropagation();
+      ui().showActionModal('Add action', (text) => store().appendAction(e._member, e.created_at, text, e._idx)); });
+    const mute = el('span', 'icon-btn', store().isMuted(e) ? '🔈' : '🔇'); mute.title = 'Mute / unmute'; stop(mute);
+    mute.addEventListener('click', (ev) => { ev.stopPropagation(); store().toggleMute(e._member, e.created_at, e._idx); });
+    meta.append(act, mute);
     card.append(meta);
     const txt = el('div', 'kanban-card-text');
     ui().safeSetHtml(txt, ui().renderEntryText((e.body || '').split('\n')[0]));
@@ -329,6 +348,10 @@
     if (!screen) return;
     screen.replaceChildren();
     const header = el('div', 'member-header'); header.append(el('h1', 'member-title', 'Kanban'));
+    const focusBtn = el('button', 'btn-sm kanban-focus-btn' + (kanbanFocus ? ' active' : ''), '◎ Focus');
+    focusBtn.title = 'Focus: hide the HOLD and PRGT columns';
+    focusBtn.addEventListener('click', () => { kanbanFocus = !kanbanFocus; openKanban(); });
+    header.append(focusBtn);
     screen.append(header);
     const board = el('div', 'kanban-board');
     const tasks = store().collectEntries().filter(e => {
@@ -336,7 +359,8 @@
       return (t.includes('task') || t.includes('followup')) && !t.includes('obsoletetask');
     });
     const rank = e => ({ high: 0, medium: 1, low: 2 })[prioOf(e.tags)] ?? 3;
-    for (const [key, label] of KANBAN_COLS) {
+    const cols = kanbanFocus ? KANBAN_COLS.filter(([k]) => k !== 'onhold' && k !== 'purgatory') : KANBAN_COLS;
+    for (const [key, label] of cols) {
       const col = el('div', 'kanban-col');
       col.append(el('div', 'kanban-col-header', label));
       let colTasks = tasks.filter(e => stateKeyOf(e.tags) === key);
@@ -382,7 +406,9 @@
 
   function ro3Card(e) {
     // No outer wrapper — the unified comment box is the whole card (avoids a double box).
-    return ui().entryCard(e, { member: e._member, showMember: true, idx: e._idx });
+    // Ro3 is a focus view: just state/priority and the action/mute controls (right-aligned).
+    return ui().entryCard(e, { member: e._member, showMember: true, idx: e._idx,
+      hideEdit: true, hideMove: true, hideDelete: true, controlsRight: true });
   }
 
   function openRo3() {

@@ -527,7 +527,9 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 
 /* ---- Kanban ----------------------------------------------------------- */
 .kanban-board { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 12px; }
-.kanban-col { flex: 0 0 200px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px; min-height: 120px; }
+.kanban-col { flex: 1 1 200px; min-width: 200px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px; min-height: 120px; }
+.kanban-focus-btn { margin-left: auto; }
+.kanban-focus-btn.active { border-color: var(--accent); color: var(--accent); }
 .kanban-col.drag-over { border-color: var(--accent); background: var(--card); }
 .kanban-col-header { font-size: .7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; }
 .kanban-card { background: var(--card); border-radius: 0; padding: 6px 8px; margin-bottom: 6px; cursor: grab; border-left: 3px solid var(--orange); }

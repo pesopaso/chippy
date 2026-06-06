@@ -395,6 +395,9 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .task-item.muted { opacity: .55; }
 .task-top { display: flex; align-items: flex-start; gap: 6px; }
 .task-text { flex: 1; min-width: 0; font-size: .82rem; }
+/* Click-to-expand: clamp to one line; .expandable shows it's clickable. */
+.task-text.clamp, .kanban-card-text.clamp { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.task-text.expandable, .kanban-card-text.expandable, .entry-text.expandable { cursor: pointer; }
 .prio-square, .state-square {
   flex: 0 0 auto; font-size: .6rem; font-weight: 700; color: #000;
   padding: 1px 5px; border-radius: 3px; cursor: pointer; user-select: none;

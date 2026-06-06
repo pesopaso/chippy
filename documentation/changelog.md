@@ -560,6 +560,15 @@ reference the requirement (`R#`) / plan step.
 - `setTaskState` now writes `resolvedtask` when resolving a followup (same as a task) instead of `resolvedfollowup`; followups follow the identical state machine and only dim/collapse when done or obsolete.
 - Legacy `resolvedfollowup` tags are still stripped on re-state and still read as DONE everywhere (state map, kanban, dashboard, closed/collapse), so existing data is unaffected and the format/harness need no change.
 
+### v3.0.0-dev.82 — 2026-06-06 — Click to expand truncated cards
+
+> Click a collapsed/clamped card to reveal the full comment when there's more than what's shown.
+
+- **Discussion centre column & All Comments** (`entryCard`): a done/obsolete (or achieved/canceled) card that has more than its one visible line is now click-to-expand on the body (the ▸ triangle still works); links/images/chips inside stay clickable.
+- **Right-column Open Tasks**: the task text now renders the full body clamped to one line and expands on click when there's more (double-click still jumps to the entry).
+- **Kanban cards**: card text clamps to one line and expands on click when there's more (click doesn't start a drag).
+- New helpers: `.task-text.clamp` / `.kanban-card-text.clamp` one-line clamp and `.expandable` (pointer cursor); "more" = the body spans multiple lines or exceeds ~60 chars.
+
 ### v3.0.0-dev.57 — 2026-06-04 — Goals stand out with a goal-tinted background
 
 > Goals are the reason for many discussions, so they should catch the eye.

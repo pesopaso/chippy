@@ -343,9 +343,18 @@
     mute.addEventListener('click', (ev) => { ev.stopPropagation(); store().toggleMute(e._member, e.created_at, e._idx); });
     meta.append(act, mute);
     card.append(meta);
-    const txt = el('div', 'kanban-card-text');
-    ui().safeSetHtml(txt, ui().renderEntryText((e.body || '').split('\n')[0]));
+    const txt = el('div', 'kanban-card-text clamp');
+    ui().safeSetHtml(txt, ui().renderEntryText(e.body || ''));
     txt.querySelectorAll('img').forEach(i => { i.draggable = false; });
+    const moreTxt = /\n/.test(e.body || '') || (e.body || '').length > 60;
+    if (moreTxt) {
+      txt.classList.add('expandable');
+      txt.addEventListener('mousedown', ev => ev.stopPropagation()); // don't start a drag
+      txt.addEventListener('click', (ev) => {
+        if (ev.target.closest('a, img, .name-chip')) return;
+        txt.classList.toggle('clamp');
+      });
+    }
     card.append(txt);
     return card;
   }

@@ -387,8 +387,17 @@
     ss.addEventListener('click', () =>
       ui().showStateDropdown(ss, sk, (key) => store().setTaskState(member.name, t.created_at, key, idx)));
 
-    const txt = el('div', 'task-text');
-    ui().safeSetHtml(txt, ui().renderEntryText(firstLine(t.body)));
+    // Show the full body clamped to one line; click expands when there's more.
+    const txt = el('div', 'task-text clamp');
+    ui().safeSetHtml(txt, ui().renderEntryText(t.body || ''));
+    const moreTxt = /\n/.test(t.body || '') || (t.body || '').length > 60;
+    if (moreTxt) {
+      txt.classList.add('expandable');
+      txt.addEventListener('click', (ev) => {
+        if (ev.target.closest('a, img, .name-chip')) return;
+        txt.classList.toggle('clamp');
+      });
+    }
     txt.addEventListener('dblclick', () => scrollToEntry(t.created_at));
 
     const top = el('div', 'task-top');

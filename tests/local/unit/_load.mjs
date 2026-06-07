@@ -10,8 +10,9 @@
 // Import this once at the top of a unit test, then read the pure helpers off the
 // returned namespaces.
 
-import '../../../src/local/format.js'; // defines globalThis.Chippy.format
-import '../../../src/local/store.js';  // defines globalThis.Chippy.store
+import '../../../src/local/format.js';   // defines globalThis.Chippy.format
+import '../../../src/local/taxonomy.js'; // defines globalThis.Chippy.tags (store.js needs it)
+import '../../../src/local/store.js';    // defines globalThis.Chippy.store
 
 const Chippy = globalThis.Chippy;
 if (!Chippy?.format) throw new Error('format.js did not register globalThis.Chippy.format');

@@ -574,3 +574,27 @@ reference the requirement (`R#`) / plan step.
 > Goals are the reason for many discussions, so they should catch the eye.
 
 - New `--goal-bg` theme variable — the surface colour with a hint of the goal teal (`#203043` dark, `#e6ecf2` light). Applied to goal comment cards (`.entry-card.entry-goal`) and right-panel goal items (`.goal-item`), so goals read as distinct from tasks/comments in both themes while keeping the goal left stripe.
+
+### v3.0.0-dev.83 — 2026-06-07 — Discussion tags (R61 + R62)
+
+> Per-discussion tags in the sidebar and an inline editor on the discussion view.
+
+- **R61** — `tag:` field added to `navigation.md` per-discussion entries. Sidebar groups discussions by tag (colored disc-tag header rows, each in its own `--disc-tag-*` accent color); untagged discussions collect in an unlabelled group at the bottom. `store.setDiscussionTag` persists the tag and emits `discussionTagChanged`; `io.saveNav` round-trips the new field byte-stable.
+- **R62** — Inline tag editor in the member header: a pill chip shows the current tag (or a muted "add tag" prompt). Clicking replaces the chip with an `<input>`; Enter/blur commits, Escape cancels. The chip uses the same disc-tag color as the sidebar. New `ui.renderDiscTagFilterButtons` renders a row of filter-button chips for any container.
+
+### v3.0.0-dev.84 — 2026-06-07 — Discussion tag filters on cross-discussion pages (R63)
+
+> Every aggregate view can now be narrowed to one discussion tag.
+
+- A row of disc-tag filter buttons appears at the top of all 8 cross-discussion pages: Comments, Tasks, Goals, Images, Links, Names, Tags, and Kanban. Clicking a tag chip rerenders the page for that tag only; clicking again deselects and shows all.
+- `collectEntries(opts)` accepts `{ discTag }` to restrict member iteration to discussions matching that tag. `getAllNames(discTag)` and `getAllTags(discTag)` gained the same optional parameter.
+- `addCrossDiscFilter()` helper in `pages.js` mounts the filter container and wires it to `ui.renderDiscTagFilterButtons`. `DISC_FILTER_RESET` map clears per-page filter state on fresh navigation so arriving at a page always shows everything.
+- New `.cross-disc-tag-filters` CSS (flex-wrap, hidden when empty) mirrors the existing `.sidebar-disc-tag-filters` rule.
+
+### v3.0.0-dev.85 — 2026-06-07 — Rename a discussion (R64)
+
+> Rename a discussion from within the discussion view.
+
+- `store.renameDiscussion(oldName, newName)` validates uniqueness, delegates to `io.renameDiscussion` (rewrites the `.md` with updated image refs and moves the image folder), updates the nav entry and `activeMemberName`, persists the nav, reloads the member from disk via `reloadMember` so in-memory image paths resolve to the new folder immediately, then emits `discussionRenamed`.
+- Discussion header gains a `✎` rename button between the title and the comment count. Clicking swaps the `<h1>` for an inline `<input>` pre-filled with the current name; Enter/blur commits, Escape restores the original. A toast is shown on failure (e.g. name already exists).
+- `discussionRenamed` event in `main.js` re-renders the sidebar and recent bar. The discussion view itself is re-rendered by the preceding `memberReloaded` event fired inside `reloadMember`, ensuring images are fetched from the renamed folder before the view paints.

@@ -70,8 +70,9 @@ export async function runNodeSeed(dir, { epochMs = Date.UTC(2026, 0, 5, 9, 0, 0)
   rmSync(dir, { recursive: true, force: true });
   createSkeleton(dir, DISCUSSION_NAMES);
 
-  // Load app scripts for side-effect (format -> io -> store), once.
+  // Load app scripts for side-effect (format -> taxonomy -> io -> store), once.
   await import('../../../../src/local/format.js');
+  await import('../../../../src/local/taxonomy.js');
   await import('../../../../src/local/io.js');
   await import('../../../../src/local/store.js');
   const store = globalThis.Chippy.store;

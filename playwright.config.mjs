@@ -24,8 +24,16 @@ export default defineConfig({
   retries: 0,
   reporter: process.env.CI ? 'list' : 'line',
 
+  // The app is fast, so a 3s action/assertion timeout is always sufficient for a
+  // real interaction; test-first specs (features not built yet) then fail in ~3s
+  // instead of stalling. The overall test timeout stays higher only so the
+  // one-time fixture setup (app boot + OPFS seed) is never killed.
+  timeout: 15_000,
+  expect: { timeout: 3_000 },
   use: {
     baseURL: `http://localhost:${PORT}`,
+    actionTimeout: 3_000,
+    navigationTimeout: 10_000,
     trace: 'on-first-retry',
     // Fixed timezone so the injected deterministic clock yields stable,
     // golden-comparable timestamps regardless of the host machine.

@@ -27,6 +27,7 @@ export const DATASET = [
     name: '1-1 Maria Lopez',
     entries: [
       { text: 'Kickoff: aligned on Q2 objectives.' },
+      { text: 'Monthly check-in completed.', tags: ['checkin'] },                                                  // checkin tag (People only)
       { text: 'Fix the deployment pipeline by end of sprint.', tags: ['task', 'high'], due: '2026-03-05' },        // OPEN
       { text: 'Completed code review for PR #42.', tags: ['task', 'low'],                                          // DONE
         actions: ['Reviewed and merged the change'], taskState: 'resolved' },
@@ -38,7 +39,7 @@ export const DATASET = [
   {
     name: '1-1 James Okafor',
     entries: [
-      { text: 'Follow up on the training budget with @[Priya Nair].', tags: ['followup'] },                       // open followup
+      { text: 'Follow up on the training budget.', tags: ['followup'] },                                           // open followup (no @name)
       { text: 'Confirmed the training budget was approved.', tags: ['followup'], taskState: 'resolved' },         // resolvedfollowup
       { text: 'Investigate flaky CI on staging.', tags: ['task', 'medium'], taskState: 'inprogress' },            // WIP
       { text: 'Migrate legacy auth — blocked on the vendor.', tags: ['task', 'low'], taskState: 'onhold' }        // HOLD
@@ -47,10 +48,12 @@ export const DATASET = [
   {
     name: 'Cloud Migration',
     entries: [
-      { text: 'Architecture charter at charter https://wiki.example.com/cloud-charter' },                          // URL autolink
+      { text: 'Architecture charter at charter https://wiki.example.com/cloud-charter', tags: ['kickoff'] },       // kickoff tag + URL
+      { text: 'Follow up on the training budget with @[Priya Nair].', tags: ['followup'] },                       // @Priya Nair — DEV only
       { text: 'Owner @[Marcus Chen] to validate the staging cutover.' },                                           // @name
       { text: 'Define the rollback runbook.', tags: ['task', 'high'], taskState: 'check' },                        // CHK
       { text: 'Drop the on-prem load balancer.', tags: ['task', 'low'], taskState: 'obsolete' },                   // OBSL
+      { text: 'Define success metrics for the migration.', tags: ['goal', 'medium'], goalKey: 'metrics' },         // open goal
       { text: 'Complete migration of tier-1 services.', tags: ['goal', 'high'], due: '2026-09-30',
         goalKey: 'mig', goalState: 'achieved' }                                                                    // achieved goal
     ]

@@ -10,11 +10,7 @@
   const store = () => Chippy.store;
   const ui = () => Chippy.ui;
 
-  const HIDDEN_TAG = /^(task|followup|goal|opentask|inprogresstask|checktask|onholdtask|purgatorytask|resolvedtask|obsoletetask|resolvedfollowup|achievedgoal|canceledgoal|resolvedgoal|high|medium|low|goal-[a-z0-9]{5}|muted:.*)$/;
-  const STATE_LABEL = {
-    inprogresstask: 'WIP', checktask: 'CHK', onholdtask: 'HOLD',
-    purgatorytask: 'PRGT', resolvedtask: 'DONE', obsoletetask: 'OBSL'
-  };
+  const HIDDEN_TAG = Chippy.tags.RESERVED; // taxonomy.js — single source of truth
 
   function el(tag, cls, text) {
     const e = document.createElement(tag);
@@ -346,24 +342,12 @@
 
   /* --------------------------- tasks panel ----------------------------- */
 
-  const PRIO_RANK = { high: 0, medium: 1, low: 2 };
-  const PRIO_LABEL = { high: 'HI', medium: 'MI', low: 'LO' };
-  const STATE_SQUARE = {
-    open: ['OPEN', 'state-open'], inprogress: ['WIP', 'state-inprogresstask'],
-    check: ['CHK', 'state-checktask'], onhold: ['HOLD', 'state-onholdtask'],
-    purgatory: ['PRGT', 'state-purgatorytask'], resolved: ['DONE', 'state-resolvedtask'],
-    obsolete: ['OBSL', 'state-obsoletetask']
-  };
-  function priorityOf(tags) { return tags.find(t => PRIO_RANK[t] !== undefined) || null; }
-  function stateKeyOf(tags) {
-    if (tags.includes('inprogresstask') || tags.includes('inprogress')) return 'inprogress';
-    if (tags.includes('checktask')) return 'check';
-    if (tags.includes('onholdtask') || tags.includes('onhold')) return 'onhold';
-    if (tags.includes('purgatorytask') || tags.includes('purgatory')) return 'purgatory';
-    if (tags.includes('resolvedtask') || tags.includes('resolvedfollowup')) return 'resolved';
-    if (tags.includes('obsoletetask')) return 'obsolete';
-    return 'open';
-  }
+  // Tag taxonomy lives in taxonomy.js (Chippy.tags); aliased here for brevity.
+  const PRIO_RANK = Chippy.tags.PRIO_RANK;
+  const PRIO_LABEL = Chippy.tags.PRIO_LABEL;
+  const STATE_SQUARE = Chippy.tags.STATE_SQUARE;
+  const priorityOf = Chippy.tags.priorityOf;
+  const stateKeyOf = Chippy.tags.stateKeyOf;
   function ageDays(createdAt) {
     const d = new Date(String(createdAt || '').replace(' ', 'T'));
     return isNaN(d) ? null : Math.floor((Date.now() - d.getTime()) / 86400000);
@@ -519,6 +503,65 @@
     return wrap;
   }
 
+  /* ----------------------- discussion tag editor ----------------------- */
+
+  // Inline tag editor for a discussion (R62). Renders as:
+  //   (a) no tag set  — a text input with datalist autocomplete; on Enter/blur calls
+  //       store.setDiscussionTag(name, val). Empty val on blur is a no-op.
+  //   (b) tag set     — a colored chip with an × remove button that calls
+  //       store.setDiscussionTag(name, '').
+  function renderDiscTag(member) {
+    const wrap = el('div', 'disc-tag-row');
+
+    function rebuild() {
+      wrap.replaceChildren();
+      const nav = store().getDiscussions().find(x => x.name === member.name);
+      const cur = (nav && nav.tag) || '';
+      const allTags = store().getDiscussionTags ? store().getDiscussionTags() : [];
+
+      if (cur) {
+        const color = (ui().getDiscTagColor) ? ui().getDiscTagColor(cur, allTags) : '#888';
+        const chip = el('span', 'disc-tag-chip', cur);
+        chip.style.background = color + '22';
+        chip.style.borderColor = color;
+        chip.style.color = color;
+        const x = el('span', 'disc-tag-chip-x', '×');
+        x.title = 'Remove tag';
+        x.addEventListener('mousedown', (e) => e.preventDefault()); // keep focus
+        x.addEventListener('click', async () => {
+          await store().setDiscussionTag(member.name, '');
+          rebuild();
+        });
+        chip.append(x);
+        wrap.append(chip);
+      } else {
+        const dlId = 'discTagList_' + member.name.replace(/\W+/g, '_');
+        const dl = document.createElement('datalist');
+        dl.id = dlId;
+        for (const t of allTags) dl.append(new Option(t));
+        const inp = el('input', 'disc-tag-input');
+        inp.type = 'text';
+        inp.placeholder = 'Add tag…';
+        inp.setAttribute('list', dlId);
+        let committed = false;
+        const commit = async () => {
+          if (committed) return; committed = true;
+          const val = inp.value.trim();
+          if (val) await store().setDiscussionTag(member.name, val);
+          rebuild();
+        };
+        inp.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); commit(); }
+          else if (e.key === 'Escape') { e.preventDefault(); inp.value = ''; inp.blur(); }
+        });
+        inp.addEventListener('blur', commit);
+        wrap.append(dl, inp);
+      }
+    }
+    rebuild();
+    return wrap;
+  }
+
   /* ------------------------------- render ------------------------------ */
 
   // Update just one entry's card in place (and the right panel) instead of
@@ -573,9 +616,48 @@
     screen.replaceChildren();
 
     const header = el('div', 'member-header');
-    header.append(el('h1', 'member-title', member.name));
-    const count = (member.entries || []).length;
-    header.append(el('span', 'member-count', count + (count === 1 ? ' comment' : ' comments')));
+    const titleEl = el('h1', 'member-title', member.name);
+    header.append(titleEl);
+    const renameBtn = el('span', 'rename-btn', '✎');
+    renameBtn.title = 'Rename discussion';
+    renameBtn.addEventListener('click', () => {
+      const input = el('input', 'rename-input');
+      input.value = member.name;
+      titleEl.replaceWith(input);
+      renameBtn.remove();
+      input.focus();
+      input.select();
+      let committed = false;
+      const restoreTitle = () => {
+        const fresh = el('h1', 'member-title', member.name);
+        input.replaceWith(fresh);
+        countEl.before(renameBtn);
+      };
+      const commit = async () => {
+        if (committed) return;
+        committed = true;
+        const newName = input.value.trim();
+        if (newName && newName !== member.name) {
+          try { await store().renameDiscussion(member.name, newName); }
+          catch (err) {
+            committed = false;
+            restoreTitle();
+            if (ui().showToast) ui().showToast('Rename failed: ' + (err && err.message || err), 'error');
+          }
+        } else {
+          restoreTitle();
+        }
+      };
+      input.addEventListener('blur', commit);
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); commit(); }
+        if (e.key === 'Escape') { e.preventDefault(); committed = true; restoreTitle(); }
+      });
+    });
+    header.append(renameBtn);
+    const entryCount = (member.entries || []).length;
+    const countEl = el('span', 'member-count', entryCount + (entryCount === 1 ? ' comment' : ' comments'));
+    header.append(countEl);
     const actions = el('div', 'member-header-actions');
     const star = el('span', 'favorite-btn' + (isFavorite(member.name) ? ' on' : ''),
       isFavorite(member.name) ? '★' : '☆');
@@ -613,6 +695,7 @@
     // Header lives at the top of the middle column so both columns run all the
     // way up to the top chrome (no full-width band pushing them down).
     left.append(header);
+    left.append(renderDiscTag(member));
     left.append(renderPrep(member));
     left.append(renderEntryBox(member));
     // Per-discussion comment search: filters the history below it.

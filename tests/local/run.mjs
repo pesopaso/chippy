@@ -32,12 +32,14 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const RUNS = join(ROOT, 'tests', 'local', '.tmp', 'runs');
 const REPORTS = process.env.CHIPPY_REPORTS_DIR ?? join(ROOT, 'tests', 'local', '.tmp', 'reports');
 
-// Each run gets its own timestamped folder (YYYY-MM-DD_hh-mm-ss_testrun) unless
-// the caller pins CHIPPY_SEED_DIR explicitly. Local time; sorts chronologically.
+// Each run gets its own timestamped folder (YYYY-MM-DD_hh-mm_testrun) unless the
+// caller pins CHIPPY_SEED_DIR explicitly. Local time; sorts chronologically.
+// Minute granularity is intentional — at most one run per minute, so seconds
+// would only add noise (a same-minute re-run reuses the folder).
 function runLabel(d) {
   const p = n => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_` +
-         `${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}_testrun`;
+         `${p(d.getHours())}-${p(d.getMinutes())}_testrun`;
 }
 const STARTED = new Date();
 const tsOf = d => { const p = n => String(n).padStart(2, '0');
@@ -76,9 +78,9 @@ function runPlaywright(label, testPath, phase) {
   const jsonFile = join(REPORTS, phase + '.json');
   rmSync(jsonFile, { force: true });
   const r = spawnSync('npx',
-    ['playwright', 'test', '--project=local', '--reporter=line,json', testPath],
-    { shell: true, cwd: ROOT, encoding: 'utf8', env: { ...process.env, PLAYWRIGHT_JSON_OUTPUT_NAME: jsonFile } });
-  tee(r);
+    ['playwright', 'test', '--project=local', '--reporter=line,json,./tests/local/reporter-progress.mjs', testPath],
+    { stdio: 'inherit', cwd: ROOT, shell: true,   // stream live so a hang / web-server error is visible
+      env: { ...process.env, PLAYWRIGHT_JSON_OUTPUT_NAME: jsonFile } });
   const ok = r.status === 0;
   console.log(ok ? `--- ${label}: PASS` : `--- ${label}: FAIL (exit ${r.status})`);
   return { ok, tests: parsePlaywrightJson(jsonFile, phase) };

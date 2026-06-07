@@ -100,12 +100,13 @@ export const test = base.extend({
         await card.dragTo(col);
       },
       // --- read-back ---
-      async readDiscussion(name) {
+      async readFile(fileName) {                // read any file from the seed OPFS by exact name
         return await page.evaluate(async (fn) => {
           const root = await navigator.storage.getDirectory();
           try { const fh = await root.getFileHandle(fn); return await (await fh.getFile()).text(); } catch { return null; }
-        }, sanitize(name) + '.md');
-      }
+        }, fileName);
+      },
+      async readDiscussion(name) { return await api.readFile(sanitize(name) + '.md'); }
     };
 
     await use(api);

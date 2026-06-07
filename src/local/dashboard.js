@@ -12,22 +12,9 @@
 
   /* --------------------------- aggregations ---------------------------- */
 
-  function entryType(e) {
-    const t = e.tags || [];
-    if (t.includes('goal')) return 'goal';
-    if (t.includes('followup')) return 'followup';
-    if (t.includes('task')) return 'task';
-    return 'comment';
-  }
-  function stateKeyOf(t) {
-    if (t.includes('inprogresstask') || t.includes('inprogress')) return 'inprogress';
-    if (t.includes('checktask')) return 'check';
-    if (t.includes('onholdtask') || t.includes('onhold')) return 'onhold';
-    if (t.includes('purgatorytask') || t.includes('purgatory')) return 'purgatory';
-    if (t.includes('resolvedtask') || t.includes('resolvedfollowup')) return 'resolved';
-    if (t.includes('obsoletetask')) return 'obsolete';
-    return 'open';
-  }
+  // Tag taxonomy lives in taxonomy.js (Chippy.tags); aliased here for brevity.
+  const entryType = Chippy.tags.entryType;
+  const stateKeyOf = Chippy.tags.stateKeyOf;
   function withinRange(dateStr, range) {
     if (range === 'all') return true;
     const d = new Date(String(dateStr).replace(' ', 'T'));

@@ -27,9 +27,18 @@ export function createSkeleton(dir, discussionNames) {
   // The content discussions plus the Test Execution meta-discussion (run results).
   const allNames = [...discussionNames, TESTRESULT_NAME];
 
+  // Seed per-discussion groups (the "major tag" in navigation.md) so the tag
+  // editor and tag-filter tests have data to act on.
+  const GROUPS = {
+    '1-1 Maria Lopez': 'People',
+    '1-1 James Okafor': 'People',
+    'Cloud Migration': 'DEV',
+    'SOC 2 Compliance': 'DEV'
+  };
+
   const nav = {
     theme: 'dark',
-    discussions: allNames.map(name => ({ name, tag: null, favorite: false, archived: false }))
+    discussions: allNames.map(name => ({ name, tag: GROUPS[name] || null, favorite: false, archived: false }))
   };
   writeFileSync(join(dir, 'navigation.md'), fmt.serializeNav(nav));
   writeFileSync(join(dir, 'tags.md'), fmt.serializeTags([]));

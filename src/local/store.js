@@ -126,6 +126,14 @@
     getGoals: (member) => {
       const m = member || selectors.getActiveMember();
       return m && m.entries ? m.entries.filter(isOpenGoal) : [];
+    },
+    getDiscussionTags: () => {
+      const seen = new Set();
+      const tags = [];
+      for (const d of state.nav.discussions) {
+        if (d.tag && !seen.has(d.tag)) { seen.add(d.tag); tags.push(d.tag); }
+      }
+      return tags.sort((a, b) => a.localeCompare(b));
     }
   };
 
@@ -171,6 +179,14 @@
     emit({ type: 'favoriteToggled', name, favorite: d.favorite });
   }
 
+  async function setDiscussionTag(name, tag) {
+    const d = state.nav.discussions.find(x => x.name === name);
+    if (!d) return;
+    d.tag = tag || null;
+    await io().saveNav(state.dirHandle, state.nav);
+    emit({ type: 'discussionTagChanged', name, tag: d.tag });
+  }
+
   async function reloadMember(name) {
     const member = await io().loadDiscussion(state.dirHandle, name);
     state.members.set(name, member);
@@ -188,6 +204,48 @@
     if (state.activeMemberName === name) state.activeMemberName = null;
     await io().saveNav(state.dirHandle, state.nav);
     emit({ type: 'discussionArchived', name });
+  }
+
+  // Rename a discussion: renames the .md file, moves the image folder, updates
+  // the nav entry and member cache, and emits 'discussionRenamed'. (R64)
+  async function renameDiscussion(oldName, newName) {
+    const trimmed = newName && newName.trim();
+    if (!trimmed || trimmed === oldName) return;
+    const existing = new Set(state.nav.discussions.map(d => d.name));
+    if (existing.has(trimmed)) throw new Error('A discussion named "' + trimmed + '" already exists.');
+    await io().renameDiscussion(state.dirHandle, oldName, trimmed);
+    const nav = state.nav.discussions.find(d => d.name === oldName);
+    if (nav) nav.name = trimmed;
+    const wasLoaded = !!state.members.get(oldName); // truthy = member was in cache
+    state.members.delete(oldName);
+    if (!wasLoaded) state.members.set(trimmed, null); // preserve lazy-load slot
+    if (state.activeMemberName === oldName) state.activeMemberName = trimmed;
+    await io().saveNav(state.dirHandle, state.nav);
+    // Reload the renamed discussion from disk so that image refs in the in-memory
+    // cache point to the new folder name. reloadMember emits 'memberReloaded'
+    // which triggers pages.refresh() and re-renders the discussion view with
+    // correct images — this must happen before 'discussionRenamed' fires so the
+    // sidebar and recent bar update after the view is already correct.
+    if (wasLoaded) await reloadMember(trimmed);
+    emit({ type: 'discussionRenamed', oldName, name: trimmed });
+  }
+
+  // Create a new empty discussion: write its .md file, register it in navigation,
+  // and cache the empty member object. Appends _2, _3, … if the base name is
+  // already taken. Opens the new discussion immediately. (R60)
+  async function createDiscussion(name) {
+    if (!state.folderReady) return;
+    const existing = new Set(state.nav.discussions.map(d => d.name));
+    let uniqueName = name;
+    let suffix = 2;
+    while (existing.has(uniqueName)) uniqueName = name + '_' + suffix++;
+    const member = { name: uniqueName, group: null, archived: false, prep: '', entries: [] };
+    await io().saveDiscussion(state.dirHandle, member);
+    state.nav.discussions.push({ name: uniqueName, favorite: false, archived: false, tag: null });
+    state.members.set(uniqueName, member);
+    await io().saveNav(state.dirHandle, state.nav);
+    emit({ type: 'discussionCreated', name: uniqueName });
+    await selectMember(uniqueName);
   }
 
   async function setPrep(name, prep) {
@@ -539,10 +597,15 @@
   }
 
   // All loaded entries, each shallow-tagged with its _member (read-only views).
-  function collectEntries() {
+  function collectEntries(opts) {
     const out = [];
+    const discTag = opts && opts.discTag;
     for (const [name, m] of state.members) {
       if (!m) continue;
+      if (discTag) {
+        const nav = state.nav.discussions.find(d => d.name === name);
+        if (!nav || nav.tag !== discTag) continue;
+      }
       (m.entries || []).forEach((e, i) => out.push(Object.assign({ _member: name, _idx: i }, e)));
     }
     return out;
@@ -581,11 +644,15 @@
 
   // Aggregate @[Name] references across all loaded entries: count, last-seen,
   // discussions, and recent excerpts. Registry names with zero mentions go last.
-  function getAllNames() {
+  function getAllNames(discTag) {
     const map = new Map();
     for (const n of state.names) map.set(n, { name: n, count: 0, lastSeen: null, discussions: new Set(), excerpts: [] });
     for (const [mname, m] of state.members) {
       if (!m) continue;
+      if (discTag) {
+        const nav = state.nav.discussions.find(d => d.name === mname);
+        if (!nav || nav.tag !== discTag) continue;
+      }
       for (const e of (m.entries || [])) {
         for (const nm of extractNameTokens(e.body || '')) {
           if (!map.has(nm)) map.set(nm, { name: nm, count: 0, lastSeen: null, discussions: new Set(), excerpts: [] });
@@ -604,15 +671,19 @@
       r.excerpts = r.excerpts.slice(0, 10);
     });
     arr.sort((a, b) => (b.lastSeen || '').localeCompare(a.lastSeen || '') || a.name.localeCompare(b.name));
-    return arr;
+    return discTag ? arr.filter(n => n.count > 0) : arr;
   }
 
   // Aggregate user-facing #tags across all loaded entries: total count and the
   // most recent use. Reserved/state/priority/goal-id/muted tags are excluded.
-  function getAllTags() {
+  function getAllTags(discTag) {
     const map = new Map();
-    for (const [, m] of state.members) {
+    for (const [mname, m] of state.members) {
       if (!m) continue;
+      if (discTag) {
+        const nav = state.nav.discussions.find(d => d.name === mname);
+        if (!nav || nav.tag !== discTag) continue;
+      }
       for (const e of (m.entries || [])) {
         for (const t of (e.tags || [])) {
           if (HIDDEN_TAG.test(t)) continue;
@@ -674,7 +745,7 @@
 
   /* -------------------------- summary + export ------------------------- */
 
-  const HIDDEN_TAG = /^(task|followup|goal|opentask|inprogresstask|checktask|onholdtask|purgatorytask|resolvedtask|obsoletetask|resolvedfollowup|achievedgoal|canceledgoal|resolvedgoal|high|medium|low|goal-[a-z0-9]{5}|muted:.*)$/;
+  const HIDDEN_TAG = Chippy.tags.RESERVED; // taxonomy.js — single source of truth
 
   function shortId(rng) {
     rng = rng || Math.random;
@@ -743,7 +814,7 @@
   Chippy.store = Object.assign(
     {
       subscribe, openFolder, selectMember, setActiveScreen, setTheme,
-      toggleFavorite, reloadMember, archiveDiscussion, setPrep, addEntry,
+      toggleFavorite, setDiscussionTag, reloadMember, archiveDiscussion, renameDiscussion, createDiscussion, setPrep, addEntry,
       setTaskState, cyclePriority, setDue, appendAction, toggleMute, isMuted,
       setGoalState, editEntry, getLinks, renameLink, moveEntry, deleteEntry,
       saveImage, getImageUrl,

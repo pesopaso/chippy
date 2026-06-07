@@ -14,6 +14,15 @@
 
   let currentScreen = 'welcome';
   let searchQuery = '';
+  let activeTagFilter = null; // null = show all discussions; string = filter sidebar to this disc tag
+  // Cross-view disc tag filters (null = show all, string = filter to that disc tag). Ref: R63.
+  let allCommentsTagFilter = null;
+  let allTasksTagFilter = null;   // shared with Kanban
+  let allGoalsTagFilter = null;
+  let allImagesTagFilter = null;
+  let allLinksTagFilter = null;
+  let allNamesTagFilter = null;
+  let allTagsTagFilter = null;
   const recent = []; // discussion names, insertion order, max 10
 
   function el(tag, cls, text) {
@@ -68,6 +77,11 @@
     const body = document.querySelector('#sidebar .sidebar-body');
     if (!body) return;
     const discs = store().getDiscussions().filter(d => !d.archived);
+
+    // Auto-reset activeTagFilter if its tag no longer exists in the nav.
+    const allTags = store().getDiscussionTags ? store().getDiscussionTags() : [];
+    if (activeTagFilter && !allTags.includes(activeTagFilter)) activeTagFilter = null;
+
     const q = searchQuery.trim().toLowerCase();
     const filtered = q ? discs.filter(d => d.name.toLowerCase().includes(q)) : discs;
 
@@ -77,16 +91,51 @@
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push(d);
     }
+    // When a tag filter is active, omit the Untagged group entirely.
+    if (activeTagFilter) groups.delete('Untagged');
 
     const active = store().getActiveMemberName();
     body.replaceChildren();
-    for (const key of [...groups.keys()].sort((a, b) => a.localeCompare(b))) {
-      const items = groups.get(key).slice().sort((a, b) => {
+
+    // Tag filter buttons row — only when there are tagged discussions.
+    if (allTags.length) {
+      const filterRow = el('div', 'sidebar-disc-tag-filters');
+      filterRow.id = 'sidebarDiscTagFilters';
+      body.append(filterRow);
+      if (ui() && ui().renderDiscTagFilterButtons) {
+        ui().renderDiscTagFilterButtons({
+          containerId: 'sidebarDiscTagFilters',
+          getFilter: () => activeTagFilter,
+          setFilter: (f) => { activeTagFilter = f; },
+          onRender: renderSidebar
+        });
+      }
+    }
+
+    // Named-tag groups alphabetically first, Untagged last.
+    const sortedKeys = [...groups.keys()].sort((a, b) => {
+      if (a === 'Untagged') return 1;
+      if (b === 'Untagged') return -1;
+      return a.localeCompare(b);
+    });
+    const visibleKeys = activeTagFilter
+      ? sortedKeys.filter(k => k === activeTagFilter)
+      : sortedKeys;
+
+    for (const key of visibleKeys) {
+      const items = (groups.get(key) || []).slice().sort((a, b) => {
         const fa = a.favorite ? 0 : 1, fb = b.favorite ? 0 : 1;
         return fa !== fb ? fa - fb : a.name.localeCompare(b.name);
       });
       const grp = el('div', 'member-group');
-      grp.append(el('div', 'member-group-header', key));
+      const hdr = el('div', 'member-group-header', key);
+      if (key !== 'Untagged' && ui() && ui().getDiscTagColor) {
+        const color = ui().getDiscTagColor(key, allTags);
+        hdr.style.borderLeft = '3px solid ' + color;
+        hdr.style.paddingLeft = '6px';
+        hdr.style.color = color;
+      }
+      grp.append(hdr);
       for (const d of items) {
         const item = el('div', 'member-item' +
           (d.name === active ? ' active' : '') + (d.favorite ? ' favorite' : ''));
@@ -130,7 +179,7 @@
 
   /* ---------------------- cross-discussion views ----------------------- */
 
-  const HIDDEN_TAG = /^(task|followup|goal|opentask|inprogresstask|checktask|onholdtask|purgatorytask|resolvedtask|obsoletetask|resolvedfollowup|achievedgoal|canceledgoal|resolvedgoal|high|medium|low|goal-[a-z0-9]{5}|muted:.*)$/;
+  const HIDDEN_TAG = Chippy.tags.RESERVED; // taxonomy.js — single source of truth
   const CLOSED_TASK = ['resolvedtask', 'obsoletetask', 'resolvedfollowup'];
   const CLOSED_GOAL = ['achievedgoal', 'canceledgoal', 'resolvedgoal'];
 
@@ -153,7 +202,7 @@
     return wrap;
   }
 
-  function crossScreen(id, title, build, count) {
+  function crossScreen(id, title, build, count, preSearch) {
     const screen = document.getElementById(id);
     if (!screen) return;
     screen.replaceChildren();
@@ -161,9 +210,20 @@
     header.append(el('h1', 'member-title', title));
     if (count != null) header.append(el('span', 'member-count', count + (count === 1 ? ' comment' : ' comments')));
     screen.append(header);
+    if (preSearch) preSearch(screen);
     const body = el('div', 'cross-body');
     screen.append(makeSearchBar(q => { body.replaceChildren(); build(body, q); }), body);
     build(body, '');
+  }
+
+  // Helper: append a disc-tag filter-buttons row to a cross-view screen.
+  function addCrossDiscFilter(screen, containerId, getFilter, setFilter, onRender) {
+    const wrap = el('div', 'cross-disc-tag-filters');
+    wrap.id = containerId;
+    screen.append(wrap);
+    if (ui().renderDiscTagFilterButtons) {
+      ui().renderDiscTagFilterButtons({ containerId, getFilter, setFilter, onRender });
+    }
   }
 
   // Every cross-view row is the shared, fully-interactive comment card.
@@ -181,15 +241,16 @@
     // Counter = the sum of every discussion's comments (all loaded entries).
     const total = store().collectEntries().length;
     crossScreen('allCommentsScreen', 'All Comments', (c, q) => {
-      const items = store().applyUnifiedFilter(store().collectEntries(), q)
+      const items = store().applyUnifiedFilter(store().collectEntries({ discTag: allCommentsTagFilter }), q)
         .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
       if (!items.length) { c.append(el('div', 'panel-empty', 'No comments.')); return; }
       for (const e of items) c.append(entryRow(e, OVERVIEW_OPTS));
-    }, total);
+    }, total, (screen) => addCrossDiscFilter(screen, 'allCommentsFilters',
+      () => allCommentsTagFilter, v => { allCommentsTagFilter = v; }, openComments));
   }
   function openTasks() {
     crossScreen('allTasksScreen', 'All Tasks', (c, q) => {
-      const items = store().applyUnifiedFilter(store().collectEntries(), q)
+      const items = store().applyUnifiedFilter(store().collectEntries({ discTag: allTasksTagFilter }), q)
         .filter(e => (e.tags || []).some(t => t === 'task' || t === 'followup') && !(e.tags || []).some(t => CLOSED_TASK.includes(t)))
         .sort((a, b) => {
           const ma = store().isMuted(a) ? 1 : 0, mb = store().isMuted(b) ? 1 : 0;
@@ -198,22 +259,28 @@
         });
       if (!items.length) { c.append(el('div', 'panel-empty', 'No open tasks.')); return; }
       for (const e of items) c.append(entryRow(e, Object.assign({}, OVERVIEW_OPTS, { dim: store().isMuted(e) })));
-    });
+    }, undefined, (screen) => addCrossDiscFilter(screen, 'allTasksFilters',
+      () => allTasksTagFilter, v => { allTasksTagFilter = v; }, openTasks));
   }
   function openGoals() {
     crossScreen('allGoalsScreen', 'All Goals', (c, q) => {
-      const items = store().applyUnifiedFilter(store().collectEntries(), q)
+      const items = store().applyUnifiedFilter(store().collectEntries({ discTag: allGoalsTagFilter }), q)
         .filter(e => (e.tags || []).includes('goal') && !(e.tags || []).some(t => CLOSED_GOAL.includes(t)))
         .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')); // newest first
       if (!items.length) { c.append(el('div', 'panel-empty', 'No open goals.')); return; }
       for (const e of items) c.append(entryRow(e, GOAL_OVERVIEW_OPTS));
-    });
+    }, undefined, (screen) => addCrossDiscFilter(screen, 'allGoalsFilters',
+      () => allGoalsTagFilter, v => { allGoalsTagFilter = v; }, openGoals));
   }
   function openLinks() {
     crossScreen('allLinksScreen', 'All Links', (c, q) => {
       const seen = new Set(), links = [];
       for (const [name, m] of store()._state.members) {
         if (!m) continue;
+        if (allLinksTagFilter) {
+          const disc = (store().getDiscussions() || []).find(d => d.name === name);
+          if (!disc || disc.tag !== allLinksTagFilter) continue;
+        }
         for (const l of store().getLinks(m)) if (!seen.has(l.url)) { seen.add(l.url); links.push(Object.assign({ _member: name }, l)); }
       }
       links.sort((a, b) => (b.date || '').localeCompare(a.date || '')); // newest first
@@ -226,15 +293,15 @@
         row.append(a, el('span', 'member-name-label', l._member));
         c.append(row);
       }
-    });
+    }, undefined, (screen) => addCrossDiscFilter(screen, 'allLinksFilters',
+      () => allLinksTagFilter, v => { allLinksTagFilter = v; }, openLinks));
   }
   function openImages() {
     crossScreen('allImagesScreen', 'All Images', (c) => {
       const withDate = [];
       const re = /!\[[^\]]*\]\(([^)]+)\)/g;
-      for (const [, m] of store()._state.members) {
-        if (!m) continue;
-        for (const e of (m.entries || [])) { let mm; while ((mm = re.exec(e.body || ''))) withDate.push({ ref: mm[1], date: e.created_at || '' }); }
+      for (const e of store().collectEntries({ discTag: allImagesTagFilter })) {
+        let mm; while ((mm = re.exec(e.body || ''))) withDate.push({ ref: mm[1], date: e.created_at || '' });
       }
       withDate.sort((a, b) => (b.date || '').localeCompare(a.date || '')); // newest first
       const refs = withDate.map(x => x.ref);
@@ -250,15 +317,16 @@
         grid.append(thumb);
       });
       c.append(grid);
-    });
+    }, undefined, (screen) => addCrossDiscFilter(screen, 'allImagesFilters',
+      () => allImagesTagFilter, v => { allImagesTagFilter = v; }, openImages));
   }
   function openNames() {
     crossScreen('allNamesScreen', 'All Names', (c, q) => {
       const ql = q.trim().toLowerCase().replace(/^@/, '');
-      const names = store().getAllNames().filter(n => !ql || n.name.toLowerCase().includes(ql));
+      const names = store().getAllNames(allNamesTagFilter).filter(n => !ql || n.name.toLowerCase().includes(ql));
       if (!names.length) { c.append(el('div', 'panel-empty', 'No names.')); return; }
       for (const n of names) {
-        const row = el('details', 'all-names-item');
+        const row = el('details', 'all-names-item name-row');
         const sum = el('summary', 'all-names-summary');
         sum.append(el('span', 'member-name-label', n.name));
         sum.append(el('span', 'name-count', n.count + ' mentions'));
@@ -274,41 +342,36 @@
         }
         c.append(row);
       }
-    });
+    }, undefined, (screen) => addCrossDiscFilter(screen, 'allNamesFilters',
+      () => allNamesTagFilter, v => { allNamesTagFilter = v; }, openNames));
   }
 
   function openTags() {
     crossScreen('allTagsScreen', 'All Tags', (c, q) => {
       const ql = q.trim().toLowerCase().replace(/^#/, '');
-      const tags = store().getAllTags().filter(t => !ql || t.tag.toLowerCase().includes(ql));
+      const tags = store().getAllTags(allTagsTagFilter).filter(t => !ql || t.tag.toLowerCase().includes(ql));
       if (!tags.length) { c.append(el('div', 'panel-empty', 'No tags.')); return; }
       for (const t of tags) {
-        const row = el('div', 'all-tags-item');
+        const row = el('div', 'all-tags-item tag-row');
         row.append(el('span', 'tag-chip', t.tag));
         row.append(el('span', 'name-count', t.count + (t.count === 1 ? ' use' : ' uses')));
         if (t.lastUsed) row.append(el('span', 'entry-time', 'last ' + t.lastUsed.slice(0, 10)));
         c.append(row);
       }
-    });
+    }, undefined, (screen) => addCrossDiscFilter(screen, 'allTagsFilters',
+      () => allTagsTagFilter, v => { allTagsTagFilter = v; }, openTags));
   }
 
   /* ------------------------------ kanban ------------------------------- */
 
   const KANBAN_COLS = [['open', 'OPEN'], ['inprogress', 'WIP'], ['check', 'CHK'],
                        ['onhold', 'HOLD'], ['purgatory', 'PRGT'], ['resolved', 'DONE']];
-  const PRIO_LABEL = { high: 'HI', medium: 'MI', low: 'LO' };
+  const PRIO_LABEL = Chippy.tags.PRIO_LABEL; // taxonomy.js
   let kanbanFocus = false; // when on, hide the HOLD and PRGT columns
 
-  function stateKeyOf(tags) {
-    if (tags.includes('inprogresstask') || tags.includes('inprogress')) return 'inprogress';
-    if (tags.includes('checktask')) return 'check';
-    if (tags.includes('onholdtask') || tags.includes('onhold')) return 'onhold';
-    if (tags.includes('purgatorytask') || tags.includes('purgatory')) return 'purgatory';
-    if (tags.includes('resolvedtask') || tags.includes('resolvedfollowup')) return 'resolved';
-    if (tags.includes('obsoletetask')) return 'obsolete';
-    return 'open';
-  }
-  function prioOf(tags) { return tags.find(t => t === 'high' || t === 'medium' || t === 'low') || 'low'; }
+  // Tag taxonomy lives in taxonomy.js (Chippy.tags); aliased here for brevity.
+  const stateKeyOf = Chippy.tags.stateKeyOf;
+  const prioOf = (tags) => Chippy.tags.priorityOf(tags) || 'low'; // pages defaults to 'low'
 
   // The card currently being dragged. Relying on this instead of dataTransfer
   // makes drops reliable on file:// (where getData can come back empty) and
@@ -369,8 +432,10 @@
     focusBtn.addEventListener('click', () => { kanbanFocus = !kanbanFocus; openKanban(); });
     header.append(focusBtn);
     screen.append(header);
+    addCrossDiscFilter(screen, 'kanbanFilters',
+      () => allTasksTagFilter, v => { allTasksTagFilter = v; }, openKanban);
     const board = el('div', 'kanban-board');
-    const tasks = store().collectEntries().filter(e => {
+    const tasks = store().collectEntries({ discTag: allTasksTagFilter }).filter(e => {
       const t = e.tags || [];
       return (t.includes('task') || t.includes('followup')) && !t.includes('obsoletetask');
     });
@@ -564,8 +629,21 @@
     kanban: openKanban, ro3: openRo3, activity: openActivity, summary: openSummary
   };
 
+  // Reset maps for disc tag filters so each page starts at "All" on fresh navigation.
+  const DISC_FILTER_RESET = {
+    allComments: () => { allCommentsTagFilter = null; },
+    allTasks:    () => { allTasksTagFilter = null; },
+    allGoals:    () => { allGoalsTagFilter = null; },
+    allImages:   () => { allImagesTagFilter = null; },
+    allLinks:    () => { allLinksTagFilter = null; },
+    allNames:    () => { allNamesTagFilter = null; },
+    allTags:     () => { allTagsTagFilter = null; },
+    kanban:      () => { allTasksTagFilter = null; },
+  };
+
   async function openCrossView(name) {
     if (!CROSS[name]) return;
+    if (DISC_FILTER_RESET[name]) DISC_FILTER_RESET[name]();
     await store().ensureAllLoaded();
     CROSS[name]();
     showScreen(name);

@@ -9,7 +9,7 @@
 
   // Single source of truth for the version. Used for display and as the cache-bust
   // query param on the CSS/JS tags in app.html (bump both together on release).
-  const VERSION = '3.0.0-dev.82';
+  const VERSION = '3.0.0-dev.85';
   Chippy.VERSION = VERSION;
 
   const THEME_KEY = 'chippy_theme';
@@ -328,6 +328,7 @@
       store.subscribe((cs) => {
         switch (cs.type) {
           case 'folderOpened':
+          case 'discussionCreated':
             if (status) {
               status.textContent =
                 `Connected: ${store.getDiscussions().length} discussions · ` +
@@ -335,8 +336,12 @@
                 `theme ${store.getTheme()}`;
               status.className = 'folder-status connected';
             }
-            if (pages) { pages.renderSidebar(); pages.showScreen('welcome'); }
-            cleanupOrphanDrafts();
+            if (cs.type === 'folderOpened') {
+              const newBtn = document.getElementById('btnNewDiscussion');
+              if (newBtn) newBtn.classList.remove('hidden');
+            }
+            if (pages) { pages.renderSidebar(); if (cs.type === 'folderOpened') pages.showScreen('welcome'); }
+            if (cs.type === 'folderOpened') cleanupOrphanDrafts();
             // Load every discussion in the background so the sidebar can show
             // per-discussion comment counts, then re-render once they're in.
             if (store.ensureAllLoaded) {
@@ -380,10 +385,16 @@
             }
             break;
           case 'favoriteToggled':
+          case 'discussionTagChanged':
             if (pages) pages.renderSidebar();
             break;
           case 'discussionArchived':
             if (pages) { pages.renderSidebar(); pages.showScreen('welcome'); }
+            break;
+          case 'discussionRenamed':
+            // Discussion view is already re-rendered by the 'memberReloaded' event
+            // that reloadMember() fires inside renameDiscussion — just sync the chrome.
+            if (pages) { pages.renderSidebar(); pages.renderRecent(); }
             break;
         }
       });
@@ -401,6 +412,17 @@
             status.className = 'folder-status error';
           }
           console.error('[chippy] openFolder failed:', err);
+        }
+      });
+    }
+
+    // New Discussion button -> store.createDiscussion('undefined') (R60).
+    const newDiscBtn = document.getElementById('btnNewDiscussion');
+    if (newDiscBtn && store) {
+      newDiscBtn.addEventListener('click', async () => {
+        try { await store.createDiscussion('undefined'); }
+        catch (err) {
+          console.error('[chippy] createDiscussion failed:', err);
         }
       });
     }

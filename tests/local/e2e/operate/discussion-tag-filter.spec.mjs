@@ -232,7 +232,39 @@ test.describe('All Names — discussion tag filter', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 9. All Tags — discussion tag filter
+// 9. Ro3 — discussion tag filter
+// ---------------------------------------------------------------------------
+
+test.describe('Ro3 — discussion tag filter', () => {
+  test('filter buttons are rendered on the Ro3 screen', async ({ app }) => {
+    await app.screen('ro3');
+    const filters = app.page.locator('#ro3Screen .cross-disc-tag-filters');
+    await expect(filters).toBeVisible();
+    await expect(filters.locator('.disc-tag-filter-btn', { hasText: 'DEV' })).toBeVisible();
+    await expect(filters.locator('.disc-tag-filter-btn', { hasText: 'People' })).toBeVisible();
+  });
+
+  test('DEV filter shows only cards from DEV discussions', async ({ app }) => {
+    await app.screen('ro3');
+    await clickTagFilter(app.page, 'DEV');
+    const screen = app.page.locator('#ro3Screen');
+    // DEV pool: Cloud Migration (CHK task + followup) + SOC 2 (PRGT task) = 3 candidates
+    await expect(screen.locator('.member-name-label', { hasText: 'Cloud Migration' }).first()).toBeVisible();
+    await expect(screen.locator('.member-name-label', { hasText: 'Maria Lopez' })).not.toBeVisible();
+    await expect(screen.locator('.member-name-label', { hasText: 'James Okafor' })).not.toBeVisible();
+  });
+
+  test('People filter shows only cards from People discussions', async ({ app }) => {
+    await app.screen('ro3');
+    await clickTagFilter(app.page, 'People');
+    const screen = app.page.locator('#ro3Screen');
+    await expect(screen.locator('.member-name-label', { hasText: 'Cloud Migration' })).not.toBeVisible();
+    await expect(screen.locator('.member-name-label', { hasText: 'SOC 2 Compliance' })).not.toBeVisible();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 10. All Tags — discussion tag filter
 // ---------------------------------------------------------------------------
 
 test.describe('All Tags — discussion tag filter', () => {

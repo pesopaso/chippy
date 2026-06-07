@@ -23,6 +23,7 @@
   let allLinksTagFilter = null;
   let allNamesTagFilter = null;
   let allTagsTagFilter = null;
+  let ro3TagFilter = null;
   const recent = []; // discussion names, insertion order, max 10
 
   function el(tag, cls, text) {
@@ -502,7 +503,7 @@
     const kept = picks.filter(p => !store().isMuted(p));
     const keys = new Set(kept.map(ro3Key));
     if (kept.length < 3) {
-      const pool = store().getRo3Candidates().filter(c => !keys.has(ro3Key(c)));
+      const pool = store().getRo3Candidates(ro3TagFilter).filter(c => !keys.has(ro3Key(c)));
       for (const f of store().pickRo3(pool)) {
         if (kept.length >= 3) break;
         if (!keys.has(ro3Key(f))) { kept.push(f); keys.add(ro3Key(f)); }
@@ -517,10 +518,13 @@
     screen.replaceChildren();
     const header = el('div', 'member-header');
     header.append(el('h1', 'member-title', 'Rule of Three'));
+    header.append(el('div', 'meta-spacer'));
     const refresh = el('button', 'btn-sm', '↻ Refresh');
-    refresh.addEventListener('click', () => { ro3Pick = store().pickRo3(store().getRo3Candidates()); openRo3(); });
+    refresh.addEventListener('click', () => { ro3Pick = store().pickRo3(store().getRo3Candidates(ro3TagFilter)); openRo3(); });
     header.append(refresh);
     screen.append(header);
+    addCrossDiscFilter(screen, 'ro3Filters',
+      () => ro3TagFilter, v => { ro3TagFilter = v; ro3Pick = null; }, openRo3);
     reconcileRo3(); // drop muted picks, backfill to 3
     const cont = el('div', 'ro3-cards');
     if (!ro3Pick.length) cont.append(el('div', 'panel-empty', 'No open tasks.'));
@@ -639,6 +643,7 @@
     allNames:    () => { allNamesTagFilter = null; },
     allTags:     () => { allTagsTagFilter = null; },
     kanban:      () => { allTasksTagFilter = null; },
+    ro3:         () => { ro3TagFilter = null; },
   };
 
   async function openCrossView(name) {

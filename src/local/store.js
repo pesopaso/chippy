@@ -717,8 +717,8 @@
   }
 
   // Open task/followup candidates for Ro3: not closed, not muted.
-  function getRo3Candidates() {
-    return collectEntries().filter(e => {
+  function getRo3Candidates(discTag) {
+    return collectEntries({ discTag }).filter(e => {
       const t = e.tags || [];
       if (!(t.includes('task') || t.includes('followup'))) return false;
       if (t.some(x => ['resolvedtask', 'obsoletetask', 'resolvedfollowup'].includes(x))) return false;

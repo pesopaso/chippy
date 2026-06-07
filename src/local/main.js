@@ -416,11 +416,11 @@
       });
     }
 
-    // New Discussion button -> store.createDiscussion('undefined') (R60).
+    // New Discussion button -> store.createDiscussion('New Discussion') (R60).
     const newDiscBtn = document.getElementById('btnNewDiscussion');
     if (newDiscBtn && store) {
       newDiscBtn.addEventListener('click', async () => {
-        try { await store.createDiscussion('undefined'); }
+        try { await store.createDiscussion('New Discussion'); }
         catch (err) {
           console.error('[chippy] createDiscussion failed:', err);
         }

@@ -76,7 +76,7 @@
   function renderSidebar() {
     const body = document.querySelector('#sidebar .sidebar-body');
     if (!body) return;
-    const discs = store().getDiscussions().filter(d => !d.archived);
+    const discs = store().getDiscussions().filter(d => !d.archived && d.name !== 'summary');
 
     // Auto-reset activeTagFilter if its tag no longer exists in the nav.
     const allTags = store().getDiscussionTags ? store().getDiscussionTags() : [];

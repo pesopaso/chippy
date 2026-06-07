@@ -16,14 +16,19 @@ reference the requirement (`R#`) / plan step.
 
 ## Released
 
-### v3.0.0 — 2026-06-01 — MVP parity (15-step rewrite complete)
+### v3.0.0 — 2026-06-07 — Production release
 
-> The from-scratch rewrite reaches feature parity with the MVP. All 15 implementation-plan steps
-> are built, the regression harness is green, and the real DOMPurify sanitizer is vendored.
+> The from-scratch rewrite ships. Requirements R1–R64 are implemented and tested end-to-end; the
+> data format is frozen; the Playwright E2E suite covers all major flows; 89 build increments
+> from scaffold to production.
 
-- Requirements **R1–R59** implemented across Steps 1–15 (R5/R15/R27/R32 were intentionally removed).
-- Vanilla classic scripts on a global `Chippy` namespace; runs directly from `file://`, no build, no server.
-- Data format frozen and pinned by the regression harness (**7/7** byte-for-byte).
+- **Requirements R1–R64** implemented (R5/R15/R27/R32 intentionally removed; R60–R64 added after the 15-step plan).
+- Vanilla classic scripts on `window.Chippy.*`; runs from `file://` and `localhost`, no build, no server, one vendored dependency (DOMPurify 3.2.6).
+- Data format frozen and pinned byte-for-byte by the regression harness (**7/7**).
+- Playwright E2E suite (create + operate phases) covers discussions, tasks, goals, comments, search, tag filters, Kanban, and Ro3.
+- Post-plan additions: per-discussion tags with sidebar grouping and inline editor (R61/R62), disc-tag filters on all cross-discussion pages including Ro3 (R63), discussion rename (R64), create discussion (R60).
+- Visual polish: `var(--chrome)` accent for links and discussion labels in light mode, all dialog and action buttons unified to `var(--chrome)`, goal-tinted backgrounds, click-to-expand cards.
+- `summary.md` excluded from the sidebar discussion list; default new-discussion name is "New Discussion".
 
 ## Build history
 
@@ -598,3 +603,31 @@ reference the requirement (`R#`) / plan step.
 - `store.renameDiscussion(oldName, newName)` validates uniqueness, delegates to `io.renameDiscussion` (rewrites the `.md` with updated image refs and moves the image folder), updates the nav entry and `activeMemberName`, persists the nav, reloads the member from disk via `reloadMember` so in-memory image paths resolve to the new folder immediately, then emits `discussionRenamed`.
 - Discussion header gains a `✎` rename button between the title and the comment count. Clicking swaps the `<h1>` for an inline `<input>` pre-filled with the current name; Enter/blur commits, Escape restores the original. A toast is shown on failure (e.g. name already exists).
 - `discussionRenamed` event in `main.js` re-renders the sidebar and recent bar. The discussion view itself is re-rendered by the preceding `memberReloaded` event fired inside `reloadMember`, ensuring images are fetched from the renamed folder before the view paints.
+
+### v3.0.0-dev.86 — 2026-06-07 — Visual refinements: chrome accent in light mode, unified dialog buttons
+
+> Links, discussion labels, and all action buttons now use the top-chrome background color consistently.
+
+- **Links & discussion labels** — `.md-link` and `.member-name-label` remain `var(--accent)` in dark mode; a `:root[data-theme="light"]` override sets both to `var(--chrome)`, giving them the same blue as the top bar and improving contrast on light backgrounds.
+- **All primary buttons unified** — `.btn-primary` base changed from `var(--accent)` to `var(--chrome)` / `var(--chrome-text)`; `.btn-primary.danger` changed from `var(--red)` to `var(--chrome)`; `.modal .btn-primary` scoped rule added so Archive, Delete, Close, Save, and Generate buttons are all the same color regardless of context.
+
+### v3.0.0-dev.87 — 2026-06-07 — Hide summary.md from the sidebar discussion list
+
+> The reserved summary.md file appeared as a discussion in the sidebar even though it already has a dedicated page.
+
+- `renderSidebar` now filters `d.name === 'summary'` alongside the existing archived-discussion filter, so the system file never appears in the navigation list.
+
+### v3.0.0-dev.88 — 2026-06-07 — Fix: new discussion default name was "undefined"
+
+> Clicking + created a discussion literally named "undefined".
+
+- The `btnNewDiscussion` click handler called `store.createDiscussion('undefined')` — a leftover placeholder string. Changed to `'New Discussion'`.
+
+### v3.0.0-dev.89 — 2026-06-07 — Ro3 discussion tag filter
+
+> The Rule of Three page now supports the same disc-tag filter as every other cross-discussion view.
+
+- `store.getRo3Candidates(discTag)` accepts an optional tag and forwards it to `collectEntries({ discTag })` so the candidate pool is already tag-scoped before priority/state filtering.
+- `ro3TagFilter` state variable added alongside the other per-page filter variables; cleared in `DISC_FILTER_RESET` on fresh navigation.
+- `openRo3` appends an `addCrossDiscFilter` bar (same helper used by all other cross-views); the Refresh button is right-aligned via a `meta-spacer`; the setFilter callback resets `ro3Pick` so the first reconcile after a filter change draws from the new scoped pool.
+- Three new tests in `discussion-tag-filter.spec.mjs`: filter buttons render, DEV filter hides People cards, People filter hides DEV cards.

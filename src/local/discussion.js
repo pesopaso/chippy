@@ -236,6 +236,13 @@
       } else hideDropdown();
     });
 
+    // Grow the box only when a line is created/removed, not on every keystroke.
+    let prevLineCount = (ta.value.match(/\n/g) || []).length;
+    ta.addEventListener('input', () => {
+      const lines = (ta.value.match(/\n/g) || []).length;
+      if (lines !== prevLineCount) { prevLineCount = lines; if (ui().autosizeTextarea) ui().autosizeTextarea(ta); }
+    });
+
     // Clipboard image paste -> JPEG in the discussion subfolder + inline ref.
     ta.addEventListener('paste', async (ev) => {
       const items = (ev.clipboardData && ev.clipboardData.items) || [];
@@ -282,6 +289,8 @@
     const footer = el('div', 'entry-footer');
     footer.append(chips, controls);
     box.append(ta, dropdown, footer);
+    // Size to the restored draft once mounted; rAF defers until the box is in the DOM.
+    if (ui().autosizeTextarea) requestAnimationFrame(() => ui().autosizeTextarea(ta));
     return box;
   }
 

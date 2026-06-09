@@ -1,0 +1,2 @@
+cowork sync check — created 22:11:09Z
+If you can see this file in your Chippy folder, sandbox writes reach your disk. Safe to delete.

@@ -649,7 +649,13 @@
   async function openCrossView(name) {
     if (!CROSS[name]) return;
     if (DISC_FILTER_RESET[name]) DISC_FILTER_RESET[name]();
-    await store().ensureAllLoaded();
+    const failed = await store().ensureAllLoaded();
+    if (failed && failed.length && ui() && ui().showToast) {
+      const names = failed.map(f => f.name).join(', ');
+      const plural = failed.length === 1 ? 'discussion' : 'discussions';
+      ui().showToast('Couldn’t load ' + failed.length + ' ' + plural + ': ' + names +
+        '. Check the file exists in the data folder (or, if it’s on OneDrive/SharePoint, that it’s downloaded).', 'error');
+    }
     CROSS[name]();
     showScreen(name);
     // Slim mode: cross-views are single-column — show them on the Discussion tab.

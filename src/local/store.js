@@ -588,12 +588,25 @@
   /* --------------------- cross-discussion + search --------------------- */
 
   // Lazy-load every non-archived discussion (for cross-views), caching each.
+  // A discussion whose file can't be read — missing, renamed outside the app, or
+  // an unmaterialized cloud placeholder (OneDrive/SharePoint "Files On-Demand") —
+  // is skipped instead of aborting the whole load; its name and the error are
+  // collected and returned so the caller can surface them to the user. The cache
+  // slot is left null so a later open retries (e.g. once the placeholder hydrates).
   async function ensureAllLoaded() {
+    const failed = [];
     for (const d of state.nav.discussions) {
       if (!d.archived && state.members.get(d.name) === null) {
-        state.members.set(d.name, await io().loadDiscussion(state.dirHandle, d.name));
+        try {
+          state.members.set(d.name, await io().loadDiscussion(state.dirHandle, d.name));
+        } catch (err) {
+          failed.push({ name: d.name, error: (err && err.name) || 'Error' });
+          console.warn('[chippy] could not load discussion "' + d.name + '":', err);
+        }
       }
     }
+    if (failed.length) emit({ type: 'discussionsLoadFailed', failed });
+    return failed;
   }
 
   // All loaded entries, each shallow-tagged with its _member (read-only views).

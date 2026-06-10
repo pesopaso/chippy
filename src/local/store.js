@@ -95,6 +95,25 @@
     );
   }
 
+  // Write rules for an edited tag set (promotion via the inline editor):
+  // dedupe, keep only the last priority typed (so a newly added one wins over
+  // the existing), default 'low' when a kind tag is present without priority,
+  // and mint a goal identity tag when an entry becomes a goal. Pure.
+  function applyEditTagRules(tags, rng) {
+    let out = [];
+    let prio = null;
+    for (const t of tags) {
+      if (PRIORITY.includes(t)) { prio = t; continue; } // last priority wins
+      if (!out.includes(t)) out.push(t);
+    }
+    if (out.includes('goal') && !out.some(t => /^goal-[a-z0-9]{5}$/.test(t))) {
+      out.push(mintGoalId(rng));
+    }
+    if (!prio && out.some(t => KINDS.includes(t))) prio = 'low';
+    if (prio) out.push(prio);
+    return out;
+  }
+
   // Names referenced as @[Full Name] in body text.
   function extractNameTokens(text) {
     const names = [];
@@ -508,7 +527,7 @@
     opts = opts || {};
     const [m, e] = findEntry(name, entryId, idx);
     if (!e) return;
-    if (Array.isArray(opts.tags)) e.tags = opts.tags.slice();
+    if (Array.isArray(opts.tags)) e.tags = applyEditTagRules(opts.tags);
     if (opts.text != null) {
       const parts = splitBodyParts(e.body);
       parts.comment = autoLinkUrls(String(opts.text).trim());
@@ -884,7 +903,7 @@
       getRo3Candidates, pickRo3, doneRecent, resolvedDate,
       loadSummary, saveSummaryConfig, appendSummary, deleteSummary, updateSummary, moveSummaryToDiscussion, exportContribution, shortId,
       // pure helpers exposed for the UI and for tests
-      nowISO, mintGoalId, extractInlineTags, autoLinkUrls, extractNameTokens,
+      nowISO, mintGoalId, extractInlineTags, autoLinkUrls, extractNameTokens, applyEditTagRules,
       splitTrailingActions, splitBodyParts, joinBodyParts, actionLabelFor, extractLinks, parseSearchQuery,
       _state: state
     },

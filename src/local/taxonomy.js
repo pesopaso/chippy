@@ -18,6 +18,12 @@
   const RESERVED = /^(task|followup|goal|opentask|inprogresstask|checktask|onholdtask|purgatorytask|resolvedtask|obsoletetask|resolvedfollowup|achievedgoal|canceledgoal|resolvedgoal|high|medium|low|goal-[a-z0-9]{5}|muted:.*)$/;
   const isReserved = (tag) => RESERVED.test(tag);
 
+  // The reserved tags a user may legitimately type by hand (in the new-comment
+  // box or the inline editor) to classify or prioritize an entry: the three
+  // kind tags and the three priorities. State tags, goal ids, and mutes stay
+  // app-managed and are never accepted as typed input.
+  const PROMOTABLE = /^(task|followup|goal|high|medium|low)$/;
+
   /* ------------------------------ task state --------------------------- */
   // Ordered: first state whose tags match wins; the fallback is 'open'.
   // `square` is [label, css-class] for the clickable state square.
@@ -59,7 +65,7 @@
   const priorityOf = (tags) => tags.find((t) => t === 'high' || t === 'medium' || t === 'low') || null;
 
   Chippy.tags = {
-    RESERVED, isReserved,
+    RESERVED, isReserved, PROMOTABLE,
     STATES, stateKeyOf, STATE_SQUARE,
     entryType,
     PRIO_RANK, PRIO_LABEL, priorityOf

@@ -198,7 +198,7 @@
 
       section('Comments — functions & special tags',
         'Comments support Markdown (headings, bold/italic, lists, code, quotes), auto-linked URLs, @[Name] mentions and inline images.', [
-        ['Actions', '✎ edit inline (tags are editable here — type #tag or use "+ tag"; × removes one), ⚡ add a dated action, 🔇 mute, ➜ move to another discussion, 🗑 delete.'],
+        ['Actions', '✎ edit inline (tags are editable here — type #tag or use "+ tag"; × removes one; #task / #followup / #goal and priorities promote the comment), ⚡ add a dated action, 🔇 mute, ➜ move to another discussion, 🗑 delete.'],
         ['"Updated:"', 'a single line recording the latest edit on a later day than creation; refreshed in place on every further edit. Editing only touches the comment text — actions and the Updated line are preserved.'],
         ['Classify', '#task, #followup or #goal turn a comment into that item type.'],
         ['Priority', '#high / #medium / #low (the priority square cycles them).'],

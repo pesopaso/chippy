@@ -660,3 +660,11 @@ reference the requirement (`R#`) / plan step.
 - **`pages.js`** — the dev.87 sidebar band-aid (`d.name !== 'summary'`) removed; a discussion named "summary" is now legitimate.
 - **Tests/harness** — harness reference data renamed to `*.chippy.md` (roundtrip dispatch accepts both spellings); `init-folder`, `validator`, `run.mjs`, `seed.spec`, `discussions.spec`, `discussion-tag-filter.spec` updated; new `io-migration.test.mjs` (5 tests) drives `loadIndexes` against an in-memory FSA fake covering both legacy generations, summary rename, pollution drop, and chippy-files-win precedence.
 - **`datadefinition.md`** — §1 namespace rule, §3/§4 filenames, §3.4 rewritten as "Legacy layouts and the one-time migration" (two generations). Harness 7/7; unit suite 25/25.
+
+### v3.4 — 2026-06-10 — Image provenance: folder tooltip, All Images discussion column, carousel captions
+
+> Small UI affordances that show where images and data come from.
+
+- **Open Folder tooltip** — after a successful open, the sidebar button's tooltip shows the loaded folder name ("Loaded folder: <name>"; the File System Access API exposes the name, not the full path).
+- **All Images page** — the thumbnail grid is unchanged; each thumbnail now carries "<discussion> — <created_at>" as its tooltip.
+- **Carousel captions** — `ui.showImageOverlay` accepts `{ url, label }` items (plain URL strings still supported) and renders the label below the image (`.img-caption`). Wired up with "<discussion> — <created_at>" captions on the All Images page and the discussion right-column gallery, whose thumbnails also carry the date tooltip (`collectImages` now returns ref + timestamp).

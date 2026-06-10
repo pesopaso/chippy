@@ -549,6 +549,7 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .img-nav.prev { left: 16px; }
 .img-nav.next { right: 16px; }
 .img-counter { position: fixed; bottom: 18px; left: 0; right: 0; text-align: center; color: #fff; font-size: .85rem; }
+.img-caption { position: fixed; bottom: 42px; left: 0; right: 0; text-align: center; color: #fff; font-size: .9rem; }
 
 /* ---- Delete confirm --------------------------------------------------- */
 .modal-preview { color: var(--muted); font-size: .82rem; margin-bottom: 4px; }

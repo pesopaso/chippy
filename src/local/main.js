@@ -401,10 +401,16 @@
     }
 
     // Open Folder button -> store.openFolder(); errors surface on the status line.
+    // After a successful open, the button's tooltip shows the loaded folder
+    // (the File System Access API exposes the folder name, not the full path).
     const openBtn = document.getElementById('btnOpenFolder');
     if (openBtn && store) {
       openBtn.addEventListener('click', async () => {
-        try { await store.openFolder(); }
+        try {
+          const st = await store.openFolder();
+          const fname = st && st.dirHandle && st.dirHandle.name;
+          if (fname) openBtn.title = 'Loaded folder: ' + fname;
+        }
         catch (err) {
           if (err && err.name === 'AbortError') return; // user dismissed picker
           if (status) {

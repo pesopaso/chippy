@@ -59,10 +59,14 @@
       img.src = url;
     });
   }
+  // Every image reference in the discussion with its entry's timestamp.
   function collectImages(member) {
-    const refs = []; const re = /!\[[^\]]*\]\(([^)]+)\)/g;
-    for (const e of (member.entries || [])) { let m; while ((m = re.exec(e.body || ''))) refs.push(m[1]); }
-    return refs;
+    const out = []; const re = /!\[[^\]]*\]\(([^)]+)\)/g;
+    for (const e of (member.entries || [])) {
+      let m;
+      while ((m = re.exec(e.body || ''))) out.push({ ref: m[1], date: e.created_at || '' });
+    }
+    return out;
   }
   function showMoveDialog(member, entryId) {
     const others = store().getDiscussions().filter(d => !d.archived && d.name !== member.name);
@@ -494,16 +498,21 @@
   }
 
   function renderGallery(member) {
-    const refs = collectImages(member).reverse(); // newest first
+    const items = collectImages(member).reverse(); // newest first
     const wrap = el('div', 'gallery-section');
     wrap.append(el('div', 'section-label', 'Images'));
-    if (!refs.length) { wrap.append(el('div', 'panel-empty', 'No images.')); return wrap; }
+    if (!items.length) { wrap.append(el('div', 'panel-empty', 'No images.')); return wrap; }
     const grid = el('div', 'gallery-grid');
-    refs.forEach((ref, idx) => {
+    items.forEach((it, idx) => {
       const thumb = el('img', 'gallery-thumb');
-      store().getImageUrl(ref).then(u => { if (u) thumb.src = u; }).catch(() => {});
+      thumb.title = it.date;
+      store().getImageUrl(it.ref).then(u => { if (u) thumb.src = u; }).catch(() => {});
       thumb.addEventListener('click', async () => {
-        const all = await Promise.all(refs.map(r => store().getImageUrl(r).catch(() => null)));
+        // Carousel with "<discussion> — <created_at>" captions below the image.
+        const all = await Promise.all(items.map(async (x) => {
+          const u = await store().getImageUrl(x.ref).catch(() => null);
+          return u ? { url: u, label: member.name + ' — ' + x.date } : null;
+        }));
         ui().showImageOverlay(all.filter(Boolean), idx);
       });
       grid.append(thumb);

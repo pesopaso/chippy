@@ -302,22 +302,32 @@
   }
   function openImages() {
     crossScreen('allImagesScreen', 'All Images', (c) => {
-      const withDate = [];
+      const items = [];
       const re = /!\[[^\]]*\]\(([^)]+)\)/g;
       for (const e of store().collectEntries({ discTag: allImagesTagFilter })) {
-        let mm; while ((mm = re.exec(e.body || ''))) withDate.push({ ref: mm[1], date: e.created_at || '' });
+        let mm;
+        while ((mm = re.exec(e.body || ''))) {
+          items.push({ ref: mm[1], date: e.created_at || '', member: e._member || '' });
+        }
       }
-      withDate.sort((a, b) => (b.date || '').localeCompare(a.date || '')); // newest first
-      const refs = withDate.map(x => x.ref);
-      if (!refs.length) { c.append(el('div', 'panel-empty', 'No images.')); return; }
+      items.sort((a, b) => (b.date || '').localeCompare(a.date || '')); // newest first
+      if (!items.length) { c.append(el('div', 'panel-empty', 'No images.')); return; }
+      // Opens the carousel with "<discussion> — <created_at>" captions.
+      const openCarousel = async (idx) => {
+        const all = await Promise.all(items.map(async (x) => {
+          const u = await store().getImageUrl(x.ref).catch(() => null);
+          return u ? { url: u, label: x.member + ' — ' + x.date } : null;
+        }));
+        ui().showImageOverlay(all.filter(Boolean), idx);
+      };
+      // Thumbnail grid; discussion title and the entry's date/time live in
+      // the tooltip only.
       const grid = el('div', 'gallery-grid');
-      refs.forEach((ref, idx) => {
+      items.forEach((it, idx) => {
         const thumb = el('img', 'gallery-thumb');
-        store().getImageUrl(ref).then(u => { if (u) thumb.src = u; }).catch(() => {});
-        thumb.addEventListener('click', async () => {
-          const all = await Promise.all(refs.map(r => store().getImageUrl(r).catch(() => null)));
-          ui().showImageOverlay(all.filter(Boolean), idx);
-        });
+        thumb.title = it.member + ' — ' + it.date;
+        store().getImageUrl(it.ref).then(u => { if (u) thumb.src = u; }).catch(() => {});
+        thumb.addEventListener('click', () => openCarousel(idx));
         grid.append(thumb);
       });
       c.append(grid);

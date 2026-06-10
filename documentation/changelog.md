@@ -631,3 +631,13 @@ reference the requirement (`R#`) / plan step.
 - `ro3TagFilter` state variable added alongside the other per-page filter variables; cleared in `DISC_FILTER_RESET` on fresh navigation.
 - `openRo3` appends an `addCrossDiscFilter` bar (same helper used by all other cross-views); the Refresh button is right-aligned via a `meta-spacer`; the setFilter callback resets `ro3Pick` so the first reconcile after a filter change draws from the new scoped pool.
 - Three new tests in `discussion-tag-filter.spec.mjs`: filter buttons render, DEV filter hides People cards, People filter hides DEV cards.
+
+### v3.1 — 2026-06-10 — Three-part comment body: state changes in the action log, single Updated line, comment-only editing
+
+> A comment body now consists of at most three things — the comment text, one `Updated:` line, and the action section — and editing only ever touches the comment text.
+
+- **State changes are logged as action bullets** — every task/followup/goal state transition appends `- YYYY-MM-DD : → LABEL` (e.g. `→ WIP`, `→ DONE`, `→ Achieved`) to the entry's action section (`setTaskState`/`setGoalState` via new `logStateAction`). No new `Resolved:`/`Obsolete:`/`Achieved:`/`Canceled:` marker lines are written; existing legacy markers are preserved verbatim and still read as close-date fallback (`resolvedDate`, dashboard `closedMonthOf` now prefer the latest `→ DONE`/`→ OBSL` bullet). No-op transitions (same state) write nothing.
+- **Single `Updated:` line, refreshed in place** — `editEntry` no longer appends a marker per day; one `Updated: <ts>` line records the latest edit and its timestamp is replaced on each subsequent edit. Legacy bodies with several `Updated:` lines consolidate to the most recent on next write.
+- **Comment-only editing** — the inline edit textarea (`ui.entryCard`) now shows only the comment text via new `store.splitBodyParts`; the `Updated:` line and the action section never enter the textarea and are reassembled untouched by `store.joinBodyParts` on save (canonical order: comment, legacy markers, `Updated:`, actions last).
+- New pure helpers `splitBodyParts`/`joinBodyParts` exported for UI and tests; 4 new unit tests in `store-helpers.test.mjs`; e2e expectations updated from `Resolved:`/`Achieved:` markers to `: → DONE`/`: → Achieved` bullets; help texts updated.
+- `datadefinition.md` §2.1 rewritten: three-part body model, state-change bullets, single-`Updated:` rule, legacy markers documented as read-only. Regression harness 7/7 (format layer untouched — body remains opaque to `format.js`); unit suite 18/18.

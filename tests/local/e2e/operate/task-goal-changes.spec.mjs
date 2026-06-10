@@ -80,11 +80,11 @@ test.describe('task & goal changes across surfaces', () => {
       await app.dragToColumn(TASK, 'CHK');
       await expect.poll(() => app.readDiscussion(MARIA)).toContain('checktask');
     });
-    test('change state: drag a card to DONE column (resolvedtask + Resolved: marker)', async ({ app }) => {
+    test('change state: drag a card to DONE column (resolvedtask + → DONE action)', async ({ app }) => {
       await app.screen('kanban');
       await app.dragToColumn(TASK, 'DONE');
       await expect.poll(() => app.readDiscussion(MARIA)).toContain('resolvedtask');
-      expect(await app.readDiscussion(MARIA)).toContain('Resolved:');
+      expect(await app.readDiscussion(MARIA)).toContain(': → DONE');
     });
   });
 

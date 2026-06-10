@@ -199,7 +199,7 @@
       section('Comments — functions & special tags',
         'Comments support Markdown (headings, bold/italic, lists, code, quotes), auto-linked URLs, @[Name] mentions and inline images.', [
         ['Actions', '✎ edit inline (tags are editable here — type #tag or use "+ tag"; × removes one), ⚡ add a dated action, 🔇 mute, ➜ move to another discussion, 🗑 delete.'],
-        ['"Updated:"', 'added automatically when you edit a comment on a later day than it was created.'],
+        ['"Updated:"', 'a single line recording the latest edit on a later day than creation; refreshed in place on every further edit. Editing only touches the comment text — actions and the Updated line are preserved.'],
         ['Classify', '#task, #followup or #goal turn a comment into that item type.'],
         ['Priority', '#high / #medium / #low (the priority square cycles them).'],
         ['Reserved tags (hidden from the chip row)', 'state tags (opentask, inprogresstask, checktask, onholdtask, purgatorytask, resolvedtask, obsoletetask, resolvedfollowup), goal states (achievedgoal, canceledgoal), muted:<date> (temporary mute) and goal-<id> (links a comment to a goal).']
@@ -231,10 +231,10 @@
       ]);
 
       section('Tasks, FollowUps & Goals', 'Classified comments gain a state machine and controls.', [
-        ['Task states', 'OPEN, WIP (in progress), CHK (check), HOLD (on hold), PRGT (purgatory), DONE (resolved), OBSL (obsolete) — click the state square for the menu.'],
+        ['Task states', 'OPEN, WIP (in progress), CHK (check), HOLD (on hold), PRGT (purgatory), DONE (resolved), OBSL (obsolete) — click the state square for the menu. Every state change is logged as a dated "→ STATE" line in the action section.'],
         ['Collapse', 'DONE / OBSL (and achieved/canceled goals) collapse to one line; click ▸ to expand.'],
         ['FollowUps', 'behave like tasks; resolving one marks it resolvedfollowup.'],
-        ['Goals', '✓ achieve or ✕ cancel writes an "Achieved:" / "Canceled:" marker; goals are visually highlighted. Link a comment to a goal, and double-click any task/goal to jump to its source entry.'],
+        ['Goals', '✓ achieve or ✕ cancel logs a dated "→ Achieved" / "→ Canceled" line in Goal Actions; goals are visually highlighted. Link a comment to a goal, and double-click any task/goal to jump to its source entry.'],
         ['Mute', 'hides a task for 5 days (muted:<date>) to cut noise in Ro3 and the kanban.']
       ]);
       chipLegend('Task-state chips (click the square for the menu):', [

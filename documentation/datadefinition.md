@@ -109,40 +109,48 @@ and image references.
 Beyond free text, entry bodies carry a few conventional data artifacts. These are plain text,
 not part of the header schema, and are stored as-is.
 
-**Lifecycle markers** — single lines, separated from the body by a blank line, each with a
-`YYYY-MM-DD HH:MM:SS` timestamp.
+**Three-part body model.** A body consists of at most three things, in this canonical order,
+blank-line separated: the **comment text**, the **`Updated:` line** (at most one), and the
+**resolution-action log** (one section, always last). Editing an entry only ever replaces the
+comment text — the other two parts are preserved untouched.
 
-These markers do **not** carry the entry's state — the state is always the state tag in the
-header (section 2.2). A marker is only a human-readable record of *when* a transition happened,
-written into the body alongside the tag change. Closing an entry therefore produces two things:
-the state tag (the authoritative state) and, for some transitions, a matching marker line (the
-timestamp note). The marker can exist without re-deriving state, and the state tag is what any
-reader should trust.
-
-State-change markers — written together with the corresponding state tag:
-
-- `Resolved: <ts>` — accompanies the `resolvedtask` tag (task state DONE), or `resolvedfollowup` for a followup.
-- `Obsolete: <ts>` — accompanies the `obsoletetask` tag (task state OBSL).
-- `Achieved: <ts>` — accompanies the `achievedgoal` tag (goal state Archived — see the naming note in section 2.2).
-- `Canceled: <ts>` — accompanies the `canceledgoal` tag (goal state Canceled).
-
-The remaining task states (OPEN, WIP, CHK, HOLD, PRGT) change only the tag and write **no** marker.
-
-Non-state markers — record an event, not a state change, and touch no tag:
-
-- `Updated: <ts>` — the entry's text was edited.
-- `Moved from <source discussion>: <ts>` — the entry was moved from another discussion.
+**The `Updated:` line** — a single line `Updated: <YYYY-MM-DD HH:MM:SS>` recording the most
+recent edit made on a later calendar day than the entry's creation. On every subsequent edit
+the existing line's timestamp is refreshed **in place** — a second `Updated:` line is never
+added. (When reading older files that carry several `Updated:` lines, the most recent one wins
+and the body is consolidated to a single line on the next write.)
 
 **Resolution-action log** — a single section at the end of the body recording dated actions.
 The header depends on entry type: `Task Resolution Actions` (task), `Followup Actions`
 (followup), or `Goal Actions` (goal). Each action is a bullet `- YYYY-MM-DD : <text>` — date
-only, one space on each side of the colon:
+only, one space on each side of the colon.
+
+**State changes are logged here.** Every task, followup, or goal state transition appends an
+action bullet `- YYYY-MM-DD : → <LABEL>`, where `<LABEL>` is the state's display label (task
+states `OPEN`, `WIP`, `CHK`, `HOLD`, `PRGT`, `DONE`, `OBSL`; goal states `Achieved`,
+`Canceled`, `Open`). The bullet does **not** carry the entry's state — the state is always the
+state tag in the header (section 2.2); the bullet is only a human-readable record of *when*
+the transition happened.
 
 ```markdown
 Task Resolution Actions
 - 2026-05-18 : Reworked the deployment pipeline; verified on staging.
 - 2026-05-19 : Confirmed fix in production.
+- 2026-05-19 : → DONE
 ```
+
+**Legacy lifecycle markers** — older files carry single marker lines, each with a
+`YYYY-MM-DD HH:MM:SS` timestamp, written before state changes moved into the action log:
+
+- `Resolved: <ts>` — accompanied the `resolvedtask` tag (task state DONE), or `resolvedfollowup` for a followup.
+- `Obsolete: <ts>` — accompanied the `obsoletetask` tag (task state OBSL).
+- `Achieved: <ts>` — accompanied the `achievedgoal` tag (goal state Archived — see the naming note in section 2.2).
+- `Canceled: <ts>` — accompanied the `canceledgoal` tag (goal state Canceled).
+
+These markers are still **read** (e.g. as a close-date fallback when no `→ DONE`/`→ OBSL`
+action bullet exists) and are preserved verbatim when an entry is rewritten, but **no new
+state markers are ever written**. The only marker still written is the move marker:
+`Moved from <source discussion>: <ts>` — the entry was moved from another discussion.
 
 **Embedded data forms inside body text:**
 

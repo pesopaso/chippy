@@ -332,6 +332,51 @@
     return { pre: lines.slice(0, k + 1).join('\n').replace(/\n+$/, ''), bullets };
   }
 
+  // --- Three-part body model (datadefinition §2.1) ---
+  // A body consists of at most three things: the comment text, a single
+  // "Updated:" line, and one trailing action section. Legacy lifecycle markers
+  // (Resolved:/Obsolete:/Achieved:/Canceled:/Moved from:) are preserved
+  // verbatim but never written anew — new state changes are logged as action
+  // bullets instead.
+  const LEGACY_MARKER_RE = /^((Resolved|Obsolete|Achieved|Canceled): |Moved from .+: )\d{4}-\d{2}-\d{2}/;
+  const UPDATED_RE = /^Updated: \d{4}-\d{2}-\d{2}/;
+
+  // Split a body into { comment, markers, updated, bullets }. Multiple legacy
+  // "Updated:" lines collapse to the most recent one.
+  function splitBodyParts(body) {
+    const { pre, bullets } = splitTrailingActions(body);
+    const markers = [];
+    let updated = null;
+    const rest = [];
+    for (const l of pre.split('\n')) {
+      const tr = l.trim();
+      if (UPDATED_RE.test(tr)) { if (!updated || tr > updated) updated = tr; continue; }
+      if (LEGACY_MARKER_RE.test(tr)) { markers.push(tr); continue; }
+      rest.push(l);
+    }
+    const comment = rest.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+    return { comment, markers, updated, bullets };
+  }
+
+  // Reassemble the canonical body: comment, legacy markers, the Updated line,
+  // then the action section last — blank-line separated.
+  function joinBodyParts(parts, e) {
+    let body = parts.comment || '';
+    for (const mk of parts.markers) body += (body ? '\n\n' : '') + mk;
+    if (parts.updated) body += (body ? '\n\n' : '') + parts.updated;
+    if (parts.bullets.length) {
+      body += (body ? '\n\n' : '') + actionLabelFor(e) + '\n' + parts.bullets.join('\n');
+    }
+    return body;
+  }
+
+  // Log a state change as a dated action bullet: "- YYYY-MM-DD : → LABEL".
+  function logStateAction(e, label) {
+    const parts = splitBodyParts(e.body);
+    parts.bullets.push('- ' + nowISO().slice(0, 10) + ' : → ' + label);
+    e.body = joinBodyParts(parts, e);
+  }
+
   // Locate an entry by created_at. When several entries share a timestamp the
   // optional idx hint (the entry's position in m.entries) disambiguates them —
   // it's only trusted if that slot still carries the same created_at, otherwise
@@ -360,24 +405,23 @@
   }
 
   // Set a task/followup state: strip every state tag, add the one new tag, and
-  // append Resolved:/Obsolete: markers before any action section. Followups now
-  // use the same states as tasks (resolved -> resolvedtask, no resolvedfollowup);
-  // legacy resolvedfollowup is still stripped and still read as DONE elsewhere.
+  // log the transition as an action bullet ("- YYYY-MM-DD : → LABEL") in the
+  // entry's action section. No new Resolved:/Obsolete: marker lines are written
+  // (existing legacy markers are preserved). Followups use the same states as
+  // tasks (resolved -> resolvedtask, no resolvedfollowup); legacy
+  // resolvedfollowup is still stripped and still read as DONE elsewhere.
   // (datadefinition §2.1-2.2)
   async function setTaskState(name, entryId, stateKey, idx) {
     const [m, e] = findEntry(name, entryId, idx);
     if (!e) return;
+    const prevKey = Chippy.tags.stateKeyOf(e.tags);
     e.tags = e.tags.filter(t =>
       !STATE_TAGS.includes(t) && !LEGACY_STATE.includes(t) && t !== 'resolvedfollowup');
     const newTag = STATE_TO_TAG[stateKey];
     if (newTag) e.tags.push(newTag);
 
-    if (stateKey === 'resolved' || stateKey === 'obsolete') {
-      const { pre, bullets } = splitTrailingActions(e.body);
-      const marker = (stateKey === 'resolved' ? 'Resolved: ' : 'Obsolete: ') + nowISO();
-      let body = pre + '\n\n' + marker;
-      if (bullets.length) body += '\n\n' + actionLabelFor(e) + '\n' + bullets.join('\n');
-      e.body = body;
+    if (stateKey !== prevKey) {
+      logStateAction(e, (Chippy.tags.STATE_SQUARE[stateKey] || [stateKey])[0]);
     }
     await ensureTagsInUnion(e.tags);
     await io().saveDiscussion(state.dirHandle, m);
@@ -436,42 +480,41 @@
   /* ----------------------------- goals --------------------------------- */
 
   const GOAL_STATE_TAGS = ['achievedgoal', 'canceledgoal', 'resolvedgoal'];
+  const GOAL_STATE_LABEL = { achieved: 'Achieved', canceled: 'Canceled', open: 'Open' };
 
-  // Append a "<Label>: <ts>" marker before any trailing action section.
-  function insertMarker(e, label) {
-    const { pre, bullets } = splitTrailingActions(e.body);
-    let b = pre + '\n\n' + label + ': ' + nowISO();
-    if (bullets.length) b += '\n\n' + actionLabelFor(e) + '\n' + bullets.join('\n');
-    return b;
-  }
-
-  // Goal state: 'achieved' (achievedgoal + Achieved: marker), 'canceled'
-  // (canceledgoal + Canceled:), or 'open' (no closed tag). (datadefinition §2.2)
+  // Goal state: 'achieved' (achievedgoal tag), 'canceled' (canceledgoal), or
+  // 'open' (no closed tag). The transition is logged as a Goal Actions bullet;
+  // no new Achieved:/Canceled: marker lines are written (legacy markers are
+  // preserved). (datadefinition §2.1-2.2)
   async function setGoalState(name, entryId, stateKey, idx) {
     const [m, e] = findEntry(name, entryId, idx);
     if (!e) return;
+    const prev = e.tags.includes('achievedgoal') || e.tags.includes('resolvedgoal') ? 'achieved'
+      : e.tags.includes('canceledgoal') ? 'canceled' : 'open';
     e.tags = e.tags.filter(t => !GOAL_STATE_TAGS.includes(t));
-    if (stateKey === 'achieved') { e.tags.push('achievedgoal'); e.body = insertMarker(e, 'Achieved'); }
-    else if (stateKey === 'canceled') { e.tags.push('canceledgoal'); e.body = insertMarker(e, 'Canceled'); }
+    if (stateKey === 'achieved') e.tags.push('achievedgoal');
+    else if (stateKey === 'canceled') e.tags.push('canceledgoal');
+    if (stateKey !== prev) logStateAction(e, GOAL_STATE_LABEL[stateKey] || stateKey);
     await ensureTagsInUnion(e.tags);
     await io().saveDiscussion(state.dirHandle, m);
     emit({ type: 'goalStateChanged', name, entryId, stateKey });
   }
 
-  // Edit an entry's body (and optionally tags). Appends an "Updated:" marker only
-  // when edited on a different calendar day than its creation. (R41 / v1.42)
+  // Edit an entry's comment part. Only the comment text is replaced — the
+  // Updated line and the action section are preserved untouched. A single
+  // "Updated:" line records the latest edit: refreshed in place on every
+  // subsequent edit, never duplicated. (R41 / v1.42, revised)
   async function editEntry(name, entryId, opts, idx) {
     opts = opts || {};
     const [m, e] = findEntry(name, entryId, idx);
     if (!e) return;
     if (Array.isArray(opts.tags)) e.tags = opts.tags.slice();
     if (opts.text != null) {
-      e.body = autoLinkUrls(String(opts.text).trim());
+      const parts = splitBodyParts(e.body);
+      parts.comment = autoLinkUrls(String(opts.text).trim());
       const created = (e.created_at || '').slice(0, 10);
-      const today = nowISO().slice(0, 10);
-      if (today !== created && !e.body.split('\n').some(l => l.startsWith('Updated: ' + today))) {
-        e.body = insertMarker(e, 'Updated');
-      }
+      if (nowISO().slice(0, 10) !== created) parts.updated = 'Updated: ' + nowISO();
+      e.body = joinBodyParts(parts, e);
     }
     await ensureTagsInUnion(e.tags);
     await io().saveDiscussion(state.dirHandle, m);
@@ -714,10 +757,16 @@
 
   /* --------------------------- kanban / Ro3 ---------------------------- */
 
-  // The "Resolved: <date>" marker date, if present.
+  // The date an entry was resolved: the latest "→ DONE" action bullet, or the
+  // legacy "Resolved: <date>" marker as fallback.
   function resolvedDate(e) {
-    const m = (e.body || '').match(/Resolved: (\d{4}-\d{2}-\d{2})/);
-    return m ? m[1] : null;
+    const body = e.body || '';
+    let last = null, m;
+    const act = /^- (\d{4}-\d{2}-\d{2}) : → DONE$/gm;
+    while ((m = act.exec(body))) if (!last || m[1] > last) last = m[1];
+    if (last) return last;
+    const mk = body.match(/Resolved: (\d{4}-\d{2}-\d{2})/);
+    return mk ? mk[1] : null;
   }
   // True if not resolved, or resolved within the last `months`. (Done-column limit)
   function doneRecent(e, months) {
@@ -836,7 +885,7 @@
       loadSummary, saveSummaryConfig, appendSummary, deleteSummary, updateSummary, moveSummaryToDiscussion, exportContribution, shortId,
       // pure helpers exposed for the UI and for tests
       nowISO, mintGoalId, extractInlineTags, autoLinkUrls, extractNameTokens,
-      splitTrailingActions, actionLabelFor, extractLinks, parseSearchQuery,
+      splitTrailingActions, splitBodyParts, joinBodyParts, actionLabelFor, extractLinks, parseSearchQuery,
       _state: state
     },
     selectors

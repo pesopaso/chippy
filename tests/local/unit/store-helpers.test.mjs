@@ -80,3 +80,64 @@ test('applyUnifiedFilter requires tags AND names AND freetext to all match', () 
   assert.equal(hit.length, 1);
   assert.equal(hit[0].body, 'deploy pipeline with @[Maria Lopez]');
 });
+
+test('splitBodyParts separates comment, legacy markers, Updated line and actions', () => {
+  const body = [
+    'Fix the deployment pipeline.',
+    '',
+    'Resolved: 2026-05-20 10:00:00',
+    '',
+    'Updated: 2026-05-18 09:00:00',
+    '',
+    'Updated: 2026-05-21 09:00:00',
+    '',
+    'Task Resolution Actions',
+    '- 2026-05-18 : Reworked the pipeline.',
+    '- 2026-05-20 : → DONE'
+  ].join('\n');
+  const p = store.splitBodyParts(body);
+  assert.equal(p.comment, 'Fix the deployment pipeline.');
+  assert.deepEqual(p.markers, ['Resolved: 2026-05-20 10:00:00']);
+  assert.equal(p.updated, 'Updated: 2026-05-21 09:00:00'); // latest wins, no duplicates
+  assert.deepEqual(p.bullets, [
+    '- 2026-05-18 : Reworked the pipeline.',
+    '- 2026-05-20 : → DONE'
+  ]);
+});
+
+test('joinBodyParts reassembles canonically: comment, markers, Updated, actions last', () => {
+  const e = { tags: ['task'] };
+  const parts = {
+    comment: 'Fix the deployment pipeline.',
+    markers: ['Resolved: 2026-05-20 10:00:00'],
+    updated: 'Updated: 2026-05-21 09:00:00',
+    bullets: ['- 2026-05-20 : → DONE']
+  };
+  assert.equal(store.joinBodyParts(parts, e), [
+    'Fix the deployment pipeline.',
+    '',
+    'Resolved: 2026-05-20 10:00:00',
+    '',
+    'Updated: 2026-05-21 09:00:00',
+    '',
+    'Task Resolution Actions',
+    '- 2026-05-20 : → DONE'
+  ].join('\n'));
+});
+
+test('splitBodyParts/joinBodyParts round-trip a plain comment unchanged', () => {
+  const body = 'Just a note with **markdown**.\n\nSecond paragraph.';
+  const p = store.splitBodyParts(body);
+  assert.equal(p.comment, body);
+  assert.equal(p.updated, null);
+  assert.deepEqual(p.markers, []);
+  assert.deepEqual(p.bullets, []);
+  assert.equal(store.joinBodyParts(p, { tags: [] }), body);
+});
+
+test('resolvedDate prefers the latest "→ DONE" action over the legacy marker', () => {
+  const e = { body: 'x\n\nResolved: 2026-01-01 08:00:00\n\nTask Resolution Actions\n- 2026-02-02 : → DONE\n- 2026-03-03 : → DONE' };
+  assert.equal(store.resolvedDate(e), '2026-03-03');
+  assert.equal(store.resolvedDate({ body: 'x\n\nResolved: 2026-01-01 08:00:00' }), '2026-01-01');
+  assert.equal(store.resolvedDate({ body: 'open task' }), null);
+});

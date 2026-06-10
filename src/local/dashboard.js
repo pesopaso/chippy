@@ -71,10 +71,16 @@
     return tl.map(r => { total += r.comments + r.tasks; return { month: r.month, total }; });
   }
 
-  // The month (YYYY-MM) a task was closed, from its Resolved:/Obsolete: marker.
+  // The month (YYYY-MM) a task was closed: the latest "→ DONE"/"→ OBSL" action
+  // bullet, or the legacy Resolved:/Obsolete: marker as fallback.
   function closedMonthOf(e) {
-    const m = (e.body || '').match(/(?:Resolved|Obsolete): (\d{4}-\d{2})/);
-    return m ? m[1] : null;
+    const body = e.body || '';
+    let last = null, m;
+    const act = /^- (\d{4}-\d{2})-\d{2} : → (?:DONE|OBSL)$/gm;
+    while ((m = act.exec(body))) if (!last || m[1] > last) last = m[1];
+    if (last) return last;
+    const mk = body.match(/(?:Resolved|Obsolete): (\d{4}-\d{2})/);
+    return mk ? mk[1] : null;
   }
   // Consecutive YYYY-MM strings from start to end inclusive.
   function monthsBetween(start, end) {

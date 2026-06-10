@@ -54,17 +54,19 @@ test.describe('task & goal changes across surfaces', () => {
   });
 
   test.describe('Discussion right column — goal row', () => {
-    test('change state: ✓ marks achieved (achievedgoal + Achieved: marker)', async ({ app }) => {
+    test('change state: ✓ marks achieved (achievedgoal + Achieved action)', async ({ app }) => {
       await app.open(MARIA);
       await app.achieveGoal(app.goalRow(GOAL));
       await expect.poll(() => app.readDiscussion(MARIA)).toContain('achievedgoal');
-      expect(await app.readDiscussion(MARIA)).toContain('Achieved:');
+      // State changes are logged as a "→ Achieved" goal action (not an "Achieved:" marker).
+      await expect.poll(() => app.readDiscussion(MARIA)).toContain('Achieved');
     });
-    test('change state: ✕ marks canceled (canceledgoal + Canceled: marker)', async ({ app }) => {
+    test('change state: ✕ marks canceled (canceledgoal + Canceled action)', async ({ app }) => {
       await app.open(MARIA);
       await app.cancelGoal(app.goalRow(GOAL));
       await expect.poll(() => app.readDiscussion(MARIA)).toContain('canceledgoal');
-      expect(await app.readDiscussion(MARIA)).toContain('Canceled:');
+      // State changes are logged as a "→ Canceled" goal action (not a "Canceled:" marker).
+      await expect.poll(() => app.readDiscussion(MARIA)).toContain('Canceled');
     });
     test('add an activity: appends a "Goal Actions" bullet', async ({ app }) => {
       await app.open(MARIA);

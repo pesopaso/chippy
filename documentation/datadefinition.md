@@ -9,11 +9,16 @@ configuration outside that folder. These file categories live at the folder root
 per-discussion image subfolders:
 
 1. One `<DiscussionName>.md` per discussion — its content.
-2. Three index files — `navigation.md` (the discussion list and theme), `tags.md` (the union of
-   all tags), and `names.md` (known person names). Loaded on startup so the sidebar and
-   autocomplete render without parsing any discussion.
-3. One `summary.md` — AI-summary history plus the LLM API configuration (present once the
-   Summary screen has been used).
+2. Three index files — `navigation.chippy.md` (the discussion list and theme),
+   `tags.chippy.md` (the union of all tags), and `names.chippy.md` (known person names).
+   Loaded on startup so the sidebar and autocomplete render without parsing any discussion.
+3. One `summary.chippy.md` — AI-summary history plus the LLM API configuration (present once
+   the Summary screen has been used).
+
+All app-managed files share the `.chippy.md` suffix. Because discussion filenames are
+sanitized to `[A-Za-z0-9_ -]` (dots are stripped), no discussion file can ever end in
+`.chippy.md` — the two namespaces cannot collide, and `navigation`, `tags`, `names`, and
+`summary` are ordinary discussion names.
 
 Archived discussions are renamed `<DiscussionName>.archive.md` and are skipped when the folder
 is loaded.
@@ -26,11 +31,11 @@ is loaded.
   display name with every character outside `[A-Za-z0-9_ -]` removed, followed by `.md`.
   Example: a discussion displayed as `R&D` is stored as `RD.md`, while the display name kept
   inside the file (`# R&D`) retains the ampersand.
-- The reserved index files (`navigation.md`, `tags.md`, `names.md`), `summary.md`, and any
-  `*.archive.md` file are not treated as discussions.
-- A file counts as a loadable discussion only when it ends in `.md`, does **not** end in
-  `.archive.md`, and is not one of the reserved files above. Discussions flagged as archived are
-  excluded from the active list.
+- App-managed files (`navigation.chippy.md`, `tags.chippy.md`, `names.chippy.md`,
+  `summary.chippy.md`) and any `*.archive.md` file are not treated as discussions.
+- A file counts as a loadable discussion only when it ends in `.md` and does **not** end in
+  `.archive.md` or `.chippy.md`. Discussions flagged as archived are excluded from the active
+  list.
 - Per-discussion images live in a subfolder whose name matches the sanitized discussion name.
 
 ---
@@ -236,9 +241,9 @@ section is never written back, so any re-saved file is normalized to the entries
 ## 3. Index files
 
 Three small index files at the folder root let the app render the sidebar and drive
-autocomplete without parsing any discussion content. They are split by concern: `navigation.md`
-(the discussion list and theme), `tags.md` (the tag union), and `names.md` (known person
-names).
+autocomplete without parsing any discussion content. They are split by concern:
+`navigation.chippy.md` (the discussion list and theme), `tags.chippy.md` (the tag union), and
+`names.chippy.md` (known person names).
 
 **Why these are persisted and not rebuilt at load.** Discussion files are loaded lazily — the
 app does not read every discussion on startup, only what the user opens. The tag union and the
@@ -247,7 +252,7 @@ defeating lazy loading, and application speed is the priority. So each index is 
 persisted file, maintained incrementally as discussions and entries change, rather than a cache
 regenerated on demand.
 
-### 3.1 `navigation.md` — discussions and theme
+### 3.1 `navigation.chippy.md` — discussions and theme
 
 ```markdown
 # Navigation
@@ -274,7 +279,7 @@ followed by optional pipe-separated flags:
 Per-discussion tag, archived, and favorite state are owned here (the single source of truth),
 not in the discussion files.
 
-### 3.2 `tags.md` — tag union
+### 3.2 `tags.chippy.md` — tag union
 
 ```markdown
 # Tags
@@ -290,7 +295,7 @@ A deduplicated, alphabetically sorted list of every tag in use across all discus
 filters. Maintained incrementally: a tag is added when an entry first introduces it. Because
 discussions are lazy-loaded, the list is not pruned by re-scanning all files.
 
-### 3.3 `names.md` — known names
+### 3.3 `names.chippy.md` — known names
 
 ```markdown
 # Names
@@ -302,10 +307,21 @@ discussions are lazy-loaded, the list is not pruned by re-scanning all files.
 A deduplicated, sorted list of known person names, one `- <name>` per line. These are the names
 offered when typing `@` in an entry and stored as `@[Full Name]` references in body text.
 
-### 3.4 Legacy layout — tags and names inside `navigation.md`
+### 3.4 Legacy layouts and the one-time migration
 
-Before the split, all three lists lived in a single `navigation.md` with `## Discussions`,
-`## Tags`, and `## Names` sections:
+Two older folder layouts are recognized and migrated to the `.chippy.md` layout on first load.
+The migration runs **only when no `navigation.chippy.md` exists yet**; once the new files are
+present, files named `navigation.md`, `tags.md`, `names.md`, or `summary.md` are ordinary
+discussions and are never read as indexes.
+
+**Generation 2 (pre-3.3 split layout).** The same three index files under their old names —
+`navigation.md`, `tags.md`, `names.md` — plus an optional `summary.md`. On load, each is read,
+written out under its `.chippy.md` name, and the legacy file is removed: effectively a rename.
+A `summary` entry in the legacy discussion list (reserved-file pollution from old versions) is
+dropped during the migration.
+
+**Generation 1 (single-file layout).** Before the split, all three lists lived in a single
+`navigation.md` with `## Discussions`, `## Tags`, and `## Names` sections:
 
 ```markdown
 # Navigation
@@ -326,21 +342,22 @@ Before the split, all three lists lived in a single `navigation.md` with `## Dis
 - Anna Wehrli
 ```
 
-This older layout is handled when chippy loads, so existing folders keep working:
+Both generations are handled in one pass when chippy loads, so existing folders keep working:
 
-- **Read precedence.** A dedicated `tags.md` / `names.md`, when present, is authoritative. When
-  a dedicated file is absent, the corresponding `## Tags` / `## Names` section inside
-  `navigation.md` is read as the fallback source. (If both exist, the dedicated file wins and
-  the inline section is ignored.)
-- **Discussions and theme** are always read from `navigation.md` regardless of layout.
-- **Migration on load.** Once the legacy data has been read, it is written out to the dedicated
-  `tags.md` / `names.md` files, and `navigation.md` is rewritten without its `## Tags` /
-  `## Names` sections. The legacy sections are therefore read at most once per folder and then
-  normalized away — after the first load, the folder is in the new three-file layout.
+- **Read precedence.** A dedicated legacy `tags.md` / `names.md`, when present, is
+  authoritative. When absent, the corresponding `## Tags` / `## Names` section inside the
+  legacy `navigation.md` is read as the fallback source.
+- **Discussions and theme** are always read from the legacy `navigation.md` regardless of
+  generation.
+- **Migration on load.** The data is written to `navigation.chippy.md`, `tags.chippy.md`, and
+  `names.chippy.md` (and `summary.md` is renamed to `summary.chippy.md` when present); the
+  legacy files are then removed. The migration therefore runs at most once per folder — after
+  the first load, the folder is in the `.chippy.md` layout and the legacy names are free for
+  ordinary discussions.
 
 ---
 
-## 4. `summary.md` — AI summaries and API configuration
+## 4. `summary.chippy.md` — AI summaries and API configuration
 
 Optional file, present once the Summary screen has been used. It holds two things: the LLM API
 configuration and the saved summaries.
@@ -380,10 +397,10 @@ image filename is `yyyy-mm-dd hh-mm-ss.jpg`. Inside entry text, images are refer
 
 ```
 <data folder>\
-├── navigation.md
-├── tags.md
-├── names.md
-├── summary.md
+├── navigation.chippy.md
+├── tags.chippy.md
+├── names.chippy.md
+├── summary.chippy.md
 ├── Alice Johnson.md
 ├── Alice Johnson\
 │   ├── 2026-02-25 10-30-45.jpg

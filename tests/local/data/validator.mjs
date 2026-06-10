@@ -19,7 +19,10 @@
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
-const RESERVED_INDEX = new Set(['navigation.md', 'tags.md', 'names.md', 'summary.md']);
+// App-managed files live in the .chippy.md namespace (datadefinition §1).
+const NAV_FILE = 'navigation.chippy.md';
+const TAGS_FILE = 'tags.chippy.md';
+const NAMES_FILE = 'names.chippy.md';
 
 // Reserved tags from datadefinition.md §2.2 (current + accepted legacy).
 const TASK_STATE_TAGS = new Set([
@@ -105,16 +108,16 @@ export function readSeed(dir) {
   if (!existsSync(dir)) throw new Error(`seed dir does not exist: ${dir}`);
   const all = readdirSync(dir);
   const discussionFiles = all.filter(
-    f => f.endsWith('.md') && !f.endsWith('.archive.md') && !RESERVED_INDEX.has(f)
+    f => f.endsWith('.md') && !f.endsWith('.archive.md') && !f.endsWith('.chippy.md')
   );
 
   const discussions = discussionFiles.map(f =>
     parseDiscussionFile(f, readFileSync(join(dir, f), 'utf8'))
   );
 
-  const navText = existsSync(join(dir, 'navigation.md')) ? readFileSync(join(dir, 'navigation.md'), 'utf8') : null;
-  const tagsText = existsSync(join(dir, 'tags.md')) ? readFileSync(join(dir, 'tags.md'), 'utf8') : null;
-  const namesText = existsSync(join(dir, 'names.md')) ? readFileSync(join(dir, 'names.md'), 'utf8') : null;
+  const navText = existsSync(join(dir, NAV_FILE)) ? readFileSync(join(dir, NAV_FILE), 'utf8') : null;
+  const tagsText = existsSync(join(dir, TAGS_FILE)) ? readFileSync(join(dir, TAGS_FILE), 'utf8') : null;
+  const namesText = existsSync(join(dir, NAMES_FILE)) ? readFileSync(join(dir, NAMES_FILE), 'utf8') : null;
 
   return {
     dir,
@@ -212,32 +215,32 @@ export function validateStructural(seed) {
 
   // index files: sorted + deduped
   if (seed.tags) {
-    if (hasDupes(seed.tags)) err('tags.dupes', 'tags.md contains duplicates', 'tags.md');
-    if (!isSorted(seed.tags)) err('tags.unsorted', 'tags.md is not alphabetically sorted', 'tags.md');
+    if (hasDupes(seed.tags)) err('tags.dupes', `${TAGS_FILE} contains duplicates`, TAGS_FILE);
+    if (!isSorted(seed.tags)) err('tags.unsorted', `${TAGS_FILE} is not alphabetically sorted`, TAGS_FILE);
   }
   if (seed.names) {
-    if (hasDupes(seed.names)) err('names.dupes', 'names.md contains duplicates', 'names.md');
-    if (!isSorted(seed.names)) err('names.unsorted', 'names.md is not sorted', 'names.md');
+    if (hasDupes(seed.names)) err('names.dupes', `${NAMES_FILE} contains duplicates`, NAMES_FILE);
+    if (!isSorted(seed.names)) err('names.unsorted', `${NAMES_FILE} is not sorted`, NAMES_FILE);
   }
 
   // cross-file: every used tag / referenced name must be present in the union
   if (seed.tags) {
     const known = new Set(seed.tags);
     for (const t of usedTags(seed))
-      if (!known.has(t)) err('tags.missing-union', `tag "${t}" used in a discussion but absent from tags.md`, 'tags.md');
+      if (!known.has(t)) err('tags.missing-union', `tag "${t}" used in a discussion but absent from ${TAGS_FILE}`, TAGS_FILE);
   }
   if (seed.names) {
     const known = new Set(seed.names);
     for (const n of referencedNames(seed))
-      if (!known.has(n)) err('names.missing-union', `name "${n}" referenced but absent from names.md`, 'names.md');
+      if (!known.has(n)) err('names.missing-union', `name "${n}" referenced but absent from ${NAMES_FILE}`, NAMES_FILE);
   }
 
-  // cross-file: every discussion file appears in navigation.md
+  // cross-file: every discussion file appears in the navigation index
   if (seed.nav) {
     const navNames = new Set(seed.nav.discussions.map(d => d.name));
     for (const d of seed.discussions)
       if (!navNames.has(d.title))
-        err('nav.missing-discussion', `discussion "${d.title}" (${d.fileName}) not listed in navigation.md`, 'navigation.md');
+        err('nav.missing-discussion', `discussion "${d.title}" (${d.fileName}) not listed in ${NAV_FILE}`, NAV_FILE);
   }
 
   return out;

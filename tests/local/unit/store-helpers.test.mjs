@@ -141,3 +141,26 @@ test('resolvedDate prefers the latest "→ DONE" action over the legacy marker',
   assert.equal(store.resolvedDate({ body: 'x\n\nResolved: 2026-01-01 08:00:00' }), '2026-01-01');
   assert.equal(store.resolvedDate({ body: 'open task' }), null);
 });
+
+test('applyEditTagRules promotes a comment to task/goal with defaults', () => {
+  // comment -> task: gets default 'low'
+  assert.deepEqual(store.applyEditTagRules(['meeting', 'task']), ['meeting', 'task', 'low']);
+  // comment -> goal: mints a goal id (deterministic rng) and default 'low'
+  assert.deepEqual(
+    store.applyEditTagRules(['career', 'goal'], () => 0),
+    ['career', 'goal', 'goal-00000', 'low']
+  );
+  // existing goal keeps its id, no second mint
+  assert.deepEqual(
+    store.applyEditTagRules(['goal', 'goal-a1b2c', 'high']),
+    ['goal', 'goal-a1b2c', 'high']
+  );
+});
+
+test('applyEditTagRules dedupes and lets the last priority win', () => {
+  assert.deepEqual(store.applyEditTagRules(['task', 'low', 'task', 'high']), ['task', 'high']);
+  // plain comment with a priority keeps it, no kind default added
+  assert.deepEqual(store.applyEditTagRules(['note', 'medium']), ['note', 'medium']);
+  // plain comment untouched
+  assert.deepEqual(store.applyEditTagRules(['note']), ['note']);
+});

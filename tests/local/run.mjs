@@ -86,12 +86,12 @@ function runPlaywright(label, testPath, phase) {
   return { ok, tests: parsePlaywrightJson(jsonFile, phase) };
 }
 
-// A discussion .md is any root-level .md that isn't a reserved index file.
-const RESERVED = new Set(['navigation.md', 'tags.md', 'names.md', 'summary.md']);
+// A discussion .md is any root-level .md that isn't an app-managed
+// *.chippy.md file (datadefinition §1).
 function seedHasData() {
   if (!existsSync(SEED)) return false;
   return readdirSync(SEED).some(
-    f => f.endsWith('.md') && !f.endsWith('.archive.md') && !RESERVED.has(f)
+    f => f.endsWith('.md') && !f.endsWith('.archive.md') && !f.endsWith('.chippy.md')
   );
 }
 

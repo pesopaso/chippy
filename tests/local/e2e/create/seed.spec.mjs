@@ -67,6 +67,6 @@ test.describe.serial('content creation — seed dataset from zero', () => {
     // Sanity: every discussion file plus the index trio landed on disk.
     const onDisk = readdirSync(seedDir);
     for (const name of DISCUSSION_NAMES) expect(onDisk).toContain(name + '.md');
-    for (const idx of ['navigation.md', 'tags.md', 'names.md']) expect(onDisk).toContain(idx);
+    for (const idx of ['navigation.chippy.md', 'tags.chippy.md', 'names.chippy.md']) expect(onDisk).toContain(idx);
   });
 });

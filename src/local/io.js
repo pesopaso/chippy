@@ -13,11 +13,19 @@
 
   /* ------------------------------ constants ---------------------------- */
 
-  const NAV_FILE = 'navigation.md';
-  const TAGS_FILE = 'tags.md';
-  const NAMES_FILE = 'names.md';
-  const SUMMARY_FILE = 'summary.md';
-  const RESERVED = new Set([NAV_FILE, TAGS_FILE, NAMES_FILE, SUMMARY_FILE]);
+  // App-managed files carry the .chippy.md suffix, so they can never collide
+  // with a user discussion (sanitizeName strips dots, so no discussion file can
+  // ever end in .chippy.md). "navigation", "tags", "names", and "summary" are
+  // therefore ordinary discussion names.
+  const NAV_FILE = 'navigation.chippy.md';
+  const TAGS_FILE = 'tags.chippy.md';
+  const NAMES_FILE = 'names.chippy.md';
+  const SUMMARY_FILE = 'summary.chippy.md';
+  // Pre-3.3 legacy filenames — read once by the migration, then removed.
+  const LEGACY_NAV = 'navigation.md';
+  const LEGACY_TAGS = 'tags.md';
+  const LEGACY_NAMES = 'names.md';
+  const LEGACY_SUMMARY = 'summary.md';
   const NUL = String.fromCharCode(0);
 
   /* ------------------------------ pure guards -------------------------- */
@@ -46,7 +54,7 @@
   function isDiscussionFile(filename) {
     if (!filename.endsWith('.md')) return false;
     if (filename.endsWith('.archive.md')) return false;
-    if (RESERVED.has(filename)) return false;
+    if (filename.endsWith('.chippy.md')) return false; // app-managed namespace
     return true;
   }
 
@@ -155,25 +163,51 @@
   /* ------------------------------ index files -------------------------- */
 
   async function loadIndexes(dirHandle) {
-    const navText = await readFileText(dirHandle, NAV_FILE);
-    const hasTags = await fileExists(dirHandle, TAGS_FILE);
-    const hasNames = await fileExists(dirHandle, NAMES_FILE);
-
-    if (hasTags && hasNames) {
-      return {
-        nav: fmt.parseNav(navText),
-        tags: fmt.parseTags(await readFileText(dirHandle, TAGS_FILE)),
-        names: fmt.parseNames(await readFileText(dirHandle, NAMES_FILE))
-      };
+    if (await fileExists(dirHandle, NAV_FILE)) {
+      const nav = fmt.parseNav(await readFileText(dirHandle, NAV_FILE));
+      const tags = (await fileExists(dirHandle, TAGS_FILE))
+        ? fmt.parseTags(await readFileText(dirHandle, TAGS_FILE)) : [];
+      const names = (await fileExists(dirHandle, NAMES_FILE))
+        ? fmt.parseNames(await readFileText(dirHandle, NAMES_FILE)) : [];
+      return { nav, tags, names };
     }
+    return migrateLegacyIndexes(dirHandle);
+  }
 
-    // Legacy single-file layout — migrate once.
-    const migrated = fmt.migrateLegacyNav(navText);
-    const nav = { discussions: migrated.discussions, theme: migrated.theme };
-    await writeFileText(dirHandle, TAGS_FILE, fmt.serializeTags(migrated.tags));
-    await writeFileText(dirHandle, NAMES_FILE, fmt.serializeNames(migrated.names));
+  // One-time migration to the .chippy.md layout. Runs only when no
+  // navigation.chippy.md exists yet. Handles both legacy generations:
+  // the pre-3.3 split layout (navigation.md + tags.md + names.md) and the
+  // older single-file navigation.md with inline ## Tags / ## Names sections
+  // (datadefinition §3.4). The new files are written first; the legacy files
+  // are removed afterwards — effectively a rename — so "navigation", "tags",
+  // "names", and "summary" become ordinary discussion names from then on.
+  async function migrateLegacyIndexes(dirHandle) {
+    const navText = await readFileText(dirHandle, LEGACY_NAV); // absent -> throws, as before
+    let nav, tags, names;
+    if ((await fileExists(dirHandle, LEGACY_TAGS)) && (await fileExists(dirHandle, LEGACY_NAMES))) {
+      nav = fmt.parseNav(navText);
+      tags = fmt.parseTags(await readFileText(dirHandle, LEGACY_TAGS));
+      names = fmt.parseNames(await readFileText(dirHandle, LEGACY_NAMES));
+    } else {
+      const m = fmt.migrateLegacyNav(navText);
+      nav = { discussions: m.discussions, theme: m.theme };
+      tags = m.tags;
+      names = m.names;
+    }
+    // A "summary" entry in a legacy navigation list was reserved-file
+    // pollution, never a real discussion — drop it during the migration.
+    nav.discussions = (nav.discussions || []).filter(d => d.name !== 'summary');
+
     await writeFileText(dirHandle, NAV_FILE, fmt.serializeNav(nav));
-    return { nav, tags: migrated.tags, names: migrated.names };
+    await writeFileText(dirHandle, TAGS_FILE, fmt.serializeTags(tags));
+    await writeFileText(dirHandle, NAMES_FILE, fmt.serializeNames(names));
+    if ((await fileExists(dirHandle, LEGACY_SUMMARY)) && !(await fileExists(dirHandle, SUMMARY_FILE))) {
+      await writeFileText(dirHandle, SUMMARY_FILE, await readFileText(dirHandle, LEGACY_SUMMARY));
+    }
+    for (const f of [LEGACY_NAV, LEGACY_TAGS, LEGACY_NAMES, LEGACY_SUMMARY]) {
+      try { await dirHandle.removeEntry(f); } catch (_) { /* not present */ }
+    }
+    return { nav, tags, names };
   }
 
   async function saveNav(dirHandle, nav) {
@@ -250,7 +284,7 @@
 
   Chippy.io = {
     NAV_FILE, TAGS_FILE, NAMES_FILE, SUMMARY_FILE,
-    sanitizeName, isSafeImagePath,
+    sanitizeName, isSafeImagePath, isDiscussionFile,
     openFolder, listDiscussions, loadDiscussion, saveDiscussion,
     archiveDiscussion, renameDiscussion,
     loadIndexes, saveNav, saveTags, saveNames,

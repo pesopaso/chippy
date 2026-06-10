@@ -641,3 +641,22 @@ reference the requirement (`R#`) / plan step.
 - **Comment-only editing** — the inline edit textarea (`ui.entryCard`) now shows only the comment text via new `store.splitBodyParts`; the `Updated:` line and the action section never enter the textarea and are reassembled untouched by `store.joinBodyParts` on save (canonical order: comment, legacy markers, `Updated:`, actions last).
 - New pure helpers `splitBodyParts`/`joinBodyParts` exported for UI and tests; 4 new unit tests in `store-helpers.test.mjs`; e2e expectations updated from `Resolved:`/`Achieved:` markers to `: → DONE`/`: → Achieved` bullets; help texts updated.
 - `datadefinition.md` §2.1 rewritten: three-part body model, state-change bullets, single-`Updated:` rule, legacy markers documented as read-only. Regression harness 7/7 (format layer untouched — body remains opaque to `format.js`); unit suite 18/18.
+
+### v3.2 — 2026-06-10 — Fix: comments can be promoted to task/followup/goal in the inline editor again
+
+> The edit box silently swallowed `#task`, `#followup`, and `#goal` (the `addTag` filter rejected every reserved tag), so an existing comment could never become a task, followup, or goal. Promotion now works and matches the new-comment box.
+
+- **`taxonomy.js`** — new `PROMOTABLE` regex (`task|followup|goal|high|medium|low`): the reserved tags a user may type by hand. State tags, goal ids, and `muted:` stay app-managed and are still rejected as typed input.
+- **`ui.js`** — the edit box's `addTag` accepts promotable tags (shown as removable chips during the edit for visible feedback) and no longer double-adds a tag the entry already carries hidden.
+- **`store.js`** — new pure `applyEditTagRules` applied in `editEntry`: dedupes, lets the last-typed priority win over an existing one, defaults to `low` when a kind tag is present without priority, and mints a `goal-<id>` when an entry becomes a goal — the same write rules `addEntry` applies on creation.
+- 2 new unit tests in `store-helpers.test.mjs` (promotion defaults + goal-id mint; dedupe + last-priority-wins); help text updated. Unit suite 20/20.
+
+### v3.3 — 2026-06-10 — App-managed files renamed to *.chippy.md with one-time legacy migration
+
+> The four app-managed files move into a dedicated namespace — `navigation.chippy.md`, `tags.chippy.md`, `names.chippy.md`, `summary.chippy.md` — so they can never collide with user discussions; `navigation`, `tags`, `names`, and `summary` become ordinary discussion names.
+
+- **`io.js`** — index/summary constants renamed; `isDiscussionFile` excludes the `.chippy.md` namespace instead of a reserved-name set (sanitizeName strips dots, so no discussion can ever produce a `.chippy.md` filename); `isDiscussionFile` exported for tests.
+- **One-time migration** (`migrateLegacyIndexes`, runs only when no `navigation.chippy.md` exists): reads the pre-3.3 split layout (`navigation.md`/`tags.md`/`names.md`) or chains the older gen-1 inline `## Tags`/`## Names` migration, writes the `.chippy.md` files first, renames `summary.md`, then removes the legacy files — effectively a rename. A polluted `summary` entry in a legacy nav list is dropped.
+- **`pages.js`** — the dev.87 sidebar band-aid (`d.name !== 'summary'`) removed; a discussion named "summary" is now legitimate.
+- **Tests/harness** — harness reference data renamed to `*.chippy.md` (roundtrip dispatch accepts both spellings); `init-folder`, `validator`, `run.mjs`, `seed.spec`, `discussions.spec`, `discussion-tag-filter.spec` updated; new `io-migration.test.mjs` (5 tests) drives `loadIndexes` against an in-memory FSA fake covering both legacy generations, summary rename, pollution drop, and chippy-files-win precedence.
+- **`datadefinition.md`** — §1 namespace rule, §3/§4 filenames, §3.4 rewritten as "Legacy layouts and the one-time migration" (two generations). Harness 7/7; unit suite 25/25.

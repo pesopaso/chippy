@@ -77,7 +77,10 @@
   function renderSidebar() {
     const body = document.querySelector('#sidebar .sidebar-body');
     if (!body) return;
-    const discs = store().getDiscussions().filter(d => !d.archived && d.name !== 'summary');
+    // "summary" needs no special-casing anymore: app files live in the
+    // .chippy.md namespace and the legacy-index migration drops the polluted
+    // nav entry, so a discussion named "summary" is legitimate. (v3.3)
+    const discs = store().getDiscussions().filter(d => !d.archived);
 
     // Auto-reset activeTagFilter if its tag no longer exists in the nav.
     const allTags = store().getDiscussionTags ? store().getDiscussionTags() : [];

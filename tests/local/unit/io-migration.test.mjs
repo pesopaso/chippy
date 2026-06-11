@@ -110,6 +110,22 @@ test('migration drops a polluted "summary" nav entry; chippy files win when both
   assert.ok(dir2.files.has('navigation.md')); // untouched, now an ordinary file
 });
 
+test('partial legacy set: a missing names.md must not blank the surviving tags.md (and vice versa)', async () => {
+  // names.md absent (e.g. unmaterialized cloud placeholder at migration time)
+  const dir = fakeDir({ 'navigation.md': NAV, 'tags.md': TAGS });
+  const r = await io.loadIndexes(dir);
+  assert.deepEqual(r.tags, ['career', 'task']); // preserved from tags.md
+  assert.deepEqual(r.names, []);                // nothing to read, but tags survive
+  assert.equal(dir.files.get('tags.chippy.md').includes('career'), true);
+
+  // tags.md absent, names.md present
+  const dir2 = fakeDir({ 'navigation.md': NAV, 'names.md': NAMES });
+  const r2 = await io.loadIndexes(dir2);
+  assert.deepEqual(r2.names, ['Maria Lopez']);  // preserved from names.md
+  assert.deepEqual(r2.tags, []);
+  assert.equal(dir2.files.get('names.chippy.md').includes('Maria Lopez'), true);
+});
+
 test('isDiscussionFile: .chippy.md namespace is reserved, legacy names are ordinary', () => {
   for (const f of ['navigation.chippy.md', 'tags.chippy.md', 'names.chippy.md', 'summary.chippy.md']) {
     assert.equal(io.isDiscussionFile(f), false, f);

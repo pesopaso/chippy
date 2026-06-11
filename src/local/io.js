@@ -183,17 +183,18 @@
   // "names", and "summary" become ordinary discussion names from then on.
   async function migrateLegacyIndexes(dirHandle) {
     const navText = await readFileText(dirHandle, LEGACY_NAV); // absent -> throws, as before
-    let nav, tags, names;
-    if ((await fileExists(dirHandle, LEGACY_TAGS)) && (await fileExists(dirHandle, LEGACY_NAMES))) {
-      nav = fmt.parseNav(navText);
-      tags = fmt.parseTags(await readFileText(dirHandle, LEGACY_TAGS));
-      names = fmt.parseNames(await readFileText(dirHandle, LEGACY_NAMES));
-    } else {
-      const m = fmt.migrateLegacyNav(navText);
-      nav = { discussions: m.discussions, theme: m.theme };
-      tags = m.tags;
-      names = m.names;
-    }
+    // Each index is taken from its dedicated legacy file when present, falling
+    // back to the gen-1 inline ## Tags / ## Names sections of navigation.md
+    // independently — a missing tags.md must never blank the names (or vice
+    // versa). (dev.96 regression: the old all-or-nothing check fell back to the
+    // inline parser for both lists when either file was absent, migrating
+    // empty registries and deleting the surviving legacy file.)
+    const inline = fmt.migrateLegacyNav(navText);
+    const nav = { discussions: inline.discussions, theme: inline.theme };
+    const tags = (await fileExists(dirHandle, LEGACY_TAGS))
+      ? fmt.parseTags(await readFileText(dirHandle, LEGACY_TAGS)) : inline.tags;
+    const names = (await fileExists(dirHandle, LEGACY_NAMES))
+      ? fmt.parseNames(await readFileText(dirHandle, LEGACY_NAMES)) : inline.names;
     // A "summary" entry in a legacy navigation list was reserved-file
     // pollution, never a real discussion — drop it during the migration.
     nav.discussions = (nav.discussions || []).filter(d => d.name !== 'summary');

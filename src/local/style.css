@@ -418,6 +418,10 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 }
 .ac-option { padding: 6px 10px; cursor: pointer; font-size: .82rem; }
 .ac-option:hover { background: var(--card); }
+/* Floating variant: body-appended under any field (shared @name autocomplete). */
+.ac-dropdown.ac-float { position: fixed; left: auto; right: auto; z-index: 1400; }
+.ac-option.ac-create { font-style: italic; color: var(--muted); border-top: 1px solid var(--border); }
+.ac-option.active { background: var(--card); }
 
 /* ---- History entry markers -------------------------------------------- */
 .entry-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 2px; }

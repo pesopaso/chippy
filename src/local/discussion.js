@@ -38,27 +38,8 @@
     if (openEdit) { const b = div.querySelector('.entry-edit-btn'); if (b) b.click(); }
   }
 
-  function insertAtCursor(ta, text) {
-    const s = ta.selectionStart || 0, e = ta.selectionEnd || 0;
-    ta.value = ta.value.slice(0, s) + text + ta.value.slice(e);
-    ta.selectionStart = ta.selectionEnd = s + text.length;
-  }
-  // Convert a pasted image File/Blob to a JPEG Blob via canvas.
-  function blobToJpeg(file) {
-    return new Promise((resolve) => {
-      const img = new Image();
-      const url = URL.createObjectURL(file);
-      img.onload = () => {
-        const c = document.createElement('canvas');
-        c.width = img.naturalWidth; c.height = img.naturalHeight;
-        c.getContext('2d').drawImage(img, 0, 0);
-        URL.revokeObjectURL(url);
-        c.toBlob(b => resolve(b), 'image/jpeg', 0.9);
-      };
-      img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
-      img.src = url;
-    });
-  }
+  // insertAtCursor and blobToJpeg moved to ui.js (shared with the inline
+  // comment editor's paste handler); used here via ui().
   // Every image reference in the discussion with its entry's timestamp.
   function collectImages(member) {
     const out = []; const re = /!\[[^\]]*\]\(([^)]+)\)/g;
@@ -209,7 +190,9 @@
       dropdown.classList.remove('hidden');
     }
 
-    // #tag extraction on space + #/@ autocomplete.
+    // #tag extraction on space + #tag autocomplete. @-name autocomplete is the
+    // shared ui helper (attached below), so the composer dropdown only handles
+    // tags and hides itself while a name token is active.
     ta.addEventListener('input', () => {
       saveDraft();
       const val = ta.value;
@@ -224,21 +207,15 @@
       // Autocomplete on the current token.
       const upto = val.slice(0, ta.selectionStart);
       const tagTok = upto.match(/(?:^|\s)#([a-zA-Z0-9-]*)$/);
-      const nameTok = upto.match(/(?:^|\s)@([^\]]*)$/);
       if (tagTok) {
         const q = tagTok[1].toLowerCase();
         showSuggestions(store().getTagUnion().filter(t => t.includes(q) && !HIDDEN_TAG.test(t)),
           (t) => { ta.value = upto.slice(0, upto.length - tagTok[1].length) + t + ' ' + val.slice(ta.selectionStart);
                    if (!selectedTags.includes(t)) selectedTags.push(t);
                    ta.value = ta.value.replace(new RegExp('#' + t + ' '), ''); renderChips(); hideDropdown(); ta.focus(); });
-      } else if (nameTok) {
-        const q = nameTok[1].toLowerCase();
-        showSuggestions(store().getNames().filter(n => n.toLowerCase().includes(q)),
-          (n) => { const before = upto.slice(0, upto.length - 1 - nameTok[1].length);
-                   ta.value = before + '@[' + n + '] ' + val.slice(ta.selectionStart);
-                   hideDropdown(); ta.focus(); saveDraft(); });
       } else hideDropdown();
     });
+    ui().attachNameAutocomplete(ta, null, { allowNew: true });
 
     // Grow the box only when a line is created/removed, not on every keystroke.
     let prevLineCount = (ta.value.match(/\n/g) || []).length;
@@ -253,10 +230,10 @@
       for (const it of items) {
         if (it.type && it.type.indexOf('image/') === 0) {
           ev.preventDefault();
-          const jpeg = await blobToJpeg(it.getAsFile());
+          const jpeg = await ui().blobToJpeg(it.getAsFile());
           if (jpeg) {
             const ref = await store().saveImage(member.name, jpeg);
-            insertAtCursor(ta, '![image](' + ref + ')');
+            ui().insertAtCursor(ta, '![image](' + ref + ')');
             saveDraft();
           }
           break;
@@ -339,6 +316,7 @@
     const wrap = el('div', 'list-search-wrap');
     const inp = el('input', 'list-search'); inp.type = 'text';
     inp.placeholder = 'Search this discussion…  #tag or @name';
+    ui().attachNameAutocomplete(inp);
     const clr = el('button', 'search-clear hidden', '×');
     inp.addEventListener('input', () => {
       clr.classList.toggle('hidden', !inp.value);

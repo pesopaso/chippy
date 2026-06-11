@@ -674,3 +674,62 @@ reference the requirement (`R#`) / plan step.
 > Opening app.html directly from file:// logged "Unsafe attempt to load URL … 'file:' URLs are treated as unique security origins" — the browser-initiated favicon fetch is blocked because every file: URL is its own origin.
 
 - The favicon `<link>` now carries a compact inline `data:` SVG (the indigo tile, visually equivalent at favicon size) instead of fetching `chippy-icon.svg`, so no favicon network/file fetch happens at all. The in-app `<img>` uses of `chippy-icon.svg` are unchanged.
+
+### v3.1.0-dev.95 — 2026-06-10 — Fix: image paste works in the inline comment editor
+
+> Ctrl+V image paste only worked in the new-comment box; the edit textarea had no paste handler.
+
+- `insertAtCursor` and `blobToJpeg` moved from `discussion.js` to `ui.js` (exported, shared by both paste paths).
+- `ui.entryCard`'s edit textarea now handles clipboard image paste exactly like the new-comment box: convert to JPEG, save via `store.saveImage` into the discussion's image folder, insert the `![image](ref)` markdown at the caret (R12). Skipped on the AI-Summary edit path, which has no discussion folder.
+- Help text mentions Ctrl+V in the edit action description.
+
+### v3.1.0-dev.96 — 2026-06-10 — @name autocomplete unified across all text boxes
+
+> Name handling followed the image-paste unification: one shared helper, attached everywhere a name can be typed.
+
+- **`ui.attachNameAutocomplete(field)`** — new shared helper holding the @-name rules in one place: typing `@` (at start or after whitespace) opens a floating dropdown of known names filtered by the token; picking inserts the storage form `@[Full Name] ` at the caret and re-dispatches `input` so drafts and live filters update. Dropdown is body-appended (`.ac-dropdown.ac-float`, position:fixed) so it works in any layout; picking uses mousedown-preventDefault so it never blurs the field (the inline editor saves on blur).
+- **Attached to:** the new-comment composer (its inline name branch removed — composer dropdown now only handles #tags), the inline comment editor, the discussion-history search box, and every cross-view search box (`makeSearchBar`). The sidebar search is excluded — it filters discussion names, where @-references don't apply.
+
+### v3.1.0-dev.97 — 2026-06-12 — Fix: migration data loss for partial legacy index sets + self-healing registries
+
+> A dev.92 migration bug could blank the tags/names registries: when only one of the legacy `tags.md`/`names.md` existed at migration time (e.g. an unmaterialized cloud placeholder), the all-or-nothing check fell back to the gen-1 inline parser for *both* lists — migrating empty registries and deleting the surviving legacy file. An empty names registry is also why the @name dropdown "never appeared": the autocomplete was working, but had nothing to offer.
+
+- **`io.js` `migrateLegacyIndexes`** — each index now falls back independently: `tags.md`/`names.md` are read when present, and only the missing one falls back to the inline `## Tags`/`## Names` sections of `navigation.md`. A missing names file can no longer blank the tags (or vice versa).
+- **`store.js` self-healing registries** — new `registerMemberRefs`: whenever a discussion's entries are loaded (`selectMember`, `reloadMember`, `ensureAllLoaded`), any tag or `@[Name]` reference missing from the persisted unions is re-registered and saved. A lost or blanked `tags.chippy.md`/`names.chippy.md` rebuilds itself from the data still in the entries — opening any cross-discussion page recovers the full registry.
+- New unit test (partial legacy set) in `io-migration.test.mjs`; suite 26/26, harness 10/10.
+
+### v3.1.0-dev.98 — 2026-06-12 — @ trigger can create the very first name
+
+> With an empty name registry (or any unknown name) the @ dropdown had nothing to offer, so the first name could only be entered by hand-typing the @[Full Name] form.
+
+- **`ui.attachNameAutocomplete`** — new `opts.allowNew`: when the typed token matches no existing name (case-insensitive), the dropdown offers a `+ New name "…"` row; picking it inserts `@[token] ` like any other pick. Enabled in the new-comment composer and the inline editor; search boxes keep referencing existing names only. New `.ac-create` style (italic, separated).
+- **`store.editEntry`** — registers `@[Name]` references from the edited text into `names.chippy.md` immediately, exactly like `addEntry` does on creation (previously a name first entered via edit only reached the registry on the next reload via the self-heal).
+- Help text updated for the @ trigger.
+
+### v3.1.0-dev.99 — 2026-06-12 — @name dropdown in the action modal
+
+> Actions often relate to other people; the ⚡ action input now has the same @ support as the comment boxes.
+
+- **`ui.showActionModal`** — the action input gets `attachNameAutocomplete` with `allowNew`, so existing names can be picked and new ones created while typing an action. The floating dropdown (z 1400) renders above the modal overlay (z 1200).
+- **`store.appendAction`** — registers any new `@[Name]` from the action text into `names.chippy.md`, matching `addEntry`/`editEntry`.
+
+### v3.1.0-dev.100 — 2026-06-12 — E2E coverage for the @name autocomplete
+
+> Five Playwright tests pin the @ behaviour on every attached surface.
+
+- New `tests/local/e2e/operate/name-autocomplete.spec.mjs`: composer pick (inserts `@[Full Name] `), composer `+ New name` creation, inline-editor pick incl. persistence of the saved body, search-box pick incl. unified-filter narrowing and the absence of the create row, and the ⚡ action modal incl. the persisted dated action line.
+- Picks are driven via `mousedown` dispatch (the helper's pick event, preventDefault keeps focus); typing uses `pressSequentially` so the caret-anchored token detection is exercised per keystroke.
+
+### v3.1.0-dev.101 — 2026-06-12 — Keyboard selection in the @name dropdown
+
+> Enter used to fall through to the field's own handler (saving the comment instead of confirming the name), and there was no way to select a name without the mouse.
+
+- **`ui.attachNameAutocomplete`** — while the dropdown is open it owns the keyboard: the top match is preselected (highlighted via `.ac-option.active`), ↑/↓ move the highlight with wrap-around, Enter confirms the highlighted row (including the `+ New name` row), Escape closes. The handled keys use `preventDefault` + `stopImmediatePropagation`, so the field's own Enter-save / Escape-cancel never fire on the same keystroke — works on all surfaces because every consumer attaches the helper before its own keydown handlers. With the dropdown closed, all keys pass through unchanged.
+- New e2e test: arrows move the highlight, Enter inserts `@[Tom Reyes] ` without saving, and a second Enter (dropdown closed) saves normally.
+
+### v3.1.0-dev.102 — 2026-06-12 — Unified search on the Kanban board
+
+> The Kanban page gets the same search box (`#tag` / `@name` / freetext, incl. the @name dropdown) as every other cross-discussion view.
+
+- **`pages.js`** — `makeSearchBar` accepts an initial value; `openKanban` mounts the bar above the board and applies `applyUnifiedFilter` to the task pool. Typing rebuilds only the board (input keeps focus); the query survives the full re-renders from drag-drop and the Focus toggle (`kanbanSearch` module state) and resets on fresh navigation (`DISC_FILTER_RESET`).
+- New e2e test in `search.spec.mjs`: board filters on a freetext query and restores when cleared.

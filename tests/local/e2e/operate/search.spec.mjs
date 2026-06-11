@@ -27,4 +27,17 @@ test.describe('unified search & cross-discussion views', () => {
     expect(n).toBeGreaterThan(0);
     expect(n).toBeLessThanOrEqual(3);
   });
+
+  test('Kanban has the unified search and filters the board', async ({ app }) => {
+    await app.screen('kanban');
+    const screen = app.page.locator('#kanbanScreen');
+    await expect(screen).toContainText('Fix the deployment pipeline');
+    await expect(screen).toContainText('Define the rollback runbook');
+    await app.search('pipeline');
+    await expect(screen).toContainText('Fix the deployment pipeline');
+    await expect(screen).not.toContainText('Define the rollback runbook');
+    // clearing restores the full board
+    await app.search('');
+    await expect(screen).toContainText('Define the rollback runbook');
+  });
 });

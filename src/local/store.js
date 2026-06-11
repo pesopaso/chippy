@@ -172,10 +172,31 @@
     return state;
   }
 
+  // Self-healing registries: whenever a discussion's entries are (re)loaded,
+  // re-register any tag or @[Name] reference that is missing from the
+  // persisted unions. Recovers a lost or blanked tags/names index (e.g. after
+  // an interrupted migration) from the data that is still in the entries.
+  async function registerMemberRefs(m) {
+    if (!m || !m.entries || !state.dirHandle) return;
+    let tagsChanged = false, namesChanged = false;
+    for (const e of m.entries) {
+      for (const t of (e.tags || [])) {
+        if (t && !state.tags.includes(t)) { state.tags.push(t); tagsChanged = true; }
+      }
+      for (const n of extractNameTokens(e.body || '')) {
+        if (n && !state.names.includes(n)) { state.names.push(n); namesChanged = true; }
+      }
+    }
+    if (tagsChanged) { state.tags.sort((a, b) => a.localeCompare(b)); await io().saveTags(state.dirHandle, state.tags); }
+    if (namesChanged) { state.names.sort((a, b) => a.localeCompare(b)); await io().saveNames(state.dirHandle, state.names); }
+  }
+
   async function selectMember(name) {
     if (!state.members.has(name)) state.members.set(name, null);
     if (state.members.get(name) === null) {
-      state.members.set(name, await io().loadDiscussion(state.dirHandle, name));
+      const m = await io().loadDiscussion(state.dirHandle, name);
+      state.members.set(name, m);
+      await registerMemberRefs(m);
     }
     state.activeMemberName = name;
     state.activeScreen = 'member';
@@ -209,6 +230,7 @@
   async function reloadMember(name) {
     const member = await io().loadDiscussion(state.dirHandle, name);
     state.members.set(name, member);
+    await registerMemberRefs(member);
     emit({ type: 'memberReloaded', name });
     return member;
   }
@@ -476,6 +498,13 @@
     const { pre, bullets } = splitTrailingActions(e.body);
     bullets.push('- ' + nowISO().slice(0, 10) + ' : ' + text);
     e.body = pre + '\n\n' + actionLabelFor(e) + '\n' + bullets.join('\n');
+    // Actions often reference other people — register any new @[Name] like
+    // addEntry/editEntry do.
+    let namesChanged = false;
+    for (const n of extractNameTokens(text)) {
+      if (!state.names.includes(n)) { state.names.push(n); namesChanged = true; }
+    }
+    if (namesChanged) { state.names.sort((a, b) => a.localeCompare(b)); await io().saveNames(state.dirHandle, state.names); }
     await io().saveDiscussion(state.dirHandle, m);
     emit({ type: 'actionAppended', name, entryId });
   }
@@ -534,6 +563,13 @@
       const created = (e.created_at || '').slice(0, 10);
       if (nowISO().slice(0, 10) !== created) parts.updated = 'Updated: ' + nowISO();
       e.body = joinBodyParts(parts, e);
+      // Register any @[Name] first referenced in the edited text, exactly like
+      // addEntry does on creation — a name may be entered via edit too.
+      let namesChanged = false;
+      for (const n of extractNameTokens(e.body)) {
+        if (!state.names.includes(n)) { state.names.push(n); namesChanged = true; }
+      }
+      if (namesChanged) { state.names.sort((a, b) => a.localeCompare(b)); await io().saveNames(state.dirHandle, state.names); }
     }
     await ensureTagsInUnion(e.tags);
     await io().saveDiscussion(state.dirHandle, m);
@@ -660,7 +696,9 @@
     for (const d of state.nav.discussions) {
       if (!d.archived && state.members.get(d.name) === null) {
         try {
-          state.members.set(d.name, await io().loadDiscussion(state.dirHandle, d.name));
+          const m = await io().loadDiscussion(state.dirHandle, d.name);
+          state.members.set(d.name, m);
+          await registerMemberRefs(m);
         } catch (err) {
           failed.push({ name: d.name, error: (err && err.name) || 'Error' });
           console.warn('[chippy] could not load discussion "' + d.name + '":', err);

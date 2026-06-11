@@ -9,7 +9,7 @@
 
   // Single source of truth for the version. Used for display and as the cache-bust
   // query param on the CSS/JS tags in app.html (bump both together on release).
-  const VERSION = '3.1.0-dev.94';
+  const VERSION = '3.1.0-dev.102';
   Chippy.VERSION = VERSION;
 
   const THEME_KEY = 'chippy_theme';
@@ -198,7 +198,7 @@
 
       section('Comments — functions & special tags',
         'Comments support Markdown (headings, bold/italic, lists, code, quotes), auto-linked URLs, @[Name] mentions and inline images.', [
-        ['Actions', '✎ edit inline (tags are editable here — type #tag or use "+ tag"; × removes one; #task / #followup / #goal and priorities promote the comment), ⚡ add a dated action, 🔇 mute, ➜ move to another discussion, 🗑 delete.'],
+        ['Actions', '✎ edit inline (tags are editable here — type #tag or use "+ tag"; × removes one; #task / #followup / #goal and priorities promote the comment; Ctrl+V pastes an image), ⚡ add a dated action, 🔇 mute, ➜ move to another discussion, 🗑 delete.'],
         ['"Updated:"', 'a single line recording the latest edit on a later day than creation; refreshed in place on every further edit. Editing only touches the comment text — actions and the Updated line are preserved.'],
         ['Classify', '#task, #followup or #goal turn a comment into that item type.'],
         ['Priority', '#high / #medium / #low (the priority square cycles them).'],
@@ -225,7 +225,7 @@
         ['[label](https://…)', 'link'],
         ['![alt](path.jpg)', 'image — or just paste with Ctrl+V'],
         ['https://…', 'bare URLs link automatically'],
-        ['@[Full Name]', 'name mention (becomes a chip)'],
+        ['@[Full Name]', 'name mention (becomes a chip) — type @ and pick from the dropdown (↑/↓ + Enter, or click), or create a new name right there'],
         ['#tag', 'tag — classifies the comment'],
         ['blank line', 'separates paragraphs']
       ]);

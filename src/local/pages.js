@@ -187,12 +187,15 @@
   const CLOSED_TASK = ['resolvedtask', 'obsoletetask', 'resolvedfollowup'];
   const CLOSED_GOAL = ['achievedgoal', 'canceledgoal', 'resolvedgoal'];
 
-  function makeSearchBar(onChange) {
+  function makeSearchBar(onChange, initial) {
     const wrap = el('div', 'list-search-wrap');
     const inp = el('input', 'list-search');
     inp.type = 'text';
     inp.placeholder = 'Search... use #tag or @name to filter';
+    if (initial) { inp.value = initial; inp.classList.add('filter-active'); }
+    ui().attachNameAutocomplete(inp);
     const clr = el('button', 'search-clear hidden', '×');
+    if (initial) clr.classList.remove('hidden');
     inp.addEventListener('input', () => {
       clr.classList.toggle('hidden', !inp.value);
       inp.classList.toggle('filter-active', !!inp.value);
@@ -382,6 +385,7 @@
                        ['onhold', 'HOLD'], ['purgatory', 'PRGT'], ['resolved', 'DONE']];
   const PRIO_LABEL = Chippy.tags.PRIO_LABEL; // taxonomy.js
   let kanbanFocus = false; // when on, hide the HOLD and PRGT columns
+  let kanbanSearch = '';   // unified search query; survives board re-renders
 
   // Tag taxonomy lives in taxonomy.js (Chippy.tags); aliased here for brevity.
   const stateKeyOf = Chippy.tags.stateKeyOf;
@@ -448,39 +452,52 @@
     screen.append(header);
     addCrossDiscFilter(screen, 'kanbanFilters',
       () => allTasksTagFilter, v => { allTasksTagFilter = v; }, openKanban);
-    const board = el('div', 'kanban-board');
-    const tasks = store().collectEntries({ discTag: allTasksTagFilter }).filter(e => {
-      const t = e.tags || [];
-      return (t.includes('task') || t.includes('followup')) && !t.includes('obsoletetask');
-    });
-    const rank = e => ({ high: 0, medium: 1, low: 2 })[prioOf(e.tags)] ?? 3;
-    const cols = kanbanFocus ? KANBAN_COLS.filter(([k]) => k !== 'onhold' && k !== 'purgatory') : KANBAN_COLS;
-    for (const [key, label] of cols) {
-      const col = el('div', 'kanban-col');
-      col.append(el('div', 'kanban-col-header', label));
-      let colTasks = tasks.filter(e => stateKeyOf(e.tags) === key);
-      if (key === 'resolved') colTasks = colTasks.filter(e => store().doneRecent(e, 2));
-      colTasks.sort((a, b) => {
-        const ma = store().isMuted(a) ? 1 : 0, mb = store().isMuted(b) ? 1 : 0;
-        return ma !== mb ? ma - mb : rank(a) - rank(b);
+
+    // Unified search (same #tag / @name / freetext syntax as the list views).
+    // Typing rebuilds only the board so the input keeps its focus; the value
+    // survives the full re-renders triggered by drag-drop and the Focus toggle.
+    const boardWrap = el('div');
+    screen.append(makeSearchBar(q => { kanbanSearch = q; renderBoard(); }, kanbanSearch), boardWrap);
+
+    function renderBoard() {
+      boardWrap.replaceChildren();
+      const board = el('div', 'kanban-board');
+      const tasks = store().applyUnifiedFilter(
+        store().collectEntries({ discTag: allTasksTagFilter }), kanbanSearch
+      ).filter(e => {
+        const t = e.tags || [];
+        return (t.includes('task') || t.includes('followup')) && !t.includes('obsoletetask');
       });
-      for (const e of colTasks) col.append(kanbanCard(e));
-      col.addEventListener('dragover', ev => { ev.preventDefault(); ev.dataTransfer.dropEffect = 'move'; col.classList.add('drag-over'); });
-      col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
-      col.addEventListener('drop', async ev => {
-        ev.preventDefault(); col.classList.remove('drag-over');
-        let ref = kanbanDrag;
-        if (!ref) { try { ref = JSON.parse(ev.dataTransfer.getData('text/plain')); } catch (_) {} }
-        kanbanDrag = null;
-        if (!ref || !ref.id) return;
-        try {
-          await store().setTaskState(ref.m, ref.id, key, ref.idx);
-          openKanban();
-        } catch (_) {}
-      });
-      board.append(col);
+      const rank = e => ({ high: 0, medium: 1, low: 2 })[prioOf(e.tags)] ?? 3;
+      const cols = kanbanFocus ? KANBAN_COLS.filter(([k]) => k !== 'onhold' && k !== 'purgatory') : KANBAN_COLS;
+      for (const [key, label] of cols) {
+        const col = el('div', 'kanban-col');
+        col.append(el('div', 'kanban-col-header', label));
+        let colTasks = tasks.filter(e => stateKeyOf(e.tags) === key);
+        if (key === 'resolved') colTasks = colTasks.filter(e => store().doneRecent(e, 2));
+        colTasks.sort((a, b) => {
+          const ma = store().isMuted(a) ? 1 : 0, mb = store().isMuted(b) ? 1 : 0;
+          return ma !== mb ? ma - mb : rank(a) - rank(b);
+        });
+        for (const e of colTasks) col.append(kanbanCard(e));
+        col.addEventListener('dragover', ev => { ev.preventDefault(); ev.dataTransfer.dropEffect = 'move'; col.classList.add('drag-over'); });
+        col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
+        col.addEventListener('drop', async ev => {
+          ev.preventDefault(); col.classList.remove('drag-over');
+          let ref = kanbanDrag;
+          if (!ref) { try { ref = JSON.parse(ev.dataTransfer.getData('text/plain')); } catch (_) {} }
+          kanbanDrag = null;
+          if (!ref || !ref.id) return;
+          try {
+            await store().setTaskState(ref.m, ref.id, key, ref.idx);
+            openKanban();
+          } catch (_) {}
+        });
+        board.append(col);
+      }
+      boardWrap.append(board);
     }
-    screen.append(board);
+    renderBoard();
   }
 
   /* ----------------------------- Rule of Three ------------------------- */
@@ -655,7 +672,7 @@
     allLinks:    () => { allLinksTagFilter = null; },
     allNames:    () => { allNamesTagFilter = null; },
     allTags:     () => { allTagsTagFilter = null; },
-    kanban:      () => { allTasksTagFilter = null; },
+    kanban:      () => { allTasksTagFilter = null; kanbanSearch = ''; },
     ro3:         () => { ro3TagFilter = null; },
   };
 

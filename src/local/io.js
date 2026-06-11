@@ -21,7 +21,7 @@
   const TAGS_FILE = 'tags.chippy.md';
   const NAMES_FILE = 'names.chippy.md';
   const SUMMARY_FILE = 'summary.chippy.md';
-  // Pre-3.3 legacy filenames — read once by the migration, then removed.
+  // Pre-v3.1 legacy filenames — read once by the migration, then removed.
   const LEGACY_NAV = 'navigation.md';
   const LEGACY_TAGS = 'tags.md';
   const LEGACY_NAMES = 'names.md';
@@ -176,7 +176,7 @@
 
   // One-time migration to the .chippy.md layout. Runs only when no
   // navigation.chippy.md exists yet. Handles both legacy generations:
-  // the pre-3.3 split layout (navigation.md + tags.md + names.md) and the
+  // the pre-v3.1 split layout (navigation.md + tags.md + names.md) and the
   // older single-file navigation.md with inline ## Tags / ## Names sections
   // (datadefinition §3.4). The new files are written first; the legacy files
   // are removed afterwards — effectively a rename — so "navigation", "tags",

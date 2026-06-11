@@ -632,7 +632,7 @@ reference the requirement (`R#`) / plan step.
 - `openRo3` appends an `addCrossDiscFilter` bar (same helper used by all other cross-views); the Refresh button is right-aligned via a `meta-spacer`; the setFilter callback resets `ro3Pick` so the first reconcile after a filter change draws from the new scoped pool.
 - Three new tests in `discussion-tag-filter.spec.mjs`: filter buttons render, DEV filter hides People cards, People filter hides DEV cards.
 
-### v3.1 — 2026-06-10 — Three-part comment body: state changes in the action log, single Updated line, comment-only editing
+### v3.1.0-dev.90 — 2026-06-10 — Three-part comment body: state changes in the action log, single Updated line, comment-only editing
 
 > A comment body now consists of at most three things — the comment text, one `Updated:` line, and the action section — and editing only ever touches the comment text.
 
@@ -642,7 +642,7 @@ reference the requirement (`R#`) / plan step.
 - New pure helpers `splitBodyParts`/`joinBodyParts` exported for UI and tests; 4 new unit tests in `store-helpers.test.mjs`; e2e expectations updated from `Resolved:`/`Achieved:` markers to `: → DONE`/`: → Achieved` bullets; help texts updated.
 - `datadefinition.md` §2.1 rewritten: three-part body model, state-change bullets, single-`Updated:` rule, legacy markers documented as read-only. Regression harness 7/7 (format layer untouched — body remains opaque to `format.js`); unit suite 18/18.
 
-### v3.2 — 2026-06-10 — Fix: comments can be promoted to task/followup/goal in the inline editor again
+### v3.1.0-dev.91 — 2026-06-10 — Fix: comments can be promoted to task/followup/goal in the inline editor again
 
 > The edit box silently swallowed `#task`, `#followup`, and `#goal` (the `addTag` filter rejected every reserved tag), so an existing comment could never become a task, followup, or goal. Promotion now works and matches the new-comment box.
 
@@ -651,17 +651,17 @@ reference the requirement (`R#`) / plan step.
 - **`store.js`** — new pure `applyEditTagRules` applied in `editEntry`: dedupes, lets the last-typed priority win over an existing one, defaults to `low` when a kind tag is present without priority, and mints a `goal-<id>` when an entry becomes a goal — the same write rules `addEntry` applies on creation.
 - 2 new unit tests in `store-helpers.test.mjs` (promotion defaults + goal-id mint; dedupe + last-priority-wins); help text updated. Unit suite 20/20.
 
-### v3.3 — 2026-06-10 — App-managed files renamed to *.chippy.md with one-time legacy migration
+### v3.1.0-dev.92 — 2026-06-10 — App-managed files renamed to *.chippy.md with one-time legacy migration
 
 > The four app-managed files move into a dedicated namespace — `navigation.chippy.md`, `tags.chippy.md`, `names.chippy.md`, `summary.chippy.md` — so they can never collide with user discussions; `navigation`, `tags`, `names`, and `summary` become ordinary discussion names.
 
 - **`io.js`** — index/summary constants renamed; `isDiscussionFile` excludes the `.chippy.md` namespace instead of a reserved-name set (sanitizeName strips dots, so no discussion can ever produce a `.chippy.md` filename); `isDiscussionFile` exported for tests.
-- **One-time migration** (`migrateLegacyIndexes`, runs only when no `navigation.chippy.md` exists): reads the pre-3.3 split layout (`navigation.md`/`tags.md`/`names.md`) or chains the older gen-1 inline `## Tags`/`## Names` migration, writes the `.chippy.md` files first, renames `summary.md`, then removes the legacy files — effectively a rename. A polluted `summary` entry in a legacy nav list is dropped.
+- **One-time migration** (`migrateLegacyIndexes`, runs only when no `navigation.chippy.md` exists): reads the pre-v3.1 split layout (`navigation.md`/`tags.md`/`names.md`) or chains the older gen-1 inline `## Tags`/`## Names` migration, writes the `.chippy.md` files first, renames `summary.md`, then removes the legacy files — effectively a rename. A polluted `summary` entry in a legacy nav list is dropped.
 - **`pages.js`** — the dev.87 sidebar band-aid (`d.name !== 'summary'`) removed; a discussion named "summary" is now legitimate.
 - **Tests/harness** — harness reference data renamed to `*.chippy.md` (roundtrip dispatch accepts both spellings); `init-folder`, `validator`, `run.mjs`, `seed.spec`, `discussions.spec`, `discussion-tag-filter.spec` updated; new `io-migration.test.mjs` (5 tests) drives `loadIndexes` against an in-memory FSA fake covering both legacy generations, summary rename, pollution drop, and chippy-files-win precedence.
 - **`datadefinition.md`** — §1 namespace rule, §3/§4 filenames, §3.4 rewritten as "Legacy layouts and the one-time migration" (two generations). Harness 7/7; unit suite 25/25.
 
-### v3.4 — 2026-06-10 — Image provenance: folder tooltip, All Images discussion column, carousel captions
+### v3.1.0-dev.93 — 2026-06-10 — Image provenance: folder tooltip, All Images tooltips, carousel captions
 
 > Small UI affordances that show where images and data come from.
 

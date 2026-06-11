@@ -314,7 +314,7 @@ The migration runs **only when no `navigation.chippy.md` exists yet**; once the 
 present, files named `navigation.md`, `tags.md`, `names.md`, or `summary.md` are ordinary
 discussions and are never read as indexes.
 
-**Generation 2 (pre-3.3 split layout).** The same three index files under their old names —
+**Generation 2 (pre-v3.1 split layout).** The same three index files under their old names —
 `navigation.md`, `tags.md`, `names.md` — plus an optional `summary.md`. On load, each is read,
 written out under its `.chippy.md` name, and the legacy file is removed: effectively a rename.
 A `summary` entry in the legacy discussion list (reserved-file pollution from old versions) is

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 // Unit tests — io.js index loading and the one-time *.chippy.md migration
-// (v3.3). Runs in Node against a minimal in-memory fake of the File System
+// (v3.1.0-dev.92). Runs in Node against a minimal in-memory fake of the File System
 // Access directory handle: io.js only touches getFileHandle / createWritable /
 // removeEntry on the index paths, so no browser is needed.
 

@@ -668,3 +668,9 @@ reference the requirement (`R#`) / plan step.
 - **Open Folder tooltip** — after a successful open, the sidebar button's tooltip shows the loaded folder name ("Loaded folder: <name>"; the File System Access API exposes the name, not the full path).
 - **All Images page** — the thumbnail grid is unchanged; each thumbnail now carries "<discussion> — <created_at>" as its tooltip.
 - **Carousel captions** — `ui.showImageOverlay` accepts `{ url, label }` items (plain URL strings still supported) and renders the label below the image (`.img-caption`). Wired up with "<discussion> — <created_at>" captions on the All Images page and the discussion right-column gallery, whose thumbnails also carry the date tooltip (`collectImages` now returns ref + timestamp).
+
+### v3.1.0-dev.94 — 2026-06-10 — Fix: console error from blocked favicon fetch on file:// origins
+
+> Opening app.html directly from file:// logged "Unsafe attempt to load URL … 'file:' URLs are treated as unique security origins" — the browser-initiated favicon fetch is blocked because every file: URL is its own origin.
+
+- The favicon `<link>` now carries a compact inline `data:` SVG (the indigo tile, visually equivalent at favicon size) instead of fetching `chippy-icon.svg`, so no favicon network/file fetch happens at all. The in-app `<img>` uses of `chippy-icon.svg` are unchanged.

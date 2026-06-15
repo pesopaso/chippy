@@ -143,7 +143,15 @@
       for (const d of items) {
         const item = el('div', 'member-item' +
           (d.name === active ? ' active' : '') + (d.favorite ? ' favorite' : ''));
-        item.append(el('span', 'member-avatar', getInitials(d.name)));
+        const avatar = el('span', 'member-avatar', getInitials(d.name));
+        if (d.tag && ui().getDiscTagColor) {
+          // Color the nav chip to match its discussion tag (untagged stays muted grey).
+          const tagColor = ui().getDiscTagColor(d.tag, allTags);
+          avatar.style.borderColor = tagColor;
+          avatar.style.color = tagColor;
+          avatar.style.backgroundColor = tagColor + '22'; // faint tag-tinted fill
+        }
+        item.append(avatar);
         item.append(el('span', 'member-name', d.name));
         const star = el('span', 'fav-star', d.favorite ? '★' : '☆');
         star.title = 'Toggle favorite';

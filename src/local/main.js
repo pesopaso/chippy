@@ -294,6 +294,19 @@
 
     applyTheme(currentTheme());
 
+    // General rule: any web link opens in a new tab, no matter where it lives.
+    // Anchors already targeting _blank are left to the browser; downloads and
+    // non-web (mailto / relative / blob) hrefs are not intercepted, and modifier
+    // or middle clicks keep their native behavior.
+    document.addEventListener('click', (ev) => {
+      if (ev.defaultPrevented || ev.button !== 0 || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
+      const a = ev.target && ev.target.closest && ev.target.closest('a[href]');
+      if (!a || a.hasAttribute('download') || a.target === '_blank') return;
+      if (!/^https?:\/\//i.test(a.getAttribute('href') || '')) return;
+      ev.preventDefault();
+      window.open(a.href, '_blank', 'noopener,noreferrer');
+    });
+
     const themeBtn = document.getElementById('btnThemeToggle');
     if (themeBtn) {
       themeBtn.addEventListener('click', () => {

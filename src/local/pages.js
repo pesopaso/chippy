@@ -589,6 +589,43 @@
     const cut = new Date(); cut.setDate(cut.getDate() - days);
     return d >= cut;
   }
+  function escapeRe(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+  // Initials of a name: first letter of each word, uppercased. "Philipp Sommer"
+  // -> "PS", "Maria Rodriguez Lopez" -> "MRL". Splits on spaces, hyphens, and
+  // underscores.
+  function initialsOf(name) {
+    const parts = String(name == null ? '' : name).trim().split(/[\s\-_]+/).filter(Boolean);
+    return parts.map(w => w[0].toUpperCase()).join('') || '?';
+  }
+
+  // Privacy redaction for the AI Summary: strip real names from the text before
+  // it is sent to the API, so identities never leave the machine when a public
+  // endpoint is used. Covers @[Full Name] references and bare occurrences of any
+  // registered name. Each distinct name maps to its initials (PS, MRL, …); names
+  // that share initials get a numeric suffix (PS, PS2) so they stay distinct.
+  function redactNames(text, registryNames) {
+    let t = String(text == null ? '' : text);
+    const set = new Set();
+    let m; const re = /@\[([^\]]+)\]/g;
+    while ((m = re.exec(t))) set.add(m[1]);
+    for (const n of (registryNames || [])) if (n) set.add(n);
+    // Longest first so a longer name isn't partially matched by a shorter one.
+    const names = [...set].sort((a, b) => b.length - a.length);
+    const label = new Map();
+    const counts = new Map();
+    for (const n of names) {
+      const base = initialsOf(n);
+      const c = (counts.get(base) || 0) + 1; counts.set(base, c);
+      label.set(n, c === 1 ? base : base + c);
+    }
+    t = t.replace(/@\[([^\]]+)\]/g, (mm, n) => label.get(n) || initialsOf(n));
+    for (const n of names) {
+      t = t.replace(new RegExp('\\b' + escapeRe(n) + '\\b', 'g'), label.get(n));
+    }
+    return t;
+  }
+
   function buildPrompt(entries) {
     const byDisc = new Map();
     for (const e of entries) {
@@ -622,6 +659,15 @@
       b.addEventListener('click', () => { range = r; ctrl.querySelectorAll('.btn-sm').forEach(x => x.classList.remove('active')); b.classList.add('active'); });
       ctrl.append(b);
     }
+    // Privacy toggle: when on, all names are stripped from the text sent to the
+    // API (for use with public/non-local endpoints). Preference persists locally.
+    const privacy = document.createElement('input'); privacy.type = 'checkbox';
+    privacy.checked = lsGet('chippy_redact_names') === '1';
+    const privacyLabel = el('label', 'summary-privacy');
+    privacyLabel.title = 'Replace all names with their initials (Philipp Sommer → PS) before sending to the API. Use this with public endpoints to keep colleagues’ names private.';
+    privacyLabel.append(privacy, document.createTextNode(' Remove names'));
+    ctrl.append(privacyLabel);
+
     const gen = el('button', 'btn-primary', 'Generate'); ctrl.append(gen);
     screen.append(ctrl);
     const out = el('div', 'summary-output entry-text'); screen.append(out);
@@ -642,14 +688,23 @@
     screen.append(list);
 
     gen.addEventListener('click', async () => {
-      try { localStorage.setItem('chippy_api_url', url.value); localStorage.setItem('chippy_api_model', model.value); } catch (_) {}
+      try {
+        localStorage.setItem('chippy_api_url', url.value);
+        localStorage.setItem('chippy_api_model', model.value);
+        localStorage.setItem('chippy_redact_names', privacy.checked ? '1' : '0');
+      } catch (_) {}
       await store().saveSummaryConfig(url.value, model.value);
       gen.disabled = true; gen.textContent = 'Generating…'; out.textContent = '';
       try {
         const entries = store().collectEntries().filter(e => inRange(e.created_at, range));
+        let promptText = buildPrompt(entries);
+        // Strip names before they leave the machine when privacy mode is on.
+        if (privacy.checked) {
+          promptText = redactNames(promptText, store().getNames ? store().getNames() : []);
+        }
         const res = await fetch(url.value, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: model.value, messages: [{ role: 'user', content: buildPrompt(entries) }], stream: false })
+          body: JSON.stringify({ model: model.value, messages: [{ role: 'user', content: promptText }], stream: false })
         });
         const data = await res.json();
         const content = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || JSON.stringify(data);

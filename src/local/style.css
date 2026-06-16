@@ -623,6 +623,8 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .summary-input { flex: 1; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); color: var(--text); font: inherit; font-size: .8rem; }
 .summary-ctrl { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
 .summary-ctrl .btn-sm.active { border-color: var(--accent); color: var(--accent); }
+.summary-privacy { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; font-size: .8rem; color: var(--text-muted); cursor: pointer; user-select: none; }
+.summary-privacy input { cursor: pointer; }
 .summary-output { background: var(--surface); border: 1px solid var(--border); border-radius: 0; padding: 12px; min-height: 40px; margin-bottom: 16px; }
 .summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: 0; padding: 12px; margin-bottom: 10px; }
 

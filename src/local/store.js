@@ -161,14 +161,25 @@
   async function openFolder() {
     const dir = await io().openFolder();
     const { nav, tags, names } = await io().loadIndexes(dir);
+    // Folder is the source of truth: discussion files may be added or removed by
+    // outside/automated processes, so reconcile the nav list with what is on
+    // disk at startup (drop missing, add new). Persist only if it changed.
+    let activeNav = nav;
+    try {
+      const r = await io().reconcileNavWithFiles(dir, nav);
+      activeNav = r.nav;
+      if (r.changed) await io().saveNav(dir, activeNav);
+    } catch (err) {
+      console.error('[chippy] nav reconcile failed:', err);
+    }
     state.dirHandle = dir;
-    state.nav = nav;
+    state.nav = activeNav;
     state.tags = tags;
     state.names = names;
-    state.members = new Map(nav.discussions.map(d => [d.name, null]));
+    state.members = new Map(activeNav.discussions.map(d => [d.name, null]));
     state.activeMemberName = null;
     state.folderReady = true;
-    emit({ type: 'folderOpened', discussions: nav.discussions.length });
+    emit({ type: 'folderOpened', discussions: activeNav.discussions.length });
     return state;
   }
 

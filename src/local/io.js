@@ -108,6 +108,56 @@
     return names;
   }
 
+  // Archived discussions live as "<stem>.archive.md" and are not returned by
+  // listDiscussions. Return their stems so the nav reconciler can keep/track them.
+  async function listArchived(dirHandle) {
+    const out = [];
+    const suffix = '.archive.md';
+    for await (const [entryName, handle] of dirHandle.entries()) {
+      if (handle.kind === 'file' && entryName.endsWith(suffix) && !entryName.endsWith('.chippy' + suffix)) {
+        out.push(entryName.slice(0, -suffix.length));
+      }
+    }
+    return out;
+  }
+
+  // Reconcile the navigation list against what is actually on disk. The folder
+  // is the source of truth: discussion .md files may be added or removed by
+  // outside/automated processes, so on every startup we drop nav entries whose
+  // file is gone and add entries for files that aren't listed yet. Existing
+  // entries keep their metadata (favorite, tag, archived) and order; new ones
+  // are appended alphabetically. Non-archived entries are matched to "<stem>.md"
+  // and archived entries to "<stem>.archive.md". Pure except for the directory
+  // read — the caller persists via saveNav only when { changed } is true.
+  async function reconcileNavWithFiles(dirHandle, nav) {
+    const activeStems = new Set(await listDiscussions(dirHandle));
+    const archivedStems = new Set(await listArchived(dirHandle));
+    const src = (nav && nav.discussions) || [];
+    const kept = [];
+    const seenActive = new Set();
+    const seenArchived = new Set();
+    for (const d of src) {
+      const stem = sanitizeName(d.name);
+      if (d.archived) {
+        if (archivedStems.has(stem) && !seenArchived.has(stem)) { kept.push(d); seenArchived.add(stem); }
+      } else if (activeStems.has(stem) && !seenActive.has(stem)) {
+        kept.push(d); seenActive.add(stem);
+      }
+    }
+    const added = [];
+    for (const stem of activeStems) {
+      if (!seenActive.has(stem)) added.push({ name: stem, favorite: false, archived: false, tag: null });
+    }
+    for (const stem of archivedStems) {
+      if (!seenArchived.has(stem)) added.push({ name: stem, favorite: false, archived: true, tag: null });
+    }
+    added.sort((a, b) => a.name.localeCompare(b.name));
+    const discussions = kept.concat(added);
+    const changed = discussions.length !== src.length ||
+      discussions.some((d, i) => src[i] !== d);
+    return { nav: Object.assign({}, nav, { discussions }), changed };
+  }
+
   async function loadDiscussion(dirHandle, name) {
     const filename = sanitizeName(name) + '.md';
     return fmt.parseDiscussion(await readFileText(dirHandle, filename), filename);
@@ -286,7 +336,8 @@
   Chippy.io = {
     NAV_FILE, TAGS_FILE, NAMES_FILE, SUMMARY_FILE,
     sanitizeName, isSafeImagePath, isDiscussionFile,
-    openFolder, listDiscussions, loadDiscussion, saveDiscussion,
+    openFolder, listDiscussions, listArchived, reconcileNavWithFiles,
+    loadDiscussion, saveDiscussion,
     archiveDiscussion, renameDiscussion,
     loadIndexes, saveNav, saveTags, saveNames,
     readSummary, writeSummary,

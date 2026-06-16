@@ -627,6 +627,9 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: 0; padding: 12px; margin-bottom: 10px; }
 
 /* ---- Print ------------------------------------------------------------ */
+/* The raw-md print surface is hidden on screen at all times. */
+.print-area { display: none; }
+
 @media print {
   #topChrome, #sidebar { display: none !important; }
   #app { height: auto; display: block; }
@@ -635,6 +638,44 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
   .screen.active { display: block !important; overflow: visible !important; }
   .split-right, .entry-box, .prep-edit-btn, .icon-btn, .member-header-actions { display: none !important; }
   body { background: #fff; color: #000; }
+
+  /* Markdown mode (set by preparePrintArea on the discussion screen): print the
+     .md file rendered as regular Markdown, never the discussion presentation. */
+  body.print-md #app { display: none !important; }
+  body.print-md .print-area {
+    display: block !important;
+    margin: 0;
+    padding: 0;
+    color: #000;
+    background: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  body.print-md .print-area h1 { font-size: 1.6em; margin: 0.4em 0 0.3em; }
+  body.print-md .print-area h2 { font-size: 1.35em; margin: 0.8em 0 0.3em; padding-bottom: 2px; border-bottom: 1px solid #ccc; }
+  body.print-md .print-area h3 { font-size: 1.15em; margin: 0.7em 0 0.2em; }
+  body.print-md .print-area h4,
+  body.print-md .print-area h5,
+  body.print-md .print-area h6 { font-size: 1em; margin: 0.6em 0 0.2em; }
+  body.print-md .print-area p { margin: 0.4em 0; }
+  body.print-md .print-area ul,
+  body.print-md .print-area ol { margin: 0.4em 0 0.4em 1.4em; padding: 0; }
+  body.print-md .print-area li { margin: 0.15em 0; }
+  body.print-md .print-area blockquote {
+    margin: 0.5em 0; padding: 0.1em 0.8em; border-left: 3px solid #ccc; color: #444;
+  }
+  body.print-md .print-area code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
+    font-size: 0.9em; background: #f2f2f2; padding: 0 3px; border-radius: 2px;
+  }
+  body.print-md .print-area pre {
+    background: #f2f2f2; padding: 8px 10px; border-radius: 3px; overflow-x: auto;
+  }
+  body.print-md .print-area pre code { background: none; padding: 0; }
+  body.print-md .print-area hr { border: none; border-top: 1px solid #ccc; margin: 0.8em 0; }
+  body.print-md .print-area a { color: #0645ad; text-decoration: underline; }
+  body.print-md .print-area img.md-img { max-width: 100%; }
 }
 
 /* ---- Help dialog ------------------------------------------------------ */

@@ -11,15 +11,15 @@
        error. At favicon size the icon reads as the indigo tile, so a compact
        inline equivalent replaces fetching chippy-icon.svg. -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='7' y='7' width='86' height='86' rx='10' fill='%230c18a0' stroke='white' stroke-width='5'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="style.css?v=3.1.0-dev.102" />
+  <link rel="stylesheet" href="style.css?v=3.1.0-dev.107" />
   <!-- DOMPurify is vendored flat (no subfolder). Loaded before the app so the global is ready. -->
-  <script src="dompurify.min.js?v=3.1.0-dev.102"></script>
+  <script src="dompurify.min.js?v=3.1.0-dev.107"></script>
 </head>
 <body>
   <!-- Top chrome: 36px bar across the viewport (R56). Hardcoded indigo, identical in both themes. -->
   <div id="topChrome" class="top-chrome">
     <div class="tc-left">
-      <img class="app-icon" src="chippy-icon.svg?v=3.1.0-dev.102" alt="" />
+      <img class="app-icon" src="chippy-icon.svg?v=3.1.0-dev.107" alt="" />
       <h2>Chippy <span id="appVersion" class="app-version"></span></h2>
     </div>
     <div class="tc-middle">
@@ -91,17 +91,23 @@
     </main>
   </div>
 
+  <!-- Print surface: filled on demand with the raw .md of the active discussion
+       (exactly the on-disk file, via format.serializeDiscussion) so printing
+       reflects the stored file, not the rendered presentation. Hidden on screen;
+       shown only under @media print when body has the print-md class. -->
+  <div id="printArea" class="print-area" aria-hidden="true"></div>
+
   <!-- Classic scripts (no ES modules) so the app runs directly from file://.
        Load order matters: each file attaches to the global Chippy namespace,
        and later files depend on earlier ones (io needs format; main needs all). -->
-  <script src="format.js?v=3.1.0-dev.102"></script>
-  <script src="taxonomy.js?v=3.1.0-dev.102"></script>
-  <script src="io.js?v=3.1.0-dev.102"></script>
-  <script src="store.js?v=3.1.0-dev.102"></script>
-  <script src="ui.js?v=3.1.0-dev.102"></script>
-  <script src="discussion.js?v=3.1.0-dev.102"></script>
-  <script src="pages.js?v=3.1.0-dev.102"></script>
-  <script src="dashboard.js?v=3.1.0-dev.102"></script>
-  <script src="main.js?v=3.1.0-dev.102"></script>
+  <script src="format.js?v=3.1.0-dev.107"></script>
+  <script src="taxonomy.js?v=3.1.0-dev.107"></script>
+  <script src="io.js?v=3.1.0-dev.107"></script>
+  <script src="store.js?v=3.1.0-dev.107"></script>
+  <script src="ui.js?v=3.1.0-dev.107"></script>
+  <script src="discussion.js?v=3.1.0-dev.107"></script>
+  <script src="pages.js?v=3.1.0-dev.107"></script>
+  <script src="dashboard.js?v=3.1.0-dev.107"></script>
+  <script src="main.js?v=3.1.0-dev.107"></script>
 </body>
 </html>

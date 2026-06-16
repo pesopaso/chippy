@@ -9,7 +9,7 @@
 
   // Single source of truth for the version. Used for display and as the cache-bust
   // query param on the CSS/JS tags in app.html (bump both together on release).
-  const VERSION = '3.1.0-dev.102';
+  const VERSION = '3.1.0-dev.107';
   Chippy.VERSION = VERSION;
 
   const THEME_KEY = 'chippy_theme';
@@ -288,6 +288,54 @@
     document.body.classList.toggle('slim', window.innerWidth < 800);
   }
 
+  // Populate the print surface with the raw .md of the active discussion so the
+  // printout matches the on-disk file exactly (reserved tags, markers, full
+  // timestamps), not the filtered/styled view. Only the member (discussion)
+  // screen maps to a single .md file; on any other screen leave the flag off so
+  // the existing DOM-based print of that screen still applies.
+  // Blob URLs minted for print images, revoked before each rebuild so repeated
+  // prints don't leak object URLs.
+  let printBlobUrls = [];
+  function revokePrintBlobs() {
+    printBlobUrls.forEach((u) => { try { URL.revokeObjectURL(u); } catch (_) {} });
+    printBlobUrls = [];
+  }
+
+  async function preparePrintArea() {
+    const area = document.getElementById('printArea');
+    if (!area) return;
+    const store = Chippy.store;
+    const fmt = Chippy.format;
+    const ui = Chippy.ui;
+    const screen = Chippy.pages && Chippy.pages.getCurrentScreen
+      ? Chippy.pages.getCurrentScreen() : null;
+    let md = '';
+    if (screen === 'member' && store && fmt) {
+      const m = store.getActiveMember && store.getActiveMember();
+      if (m) md = fmt.serializeDiscussion(m);
+    }
+    revokePrintBlobs();
+    if (md && ui) {
+      // Render the .md as regular Markdown — no discussion-specific renderings.
+      ui.safeSetHtml(area, ui.renderMarkdownPlain(md));
+      document.body.classList.add('print-md');
+      // Resolve image references to blob URLs (the data folder isn't
+      // URL-addressable), the same way the discussion view does. Awaited so the
+      // images are present before the print dialog opens.
+      if (store && store.getImageUrl) {
+        const imgs = Array.prototype.slice.call(area.querySelectorAll('img[data-src]'));
+        await Promise.all(imgs.map((img) =>
+          store.getImageUrl(img.getAttribute('data-src'))
+            .then((u) => { if (u) { img.src = u; printBlobUrls.push(u); } })
+            .catch(() => {})
+        ));
+      }
+    } else {
+      area.textContent = '';
+      document.body.classList.remove('print-md');
+    }
+  }
+
   function init() {
     const ver = document.getElementById('appVersion');
     if (ver) ver.textContent = 'v' + VERSION;
@@ -321,7 +369,27 @@
     if (help) help.addEventListener('click', showHelp);
 
     const printBtn = document.getElementById('btnPrintChrome');
-    if (printBtn) printBtn.addEventListener('click', () => window.print());
+    // Print = the .md file rendered as regular Markdown, never the on-screen
+    // presentation. Populate #printArea + set the print-md flag explicitly on the
+    // button click (robust even if 'beforeprint' doesn't fire), and also on the
+    // 'beforeprint' event so Ctrl+P works too.
+    if (printBtn) printBtn.addEventListener('click', async () => { await preparePrintArea(); window.print(); });
+    // Do NOT sanitize/build inside 'beforeprint' — DOMPurify's Trusted Types
+    // policy callback cannot run during the print lifecycle (it throws
+    // "callback is no longer runnable"). The print area is already built (on the
+    // button click and when a discussion opens), so for Ctrl+P we only need to
+    // re-assert the CSS flag synchronously here.
+    window.addEventListener('beforeprint', () => {
+      const area = document.getElementById('printArea');
+      const onMember = Chippy.pages && Chippy.pages.getCurrentScreen &&
+        Chippy.pages.getCurrentScreen() === 'member';
+      if (onMember && area && area.childNodes.length) {
+        document.body.classList.add('print-md');
+      }
+    });
+    window.addEventListener('afterprint', () => {
+      document.body.classList.remove('print-md');
+    });
 
     setSlimTab('mid');
     document.querySelectorAll('.slim-tab').forEach(b =>
@@ -365,6 +433,9 @@
             if (pages) { pages.noteRecent(cs.name); pages.renderSidebar(); pages.renderRecent(); }
             if (Chippy.discussion) Chippy.discussion.render(store.getActiveMember(), { fresh: true });
             if (pages) pages.showScreen('member');
+            // Pre-build the print surface (with resolved images) so Ctrl+P works
+            // too, not only the print button which awaits the build.
+            preparePrintArea();
             // Slim mode: jump from the Navigation tab to the Discussion tab.
             if (document.body.classList.contains('slim')) setSlimTab('mid');
             break;

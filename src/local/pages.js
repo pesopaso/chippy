@@ -720,10 +720,156 @@
     });
   }
 
+  /* ------------------------------- Calendar ---------------------------- */
+  // A due-date calendar over open tasks/followups. Five views select how the
+  // due tasks are bucketed; all share the disc-tag filter and unified search.
+
+  let calendarView = 'focus';     // day | focus | work | full | month
+  let calendarSearch = '';
+  let calendarTagFilter = null;
+
+  const CAL_WD = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const CAL_VIEWS = [['day', 'Day'], ['focus', 'Focus'], ['work', 'Work week'], ['full', 'Full week'], ['month', 'Month']];
+
+  function ymd(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function parseYmd(s) { return new Date(s + 'T00:00:00'); }
+  function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+  function mondayOf(d) { return addDays(d, -((d.getDay() + 6) % 7)); } // Mon = start of week
+
+  // Open task/followup entries that carry a due date (closed states excluded).
+  function dueTaskEntries() {
+    const items = store().applyUnifiedFilter(
+      store().collectEntries({ discTag: calendarTagFilter }), calendarSearch
+    );
+    return items.filter(e => {
+      const t = e.tags || [];
+      if (!(t.includes('task') || t.includes('followup'))) return false;
+      if (!e.due) return false;
+      const sk = stateKeyOf(t);
+      return sk !== 'resolved' && sk !== 'obsolete' && !t.includes('obsoletetask');
+    });
+  }
+
+  function calSort(a, b) {
+    const ma = store().isMuted(a) ? 1 : 0, mb = store().isMuted(b) ? 1 : 0;
+    if (ma !== mb) return ma - mb;
+    const rank = e => ({ high: 0, medium: 1, low: 2 })[prioOf(e.tags)] ?? 3;
+    return rank(a) - rank(b) || (a.due || '').localeCompare(b.due || '') ||
+      (a.created_at || '').localeCompare(b.created_at || '');
+  }
+
+  function calCard(e) {
+    // The column/cell already states the day, so the per-card timestamp is dropped.
+    return entryRow(e, Object.assign({ dim: store().isMuted(e), hideTime: true }, OVERVIEW_OPTS));
+  }
+
+  const CAL_STATE_LABEL = { open: 'OPEN', inprogress: 'WIP', check: 'CHK', onhold: 'HOLD', purgatory: 'PRGT', resolved: 'DONE', obsolete: 'OBSL' };
+
+  // Compact info box for the month grid: state label, priority dot, a two-line
+  // title and the discussion name. Click opens its discussion.
+  function calMini(e) {
+    const sk = stateKeyOf(e.tags), prio = prioOf(e.tags) || 'low';
+    const box = el('div', 'cal-mbox cal-mbox-' + sk + ' cal-prio-' + prio + (store().isMuted(e) ? ' dimmed' : ''));
+    const top = el('div', 'cal-mbox-top');
+    top.append(el('span', 'cal-mbox-state', CAL_STATE_LABEL[sk] || sk.toUpperCase()), el('span', 'cal-mbox-prio'));
+    box.append(top, el('div', 'cal-mbox-title', (e.body || '').split('\n')[0] || '(untitled)'));
+    if (e._member) box.append(el('div', 'cal-mbox-member', e._member));
+    box.title = (e._member ? e._member + ' · ' : '') + ((e.body || '').split('\n')[0]);
+    box.addEventListener('click', () => store().selectMember(e._member));
+    return box;
+  }
+
+  function calColumn(day, date, entries, isToday) {
+    const col = el('div', 'cal-col' + (isToday ? ' cal-today' : ''));
+    const h = el('div', 'cal-col-header');
+    h.append(el('div', 'cal-col-day', day));
+    if (date) h.append(el('div', 'cal-col-date', date));
+    col.append(h);
+    const body = el('div', 'cal-col-body');
+    if (!entries.length) body.append(el('div', 'cal-empty', 'No tasks'));
+    else for (const e of entries) body.append(calCard(e));
+    col.append(body);
+    return col;
+  }
+
+  function openCalendar() {
+    const screen = document.getElementById('calendarScreen');
+    if (!screen) return;
+    screen.replaceChildren();
+    const header = el('div', 'member-header');
+    header.append(el('h1', 'member-title', 'Calendar'));
+    screen.append(header);
+
+    const ctrl = el('div', 'cal-ctrl');
+    for (const [k, lbl] of CAL_VIEWS) {
+      const b = el('button', 'btn-sm' + (calendarView === k ? ' active' : ''), lbl);
+      b.addEventListener('click', () => { calendarView = k; openCalendar(); });
+      ctrl.append(b);
+    }
+    screen.append(ctrl);
+    addCrossDiscFilter(screen, 'calendarFilters',
+      () => calendarTagFilter, v => { calendarTagFilter = v; }, openCalendar);
+
+    const bodyWrap = el('div');
+    screen.append(makeSearchBar(q => { calendarSearch = q; renderCal(); }, calendarSearch), bodyWrap);
+
+    const today = parseYmd(store().nowISO().slice(0, 10));
+    const todayStr = ymd(today);
+
+    function renderCal() {
+      bodyWrap.replaceChildren();
+      const entries = dueTaskEntries();
+      const byDue = new Map();
+      for (const e of entries) { if (!byDue.has(e.due)) byDue.set(e.due, []); byDue.get(e.due).push(e); }
+      for (const arr of byDue.values()) arr.sort(calSort);
+      const on = ds => (byDue.get(ds) || []);
+
+      if (calendarView === 'day') {
+        const board = el('div', 'cal-board');
+        board.append(calColumn('Today', todayStr, on(todayStr), true));
+        bodyWrap.append(board);
+      } else if (calendarView === 'focus') {
+        const t1 = ymd(addDays(today, 1)), t2 = ymd(addDays(today, 2));
+        const overdue = entries.filter(e => e.due < todayStr).sort(calSort);
+        const next = entries.filter(e => e.due === t1 || e.due === t2).sort(calSort);
+        const board = el('div', 'cal-board');
+        board.append(calColumn('Overdue', 'before ' + todayStr, overdue, false));
+        board.append(calColumn('Due today', todayStr, on(todayStr), true));
+        board.append(calColumn('Next 2 days', t1 + ' – ' + t2, next, false));
+        bodyWrap.append(board);
+      } else if (calendarView === 'work' || calendarView === 'full') {
+        const mon = mondayOf(today), n = calendarView === 'work' ? 5 : 7;
+        const board = el('div', 'cal-board');
+        for (let i = 0; i < n; i++) {
+          const d = addDays(mon, i), ds = ymd(d);
+          board.append(calColumn(CAL_WD[i], ds.slice(5), on(ds), ds === todayStr));
+        }
+        bodyWrap.append(board);
+      } else { // month: this week + next 3 (4 rows x 7 days)
+        const mon = mondayOf(today);
+        const grid = el('div', 'cal-month');
+        for (let i = 0; i < 7; i++) grid.append(el('div', 'cal-month-dow', CAL_WD[i]));
+        for (let w = 0; w < 4; w++) for (let i = 0; i < 7; i++) {
+          const d = addDays(mon, w * 7 + i), ds = ymd(d);
+          const cell = el('div', 'cal-cell' + (ds === todayStr ? ' cal-today' : ''));
+          cell.append(el('div', 'cal-cell-date', (d.getDate() === 1 ? CAL_MONTH[d.getMonth()] + ' ' : '') + d.getDate()));
+          for (const e of on(ds)) cell.append(calMini(e));
+          grid.append(cell);
+        }
+        bodyWrap.append(grid);
+      }
+    }
+    renderCal();
+  }
+
+  const CAL_MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
   const CROSS = {
     allComments: openComments, allTasks: openTasks, allGoals: openGoals,
     allLinks: openLinks, allImages: openImages, allNames: openNames, allTags: openTags,
-    kanban: openKanban, ro3: openRo3, activity: openActivity, summary: openSummary
+    kanban: openKanban, calendar: openCalendar, ro3: openRo3, activity: openActivity, summary: openSummary
   };
 
   // Reset maps for disc tag filters so each page starts at "All" on fresh navigation.
@@ -736,6 +882,7 @@
     allNames:    () => { allNamesTagFilter = null; },
     allTags:     () => { allTagsTagFilter = null; },
     kanban:      () => { allTasksTagFilter = null; kanbanSearch = ''; },
+    calendar:    () => { calendarTagFilter = null; calendarSearch = ''; },
     ro3:         () => { ro3TagFilter = null; },
   };
 

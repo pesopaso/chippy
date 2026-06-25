@@ -196,16 +196,22 @@
     ta.addEventListener('input', () => {
       saveDraft();
       const val = ta.value;
-      // Extract a completed "#tag " into a chip.
-      const tagMatch = val.match(/(^|\s)#([a-zA-Z0-9][a-zA-Z0-9-]*)\s$/);
+      const pos = ta.selectionStart;
+      const before = val.slice(0, pos);
+      // Extract a completed "#tag " sitting right before the caret into a chip.
+      // Anchoring to the caret (not the end of the whole text) makes tagging work
+      // anywhere in the comment, including when editing existing text.
+      const tagMatch = before.match(/(^|\s)#([a-zA-Z0-9][a-zA-Z0-9-]*)\s$/);
       if (tagMatch) {
         const t = tagMatch[2].toLowerCase();
         if (!selectedTags.includes(t)) selectedTags.push(t);
-        ta.value = val.slice(0, tagMatch.index) + (tagMatch[1] || '');
+        const newBefore = before.slice(0, tagMatch.index) + (tagMatch[1] || '');
+        ta.value = newBefore + val.slice(pos);
+        const np = newBefore.length; ta.setSelectionRange(np, np);
         renderChips(); hideDropdown(); saveDraft(); return;
       }
       // Autocomplete on the current token.
-      const upto = val.slice(0, ta.selectionStart);
+      const upto = before;
       const tagTok = upto.match(/(?:^|\s)#([a-zA-Z0-9-]*)$/);
       if (tagTok) {
         const q = tagTok[1].toLowerCase();

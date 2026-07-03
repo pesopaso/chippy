@@ -33,7 +33,7 @@ export const DATASET = [
         actions: ['Reviewed and merged the change'], taskState: 'resolved' },
       { text: 'Senior promotion — finalize scope and stakeholders.', tags: ['goal', 'high'], due: '2026-06-30',
         goalKey: 'promo' },                                                                                        // goal (open)
-      { text: 'Strong collaboration noted in sprint review.', tags: ['technical'], linkGoal: 'promo' }            // goal-linked comment
+      { text: 'Strong collaboration noted in sprint review with @[Maria Lopez] and @[Tom Reyes].', tags: ['technical'], linkGoal: 'promo' } // goal-linked comment + @names (registers Maria Lopez & Tom Reyes for the name-autocomplete spec)
     ]
   },
   {

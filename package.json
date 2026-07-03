@@ -11,7 +11,11 @@
     "test:local:unit": "node --test \"tests/local/unit/**/*.test.mjs\"",
     "test:local:create": "playwright test --project=local tests/local/e2e/create",
     "test:local:operate": "playwright test --project=local tests/local/e2e/operate",
-    "test:local:data": "node --test \"tests/local/data/**/*.test.mjs\""
+    "test:local:data": "node --test \"tests/local/data/**/*.test.mjs\"",
+    "version:check": "node scripts/stamp-version.mjs --check",
+    "version:stamp": "node scripts/stamp-version.mjs",
+    "release:notes": "node scripts/release-notes.mjs",
+    "package": "node scripts/build-package.mjs --versioned"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0"

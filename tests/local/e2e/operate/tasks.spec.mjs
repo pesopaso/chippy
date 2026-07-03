@@ -15,17 +15,18 @@ test.describe('task & goal lifecycle workflows', () => {
 
     await expect.poll(() => app.readDiscussion('1-1 Maria Lopez')).toContain('achievedgoal');
     const after = await app.readDiscussion('1-1 Maria Lopez');
-    expect(after).toContain('Achieved:');
+    expect(after).toContain(': → Achieved');
     // goal-<id> appears on both the goal entry and the linked comment.
     expect((after.match(new RegExp(gid, 'g')) || []).length).toBeGreaterThanOrEqual(2);
   });
 
   // Followups use the identical state machine as tasks (dev.81): resolving one
-  // writes resolvedtask (not the legacy resolvedfollowup) plus a Resolved: marker.
-  test('resolve an open followup (resolvedtask + Resolved: marker)', async ({ app }) => {
+  // writes resolvedtask (not the legacy resolvedfollowup) plus a "→ DONE"
+  // action bullet (state changes are logged in the action section).
+  test('resolve an open followup (resolvedtask + → DONE action)', async ({ app }) => {
     await app.open('1-1 James Okafor');
     await app.chooseState(app.taskRow('Follow up on the training budget'), 'DONE');
     await expect.poll(() => app.readDiscussion('1-1 James Okafor')).toContain('resolvedtask');
-    expect(await app.readDiscussion('1-1 James Okafor')).toContain('Resolved:');
+    expect(await app.readDiscussion('1-1 James Okafor')).toContain(': → DONE');
   });
 });

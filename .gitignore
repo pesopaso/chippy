@@ -14,3 +14,6 @@ tests/**/.tmp/
 
 # Editor/script backups (e.g. mount could not unlink during a session)
 *.bak
+
+# Release packaging output (chippy.zip is built by the pipeline, not committed).
+/dist/

@@ -38,31 +38,16 @@
     if (openEdit) { const b = div.querySelector('.entry-edit-btn'); if (b) b.click(); }
   }
 
-  function insertAtCursor(ta, text) {
-    const s = ta.selectionStart || 0, e = ta.selectionEnd || 0;
-    ta.value = ta.value.slice(0, s) + text + ta.value.slice(e);
-    ta.selectionStart = ta.selectionEnd = s + text.length;
-  }
-  // Convert a pasted image File/Blob to a JPEG Blob via canvas.
-  function blobToJpeg(file) {
-    return new Promise((resolve) => {
-      const img = new Image();
-      const url = URL.createObjectURL(file);
-      img.onload = () => {
-        const c = document.createElement('canvas');
-        c.width = img.naturalWidth; c.height = img.naturalHeight;
-        c.getContext('2d').drawImage(img, 0, 0);
-        URL.revokeObjectURL(url);
-        c.toBlob(b => resolve(b), 'image/jpeg', 0.9);
-      };
-      img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
-      img.src = url;
-    });
-  }
+  // insertAtCursor and blobToJpeg moved to ui.js (shared with the inline
+  // comment editor's paste handler); used here via ui().
+  // Every image reference in the discussion with its entry's timestamp.
   function collectImages(member) {
-    const refs = []; const re = /!\[[^\]]*\]\(([^)]+)\)/g;
-    for (const e of (member.entries || [])) { let m; while ((m = re.exec(e.body || ''))) refs.push(m[1]); }
-    return refs;
+    const out = []; const re = /!\[[^\]]*\]\(([^)]+)\)/g;
+    for (const e of (member.entries || [])) {
+      let m;
+      while ((m = re.exec(e.body || ''))) out.push({ ref: m[1], date: e.created_at || '' });
+    }
+    return out;
   }
   function showMoveDialog(member, entryId) {
     const others = store().getDiscussions().filter(d => !d.archived && d.name !== member.name);
@@ -205,35 +190,44 @@
       dropdown.classList.remove('hidden');
     }
 
-    // #tag extraction on space + #/@ autocomplete.
+    // #tag extraction on space + #tag autocomplete. @-name autocomplete is the
+    // shared ui helper (attached below), so the composer dropdown only handles
+    // tags and hides itself while a name token is active.
     ta.addEventListener('input', () => {
       saveDraft();
       const val = ta.value;
-      // Extract a completed "#tag " into a chip.
-      const tagMatch = val.match(/(^|\s)#([a-zA-Z0-9][a-zA-Z0-9-]*)\s$/);
+      const pos = ta.selectionStart;
+      const before = val.slice(0, pos);
+      // Extract a completed "#tag " sitting right before the caret into a chip.
+      // Anchoring to the caret (not the end of the whole text) makes tagging work
+      // anywhere in the comment, including when editing existing text.
+      const tagMatch = before.match(/(^|\s)#([a-zA-Z0-9][a-zA-Z0-9-]*)\s$/);
       if (tagMatch) {
         const t = tagMatch[2].toLowerCase();
         if (!selectedTags.includes(t)) selectedTags.push(t);
-        ta.value = val.slice(0, tagMatch.index) + (tagMatch[1] || '');
+        const newBefore = before.slice(0, tagMatch.index) + (tagMatch[1] || '');
+        ta.value = newBefore + val.slice(pos);
+        const np = newBefore.length; ta.setSelectionRange(np, np);
         renderChips(); hideDropdown(); saveDraft(); return;
       }
       // Autocomplete on the current token.
-      const upto = val.slice(0, ta.selectionStart);
+      const upto = before;
       const tagTok = upto.match(/(?:^|\s)#([a-zA-Z0-9-]*)$/);
-      const nameTok = upto.match(/(?:^|\s)@([^\]]*)$/);
       if (tagTok) {
         const q = tagTok[1].toLowerCase();
         showSuggestions(store().getTagUnion().filter(t => t.includes(q) && !HIDDEN_TAG.test(t)),
           (t) => { ta.value = upto.slice(0, upto.length - tagTok[1].length) + t + ' ' + val.slice(ta.selectionStart);
                    if (!selectedTags.includes(t)) selectedTags.push(t);
                    ta.value = ta.value.replace(new RegExp('#' + t + ' '), ''); renderChips(); hideDropdown(); ta.focus(); });
-      } else if (nameTok) {
-        const q = nameTok[1].toLowerCase();
-        showSuggestions(store().getNames().filter(n => n.toLowerCase().includes(q)),
-          (n) => { const before = upto.slice(0, upto.length - 1 - nameTok[1].length);
-                   ta.value = before + '@[' + n + '] ' + val.slice(ta.selectionStart);
-                   hideDropdown(); ta.focus(); saveDraft(); });
       } else hideDropdown();
+    });
+    ui().attachNameAutocomplete(ta, null, { allowNew: true });
+
+    // Grow the box only when a line is created/removed, not on every keystroke.
+    let prevLineCount = (ta.value.match(/\n/g) || []).length;
+    ta.addEventListener('input', () => {
+      const lines = (ta.value.match(/\n/g) || []).length;
+      if (lines !== prevLineCount) { prevLineCount = lines; if (ui().autosizeTextarea) ui().autosizeTextarea(ta); }
     });
 
     // Clipboard image paste -> JPEG in the discussion subfolder + inline ref.
@@ -242,10 +236,10 @@
       for (const it of items) {
         if (it.type && it.type.indexOf('image/') === 0) {
           ev.preventDefault();
-          const jpeg = await blobToJpeg(it.getAsFile());
+          const jpeg = await ui().blobToJpeg(it.getAsFile());
           if (jpeg) {
             const ref = await store().saveImage(member.name, jpeg);
-            insertAtCursor(ta, '![image](' + ref + ')');
+            ui().insertAtCursor(ta, '![image](' + ref + ')');
             saveDraft();
           }
           break;
@@ -282,6 +276,8 @@
     const footer = el('div', 'entry-footer');
     footer.append(chips, controls);
     box.append(ta, dropdown, footer);
+    // Size to the restored draft once mounted; rAF defers until the box is in the DOM.
+    if (ui().autosizeTextarea) requestAnimationFrame(() => ui().autosizeTextarea(ta));
     return box;
   }
 
@@ -326,6 +322,7 @@
     const wrap = el('div', 'list-search-wrap');
     const inp = el('input', 'list-search'); inp.type = 'text';
     inp.placeholder = 'Search this discussion…  #tag or @name';
+    ui().attachNameAutocomplete(inp);
     const clr = el('button', 'search-clear hidden', '×');
     inp.addEventListener('input', () => {
       clr.classList.toggle('hidden', !inp.value);
@@ -485,16 +482,21 @@
   }
 
   function renderGallery(member) {
-    const refs = collectImages(member).reverse(); // newest first
+    const items = collectImages(member).reverse(); // newest first
     const wrap = el('div', 'gallery-section');
     wrap.append(el('div', 'section-label', 'Images'));
-    if (!refs.length) { wrap.append(el('div', 'panel-empty', 'No images.')); return wrap; }
+    if (!items.length) { wrap.append(el('div', 'panel-empty', 'No images.')); return wrap; }
     const grid = el('div', 'gallery-grid');
-    refs.forEach((ref, idx) => {
+    items.forEach((it, idx) => {
       const thumb = el('img', 'gallery-thumb');
-      store().getImageUrl(ref).then(u => { if (u) thumb.src = u; }).catch(() => {});
+      thumb.title = it.date;
+      store().getImageUrl(it.ref).then(u => { if (u) thumb.src = u; }).catch(() => {});
       thumb.addEventListener('click', async () => {
-        const all = await Promise.all(refs.map(r => store().getImageUrl(r).catch(() => null)));
+        // Carousel with "<discussion> — <created_at>" captions below the image.
+        const all = await Promise.all(items.map(async (x) => {
+          const u = await store().getImageUrl(x.ref).catch(() => null);
+          return u ? { url: u, label: member.name + ' — ' + x.date } : null;
+        }));
         ui().showImageOverlay(all.filter(Boolean), idx);
       });
       grid.append(thumb);

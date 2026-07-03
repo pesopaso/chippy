@@ -34,15 +34,15 @@ test.describe('Discussion view — inline tag editor', () => {
     await expect(chip).toContainText('DEV');
   });
 
-  test('removing the tag chip clears the tag in navigation.md', async ({ app }) => {
+  test('removing the tag chip clears the tag in navigation.chippy.md', async ({ app }) => {
     await app.open('Cloud Migration');
     await app.page.locator('#memberScreen .disc-tag-chip .disc-tag-chip-x').click();
     // chip disappears, input appears
     await expect(app.page.locator('#memberScreen .disc-tag-chip')).not.toBeVisible();
     await expect(app.page.locator('#memberScreen input.disc-tag-input')).toBeVisible();
-    // persisted: navigation.md should no longer carry tag: DEV for Cloud Migration
+    // persisted: navigation.chippy.md should no longer carry tag: DEV for Cloud Migration
     await expect.poll(async () => {
-      const nav = await app.readFile('navigation.md');
+      const nav = await app.readFile('navigation.chippy.md');
       return nav;
     }, { timeout: 5000 }).not.toMatch(/Cloud Migration.*tag:\s*DEV/);
   });
@@ -57,7 +57,7 @@ test.describe('Discussion view — inline tag editor', () => {
     // chip shows new tag
     await expect(app.page.locator('#memberScreen .disc-tag-chip')).toContainText('QA');
     // persisted
-    await expect.poll(async () => app.readFile('navigation.md'), { timeout: 5000 })
+    await expect.poll(async () => app.readFile('navigation.chippy.md'), { timeout: 5000 })
       .toMatch(/SOC 2 Compliance.*tag:\s*QA/);
   });
 });

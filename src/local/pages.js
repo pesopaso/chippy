@@ -77,7 +77,10 @@
   function renderSidebar() {
     const body = document.querySelector('#sidebar .sidebar-body');
     if (!body) return;
-    const discs = store().getDiscussions().filter(d => !d.archived && d.name !== 'summary');
+    // "summary" needs no special-casing anymore: app files live in the
+    // .chippy.md namespace and the legacy-index migration drops the polluted
+    // nav entry, so a discussion named "summary" is legitimate. (v3.1.0-dev.92)
+    const discs = store().getDiscussions().filter(d => !d.archived);
 
     // Auto-reset activeTagFilter if its tag no longer exists in the nav.
     const allTags = store().getDiscussionTags ? store().getDiscussionTags() : [];
@@ -140,7 +143,15 @@
       for (const d of items) {
         const item = el('div', 'member-item' +
           (d.name === active ? ' active' : '') + (d.favorite ? ' favorite' : ''));
-        item.append(el('span', 'member-avatar', getInitials(d.name)));
+        const avatar = el('span', 'member-avatar', getInitials(d.name));
+        if (d.tag && ui().getDiscTagColor) {
+          // Color the nav chip to match its discussion tag (untagged stays muted grey).
+          const tagColor = ui().getDiscTagColor(d.tag, allTags);
+          avatar.style.borderColor = tagColor;
+          avatar.style.color = tagColor;
+          avatar.style.backgroundColor = tagColor + '22'; // faint tag-tinted fill
+        }
+        item.append(avatar);
         item.append(el('span', 'member-name', d.name));
         const star = el('span', 'fav-star', d.favorite ? '★' : '☆');
         star.title = 'Toggle favorite';
@@ -184,12 +195,15 @@
   const CLOSED_TASK = ['resolvedtask', 'obsoletetask', 'resolvedfollowup'];
   const CLOSED_GOAL = ['achievedgoal', 'canceledgoal', 'resolvedgoal'];
 
-  function makeSearchBar(onChange) {
+  function makeSearchBar(onChange, initial) {
     const wrap = el('div', 'list-search-wrap');
     const inp = el('input', 'list-search');
     inp.type = 'text';
     inp.placeholder = 'Search... use #tag or @name to filter';
+    if (initial) { inp.value = initial; inp.classList.add('filter-active'); }
+    ui().attachNameAutocomplete(inp);
     const clr = el('button', 'search-clear hidden', '×');
+    if (initial) clr.classList.remove('hidden');
     inp.addEventListener('input', () => {
       clr.classList.toggle('hidden', !inp.value);
       inp.classList.toggle('filter-active', !!inp.value);
@@ -299,22 +313,32 @@
   }
   function openImages() {
     crossScreen('allImagesScreen', 'All Images', (c) => {
-      const withDate = [];
+      const items = [];
       const re = /!\[[^\]]*\]\(([^)]+)\)/g;
       for (const e of store().collectEntries({ discTag: allImagesTagFilter })) {
-        let mm; while ((mm = re.exec(e.body || ''))) withDate.push({ ref: mm[1], date: e.created_at || '' });
+        let mm;
+        while ((mm = re.exec(e.body || ''))) {
+          items.push({ ref: mm[1], date: e.created_at || '', member: e._member || '' });
+        }
       }
-      withDate.sort((a, b) => (b.date || '').localeCompare(a.date || '')); // newest first
-      const refs = withDate.map(x => x.ref);
-      if (!refs.length) { c.append(el('div', 'panel-empty', 'No images.')); return; }
+      items.sort((a, b) => (b.date || '').localeCompare(a.date || '')); // newest first
+      if (!items.length) { c.append(el('div', 'panel-empty', 'No images.')); return; }
+      // Opens the carousel with "<discussion> — <created_at>" captions.
+      const openCarousel = async (idx) => {
+        const all = await Promise.all(items.map(async (x) => {
+          const u = await store().getImageUrl(x.ref).catch(() => null);
+          return u ? { url: u, label: x.member + ' — ' + x.date } : null;
+        }));
+        ui().showImageOverlay(all.filter(Boolean), idx);
+      };
+      // Thumbnail grid; discussion title and the entry's date/time live in
+      // the tooltip only.
       const grid = el('div', 'gallery-grid');
-      refs.forEach((ref, idx) => {
+      items.forEach((it, idx) => {
         const thumb = el('img', 'gallery-thumb');
-        store().getImageUrl(ref).then(u => { if (u) thumb.src = u; }).catch(() => {});
-        thumb.addEventListener('click', async () => {
-          const all = await Promise.all(refs.map(r => store().getImageUrl(r).catch(() => null)));
-          ui().showImageOverlay(all.filter(Boolean), idx);
-        });
+        thumb.title = it.member + ' — ' + it.date;
+        store().getImageUrl(it.ref).then(u => { if (u) thumb.src = u; }).catch(() => {});
+        thumb.addEventListener('click', () => openCarousel(idx));
         grid.append(thumb);
       });
       c.append(grid);
@@ -369,6 +393,7 @@
                        ['onhold', 'HOLD'], ['purgatory', 'PRGT'], ['resolved', 'DONE']];
   const PRIO_LABEL = Chippy.tags.PRIO_LABEL; // taxonomy.js
   let kanbanFocus = false; // when on, hide the HOLD and PRGT columns
+  let kanbanSearch = '';   // unified search query; survives board re-renders
 
   // Tag taxonomy lives in taxonomy.js (Chippy.tags); aliased here for brevity.
   const stateKeyOf = Chippy.tags.stateKeyOf;
@@ -435,39 +460,52 @@
     screen.append(header);
     addCrossDiscFilter(screen, 'kanbanFilters',
       () => allTasksTagFilter, v => { allTasksTagFilter = v; }, openKanban);
-    const board = el('div', 'kanban-board');
-    const tasks = store().collectEntries({ discTag: allTasksTagFilter }).filter(e => {
-      const t = e.tags || [];
-      return (t.includes('task') || t.includes('followup')) && !t.includes('obsoletetask');
-    });
-    const rank = e => ({ high: 0, medium: 1, low: 2 })[prioOf(e.tags)] ?? 3;
-    const cols = kanbanFocus ? KANBAN_COLS.filter(([k]) => k !== 'onhold' && k !== 'purgatory') : KANBAN_COLS;
-    for (const [key, label] of cols) {
-      const col = el('div', 'kanban-col');
-      col.append(el('div', 'kanban-col-header', label));
-      let colTasks = tasks.filter(e => stateKeyOf(e.tags) === key);
-      if (key === 'resolved') colTasks = colTasks.filter(e => store().doneRecent(e, 2));
-      colTasks.sort((a, b) => {
-        const ma = store().isMuted(a) ? 1 : 0, mb = store().isMuted(b) ? 1 : 0;
-        return ma !== mb ? ma - mb : rank(a) - rank(b);
+
+    // Unified search (same #tag / @name / freetext syntax as the list views).
+    // Typing rebuilds only the board so the input keeps its focus; the value
+    // survives the full re-renders triggered by drag-drop and the Focus toggle.
+    const boardWrap = el('div');
+    screen.append(makeSearchBar(q => { kanbanSearch = q; renderBoard(); }, kanbanSearch), boardWrap);
+
+    function renderBoard() {
+      boardWrap.replaceChildren();
+      const board = el('div', 'kanban-board');
+      const tasks = store().applyUnifiedFilter(
+        store().collectEntries({ discTag: allTasksTagFilter }), kanbanSearch
+      ).filter(e => {
+        const t = e.tags || [];
+        return (t.includes('task') || t.includes('followup')) && !t.includes('obsoletetask');
       });
-      for (const e of colTasks) col.append(kanbanCard(e));
-      col.addEventListener('dragover', ev => { ev.preventDefault(); ev.dataTransfer.dropEffect = 'move'; col.classList.add('drag-over'); });
-      col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
-      col.addEventListener('drop', async ev => {
-        ev.preventDefault(); col.classList.remove('drag-over');
-        let ref = kanbanDrag;
-        if (!ref) { try { ref = JSON.parse(ev.dataTransfer.getData('text/plain')); } catch (_) {} }
-        kanbanDrag = null;
-        if (!ref || !ref.id) return;
-        try {
-          await store().setTaskState(ref.m, ref.id, key, ref.idx);
-          openKanban();
-        } catch (_) {}
-      });
-      board.append(col);
+      const rank = e => ({ high: 0, medium: 1, low: 2 })[prioOf(e.tags)] ?? 3;
+      const cols = kanbanFocus ? KANBAN_COLS.filter(([k]) => k !== 'onhold' && k !== 'purgatory') : KANBAN_COLS;
+      for (const [key, label] of cols) {
+        const col = el('div', 'kanban-col');
+        col.append(el('div', 'kanban-col-header', label));
+        let colTasks = tasks.filter(e => stateKeyOf(e.tags) === key);
+        if (key === 'resolved') colTasks = colTasks.filter(e => store().doneRecent(e, 2));
+        colTasks.sort((a, b) => {
+          const ma = store().isMuted(a) ? 1 : 0, mb = store().isMuted(b) ? 1 : 0;
+          return ma !== mb ? ma - mb : rank(a) - rank(b);
+        });
+        for (const e of colTasks) col.append(kanbanCard(e));
+        col.addEventListener('dragover', ev => { ev.preventDefault(); ev.dataTransfer.dropEffect = 'move'; col.classList.add('drag-over'); });
+        col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
+        col.addEventListener('drop', async ev => {
+          ev.preventDefault(); col.classList.remove('drag-over');
+          let ref = kanbanDrag;
+          if (!ref) { try { ref = JSON.parse(ev.dataTransfer.getData('text/plain')); } catch (_) {} }
+          kanbanDrag = null;
+          if (!ref || !ref.id) return;
+          try {
+            await store().setTaskState(ref.m, ref.id, key, ref.idx);
+            openKanban();
+          } catch (_) {}
+        });
+        board.append(col);
+      }
+      boardWrap.append(board);
     }
-    screen.append(board);
+    renderBoard();
   }
 
   /* ----------------------------- Rule of Three ------------------------- */
@@ -551,6 +589,43 @@
     const cut = new Date(); cut.setDate(cut.getDate() - days);
     return d >= cut;
   }
+  function escapeRe(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+  // Initials of a name: first letter of each word, uppercased. "Philipp Sommer"
+  // -> "PS", "Maria Rodriguez Lopez" -> "MRL". Splits on spaces, hyphens, and
+  // underscores.
+  function initialsOf(name) {
+    const parts = String(name == null ? '' : name).trim().split(/[\s\-_]+/).filter(Boolean);
+    return parts.map(w => w[0].toUpperCase()).join('') || '?';
+  }
+
+  // Privacy redaction for the AI Summary: strip real names from the text before
+  // it is sent to the API, so identities never leave the machine when a public
+  // endpoint is used. Covers @[Full Name] references and bare occurrences of any
+  // registered name. Each distinct name maps to its initials (PS, MRL, …); names
+  // that share initials get a numeric suffix (PS, PS2) so they stay distinct.
+  function redactNames(text, registryNames) {
+    let t = String(text == null ? '' : text);
+    const set = new Set();
+    let m; const re = /@\[([^\]]+)\]/g;
+    while ((m = re.exec(t))) set.add(m[1]);
+    for (const n of (registryNames || [])) if (n) set.add(n);
+    // Longest first so a longer name isn't partially matched by a shorter one.
+    const names = [...set].sort((a, b) => b.length - a.length);
+    const label = new Map();
+    const counts = new Map();
+    for (const n of names) {
+      const base = initialsOf(n);
+      const c = (counts.get(base) || 0) + 1; counts.set(base, c);
+      label.set(n, c === 1 ? base : base + c);
+    }
+    t = t.replace(/@\[([^\]]+)\]/g, (mm, n) => label.get(n) || initialsOf(n));
+    for (const n of names) {
+      t = t.replace(new RegExp('\\b' + escapeRe(n) + '\\b', 'g'), label.get(n));
+    }
+    return t;
+  }
+
   function buildPrompt(entries) {
     const byDisc = new Map();
     for (const e of entries) {
@@ -584,6 +659,15 @@
       b.addEventListener('click', () => { range = r; ctrl.querySelectorAll('.btn-sm').forEach(x => x.classList.remove('active')); b.classList.add('active'); });
       ctrl.append(b);
     }
+    // Privacy toggle: when on, all names are stripped from the text sent to the
+    // API (for use with public/non-local endpoints). Preference persists locally.
+    const privacy = document.createElement('input'); privacy.type = 'checkbox';
+    privacy.checked = lsGet('chippy_redact_names') === '1';
+    const privacyLabel = el('label', 'summary-privacy');
+    privacyLabel.title = 'Replace all names with their initials (Philipp Sommer → PS) before sending to the API. Use this with public endpoints to keep colleagues’ names private.';
+    privacyLabel.append(privacy, document.createTextNode(' Remove names'));
+    ctrl.append(privacyLabel);
+
     const gen = el('button', 'btn-primary', 'Generate'); ctrl.append(gen);
     screen.append(ctrl);
     const out = el('div', 'summary-output entry-text'); screen.append(out);
@@ -604,14 +688,23 @@
     screen.append(list);
 
     gen.addEventListener('click', async () => {
-      try { localStorage.setItem('chippy_api_url', url.value); localStorage.setItem('chippy_api_model', model.value); } catch (_) {}
+      try {
+        localStorage.setItem('chippy_api_url', url.value);
+        localStorage.setItem('chippy_api_model', model.value);
+        localStorage.setItem('chippy_redact_names', privacy.checked ? '1' : '0');
+      } catch (_) {}
       await store().saveSummaryConfig(url.value, model.value);
       gen.disabled = true; gen.textContent = 'Generating…'; out.textContent = '';
       try {
         const entries = store().collectEntries().filter(e => inRange(e.created_at, range));
+        let promptText = buildPrompt(entries);
+        // Strip names before they leave the machine when privacy mode is on.
+        if (privacy.checked) {
+          promptText = redactNames(promptText, store().getNames ? store().getNames() : []);
+        }
         const res = await fetch(url.value, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: model.value, messages: [{ role: 'user', content: buildPrompt(entries) }], stream: false })
+          body: JSON.stringify({ model: model.value, messages: [{ role: 'user', content: promptText }], stream: false })
         });
         const data = await res.json();
         const content = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || JSON.stringify(data);
@@ -627,10 +720,156 @@
     });
   }
 
+  /* ------------------------------- Calendar ---------------------------- */
+  // A due-date calendar over open tasks/followups. Five views select how the
+  // due tasks are bucketed; all share the disc-tag filter and unified search.
+
+  let calendarView = 'focus';     // day | focus | work | full | month
+  let calendarSearch = '';
+  let calendarTagFilter = null;
+
+  const CAL_WD = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const CAL_VIEWS = [['day', 'Day'], ['focus', 'Focus'], ['work', 'Work week'], ['full', 'Full week'], ['month', 'Month']];
+
+  function ymd(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function parseYmd(s) { return new Date(s + 'T00:00:00'); }
+  function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+  function mondayOf(d) { return addDays(d, -((d.getDay() + 6) % 7)); } // Mon = start of week
+
+  // Open task/followup entries that carry a due date (closed states excluded).
+  function dueTaskEntries() {
+    const items = store().applyUnifiedFilter(
+      store().collectEntries({ discTag: calendarTagFilter }), calendarSearch
+    );
+    return items.filter(e => {
+      const t = e.tags || [];
+      if (!(t.includes('task') || t.includes('followup'))) return false;
+      if (!e.due) return false;
+      const sk = stateKeyOf(t);
+      return sk !== 'resolved' && sk !== 'obsolete' && !t.includes('obsoletetask');
+    });
+  }
+
+  function calSort(a, b) {
+    const ma = store().isMuted(a) ? 1 : 0, mb = store().isMuted(b) ? 1 : 0;
+    if (ma !== mb) return ma - mb;
+    const rank = e => ({ high: 0, medium: 1, low: 2 })[prioOf(e.tags)] ?? 3;
+    return rank(a) - rank(b) || (a.due || '').localeCompare(b.due || '') ||
+      (a.created_at || '').localeCompare(b.created_at || '');
+  }
+
+  function calCard(e) {
+    // The column/cell already states the day, so the per-card timestamp is dropped.
+    return entryRow(e, Object.assign({ dim: store().isMuted(e), hideTime: true }, OVERVIEW_OPTS));
+  }
+
+  const CAL_STATE_LABEL = { open: 'OPEN', inprogress: 'WIP', check: 'CHK', onhold: 'HOLD', purgatory: 'PRGT', resolved: 'DONE', obsolete: 'OBSL' };
+
+  // Compact info box for the month grid: state label, priority dot, a two-line
+  // title and the discussion name. Click opens its discussion.
+  function calMini(e) {
+    const sk = stateKeyOf(e.tags), prio = prioOf(e.tags) || 'low';
+    const box = el('div', 'cal-mbox cal-mbox-' + sk + ' cal-prio-' + prio + (store().isMuted(e) ? ' dimmed' : ''));
+    const top = el('div', 'cal-mbox-top');
+    top.append(el('span', 'cal-mbox-state', CAL_STATE_LABEL[sk] || sk.toUpperCase()), el('span', 'cal-mbox-prio'));
+    box.append(top, el('div', 'cal-mbox-title', (e.body || '').split('\n')[0] || '(untitled)'));
+    if (e._member) box.append(el('div', 'cal-mbox-member', e._member));
+    box.title = (e._member ? e._member + ' · ' : '') + ((e.body || '').split('\n')[0]);
+    box.addEventListener('click', () => store().selectMember(e._member));
+    return box;
+  }
+
+  function calColumn(day, date, entries, isToday) {
+    const col = el('div', 'cal-col' + (isToday ? ' cal-today' : ''));
+    const h = el('div', 'cal-col-header');
+    h.append(el('div', 'cal-col-day', day));
+    if (date) h.append(el('div', 'cal-col-date', date));
+    col.append(h);
+    const body = el('div', 'cal-col-body');
+    if (!entries.length) body.append(el('div', 'cal-empty', 'No tasks'));
+    else for (const e of entries) body.append(calCard(e));
+    col.append(body);
+    return col;
+  }
+
+  function openCalendar() {
+    const screen = document.getElementById('calendarScreen');
+    if (!screen) return;
+    screen.replaceChildren();
+    const header = el('div', 'member-header');
+    header.append(el('h1', 'member-title', 'Calendar'));
+    screen.append(header);
+
+    const ctrl = el('div', 'cal-ctrl');
+    for (const [k, lbl] of CAL_VIEWS) {
+      const b = el('button', 'btn-sm' + (calendarView === k ? ' active' : ''), lbl);
+      b.addEventListener('click', () => { calendarView = k; openCalendar(); });
+      ctrl.append(b);
+    }
+    screen.append(ctrl);
+    addCrossDiscFilter(screen, 'calendarFilters',
+      () => calendarTagFilter, v => { calendarTagFilter = v; }, openCalendar);
+
+    const bodyWrap = el('div');
+    screen.append(makeSearchBar(q => { calendarSearch = q; renderCal(); }, calendarSearch), bodyWrap);
+
+    const today = parseYmd(store().nowISO().slice(0, 10));
+    const todayStr = ymd(today);
+
+    function renderCal() {
+      bodyWrap.replaceChildren();
+      const entries = dueTaskEntries();
+      const byDue = new Map();
+      for (const e of entries) { if (!byDue.has(e.due)) byDue.set(e.due, []); byDue.get(e.due).push(e); }
+      for (const arr of byDue.values()) arr.sort(calSort);
+      const on = ds => (byDue.get(ds) || []);
+
+      if (calendarView === 'day') {
+        const board = el('div', 'cal-board');
+        board.append(calColumn('Today', todayStr, on(todayStr), true));
+        bodyWrap.append(board);
+      } else if (calendarView === 'focus') {
+        const t1 = ymd(addDays(today, 1)), t2 = ymd(addDays(today, 2));
+        const overdue = entries.filter(e => e.due < todayStr).sort(calSort);
+        const next = entries.filter(e => e.due === t1 || e.due === t2).sort(calSort);
+        const board = el('div', 'cal-board');
+        board.append(calColumn('Overdue', 'before ' + todayStr, overdue, false));
+        board.append(calColumn('Due today', todayStr, on(todayStr), true));
+        board.append(calColumn('Next 2 days', t1 + ' – ' + t2, next, false));
+        bodyWrap.append(board);
+      } else if (calendarView === 'work' || calendarView === 'full') {
+        const mon = mondayOf(today), n = calendarView === 'work' ? 5 : 7;
+        const board = el('div', 'cal-board');
+        for (let i = 0; i < n; i++) {
+          const d = addDays(mon, i), ds = ymd(d);
+          board.append(calColumn(CAL_WD[i], ds.slice(5), on(ds), ds === todayStr));
+        }
+        bodyWrap.append(board);
+      } else { // month: this week + next 3 (4 rows x 7 days)
+        const mon = mondayOf(today);
+        const grid = el('div', 'cal-month');
+        for (let i = 0; i < 7; i++) grid.append(el('div', 'cal-month-dow', CAL_WD[i]));
+        for (let w = 0; w < 4; w++) for (let i = 0; i < 7; i++) {
+          const d = addDays(mon, w * 7 + i), ds = ymd(d);
+          const cell = el('div', 'cal-cell' + (ds === todayStr ? ' cal-today' : ''));
+          cell.append(el('div', 'cal-cell-date', (d.getDate() === 1 ? CAL_MONTH[d.getMonth()] + ' ' : '') + d.getDate()));
+          for (const e of on(ds)) cell.append(calMini(e));
+          grid.append(cell);
+        }
+        bodyWrap.append(grid);
+      }
+    }
+    renderCal();
+  }
+
+  const CAL_MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
   const CROSS = {
     allComments: openComments, allTasks: openTasks, allGoals: openGoals,
     allLinks: openLinks, allImages: openImages, allNames: openNames, allTags: openTags,
-    kanban: openKanban, ro3: openRo3, activity: openActivity, summary: openSummary
+    kanban: openKanban, calendar: openCalendar, ro3: openRo3, activity: openActivity, summary: openSummary
   };
 
   // Reset maps for disc tag filters so each page starts at "All" on fresh navigation.
@@ -642,14 +881,21 @@
     allLinks:    () => { allLinksTagFilter = null; },
     allNames:    () => { allNamesTagFilter = null; },
     allTags:     () => { allTagsTagFilter = null; },
-    kanban:      () => { allTasksTagFilter = null; },
+    kanban:      () => { allTasksTagFilter = null; kanbanSearch = ''; },
+    calendar:    () => { calendarTagFilter = null; calendarSearch = ''; },
     ro3:         () => { ro3TagFilter = null; },
   };
 
   async function openCrossView(name) {
     if (!CROSS[name]) return;
     if (DISC_FILTER_RESET[name]) DISC_FILTER_RESET[name]();
-    await store().ensureAllLoaded();
+    const failed = await store().ensureAllLoaded();
+    if (failed && failed.length && ui() && ui().showToast) {
+      const names = failed.map(f => f.name).join(', ');
+      const plural = failed.length === 1 ? 'discussion' : 'discussions';
+      ui().showToast('Couldn’t load ' + failed.length + ' ' + plural + ': ' + names +
+        '. Check the file exists in the data folder (or, if it’s on OneDrive/SharePoint, that it’s downloaded).', 'error');
+    }
     CROSS[name]();
     showScreen(name);
     // Slim mode: cross-views are single-column — show them on the Discussion tab.

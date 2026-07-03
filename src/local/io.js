@@ -13,11 +13,19 @@
 
   /* ------------------------------ constants ---------------------------- */
 
-  const NAV_FILE = 'navigation.md';
-  const TAGS_FILE = 'tags.md';
-  const NAMES_FILE = 'names.md';
-  const SUMMARY_FILE = 'summary.md';
-  const RESERVED = new Set([NAV_FILE, TAGS_FILE, NAMES_FILE, SUMMARY_FILE]);
+  // App-managed files carry the .chippy.md suffix, so they can never collide
+  // with a user discussion (sanitizeName strips dots, so no discussion file can
+  // ever end in .chippy.md). "navigation", "tags", "names", and "summary" are
+  // therefore ordinary discussion names.
+  const NAV_FILE = 'navigation.chippy.md';
+  const TAGS_FILE = 'tags.chippy.md';
+  const NAMES_FILE = 'names.chippy.md';
+  const SUMMARY_FILE = 'summary.chippy.md';
+  // Pre-v3.1 legacy filenames — read once by the migration, then removed.
+  const LEGACY_NAV = 'navigation.md';
+  const LEGACY_TAGS = 'tags.md';
+  const LEGACY_NAMES = 'names.md';
+  const LEGACY_SUMMARY = 'summary.md';
   const NUL = String.fromCharCode(0);
 
   /* ------------------------------ pure guards -------------------------- */
@@ -46,7 +54,7 @@
   function isDiscussionFile(filename) {
     if (!filename.endsWith('.md')) return false;
     if (filename.endsWith('.archive.md')) return false;
-    if (RESERVED.has(filename)) return false;
+    if (filename.endsWith('.chippy.md')) return false; // app-managed namespace
     return true;
   }
 
@@ -98,6 +106,56 @@
     }
     names.sort((a, b) => a.localeCompare(b));
     return names;
+  }
+
+  // Archived discussions live as "<stem>.archive.md" and are not returned by
+  // listDiscussions. Return their stems so the nav reconciler can keep/track them.
+  async function listArchived(dirHandle) {
+    const out = [];
+    const suffix = '.archive.md';
+    for await (const [entryName, handle] of dirHandle.entries()) {
+      if (handle.kind === 'file' && entryName.endsWith(suffix) && !entryName.endsWith('.chippy' + suffix)) {
+        out.push(entryName.slice(0, -suffix.length));
+      }
+    }
+    return out;
+  }
+
+  // Reconcile the navigation list against what is actually on disk. The folder
+  // is the source of truth: discussion .md files may be added or removed by
+  // outside/automated processes, so on every startup we drop nav entries whose
+  // file is gone and add entries for files that aren't listed yet. Existing
+  // entries keep their metadata (favorite, tag, archived) and order; new ones
+  // are appended alphabetically. Non-archived entries are matched to "<stem>.md"
+  // and archived entries to "<stem>.archive.md". Pure except for the directory
+  // read — the caller persists via saveNav only when { changed } is true.
+  async function reconcileNavWithFiles(dirHandle, nav) {
+    const activeStems = new Set(await listDiscussions(dirHandle));
+    const archivedStems = new Set(await listArchived(dirHandle));
+    const src = (nav && nav.discussions) || [];
+    const kept = [];
+    const seenActive = new Set();
+    const seenArchived = new Set();
+    for (const d of src) {
+      const stem = sanitizeName(d.name);
+      if (d.archived) {
+        if (archivedStems.has(stem) && !seenArchived.has(stem)) { kept.push(d); seenArchived.add(stem); }
+      } else if (activeStems.has(stem) && !seenActive.has(stem)) {
+        kept.push(d); seenActive.add(stem);
+      }
+    }
+    const added = [];
+    for (const stem of activeStems) {
+      if (!seenActive.has(stem)) added.push({ name: stem, favorite: false, archived: false, tag: null });
+    }
+    for (const stem of archivedStems) {
+      if (!seenArchived.has(stem)) added.push({ name: stem, favorite: false, archived: true, tag: null });
+    }
+    added.sort((a, b) => a.name.localeCompare(b.name));
+    const discussions = kept.concat(added);
+    const changed = discussions.length !== src.length ||
+      discussions.some((d, i) => src[i] !== d);
+    return { nav: Object.assign({}, nav, { discussions }), changed };
   }
 
   async function loadDiscussion(dirHandle, name) {
@@ -155,25 +213,52 @@
   /* ------------------------------ index files -------------------------- */
 
   async function loadIndexes(dirHandle) {
-    const navText = await readFileText(dirHandle, NAV_FILE);
-    const hasTags = await fileExists(dirHandle, TAGS_FILE);
-    const hasNames = await fileExists(dirHandle, NAMES_FILE);
-
-    if (hasTags && hasNames) {
-      return {
-        nav: fmt.parseNav(navText),
-        tags: fmt.parseTags(await readFileText(dirHandle, TAGS_FILE)),
-        names: fmt.parseNames(await readFileText(dirHandle, NAMES_FILE))
-      };
+    if (await fileExists(dirHandle, NAV_FILE)) {
+      const nav = fmt.parseNav(await readFileText(dirHandle, NAV_FILE));
+      const tags = (await fileExists(dirHandle, TAGS_FILE))
+        ? fmt.parseTags(await readFileText(dirHandle, TAGS_FILE)) : [];
+      const names = (await fileExists(dirHandle, NAMES_FILE))
+        ? fmt.parseNames(await readFileText(dirHandle, NAMES_FILE)) : [];
+      return { nav, tags, names };
     }
+    return migrateLegacyIndexes(dirHandle);
+  }
 
-    // Legacy single-file layout — migrate once.
-    const migrated = fmt.migrateLegacyNav(navText);
-    const nav = { discussions: migrated.discussions, theme: migrated.theme };
-    await writeFileText(dirHandle, TAGS_FILE, fmt.serializeTags(migrated.tags));
-    await writeFileText(dirHandle, NAMES_FILE, fmt.serializeNames(migrated.names));
+  // One-time migration to the .chippy.md layout. Runs only when no
+  // navigation.chippy.md exists yet. Handles both legacy generations:
+  // the pre-v3.1 split layout (navigation.md + tags.md + names.md) and the
+  // older single-file navigation.md with inline ## Tags / ## Names sections
+  // (datadefinition §3.4). The new files are written first; the legacy files
+  // are removed afterwards — effectively a rename — so "navigation", "tags",
+  // "names", and "summary" become ordinary discussion names from then on.
+  async function migrateLegacyIndexes(dirHandle) {
+    const navText = await readFileText(dirHandle, LEGACY_NAV); // absent -> throws, as before
+    // Each index is taken from its dedicated legacy file when present, falling
+    // back to the gen-1 inline ## Tags / ## Names sections of navigation.md
+    // independently — a missing tags.md must never blank the names (or vice
+    // versa). (dev.96 regression: the old all-or-nothing check fell back to the
+    // inline parser for both lists when either file was absent, migrating
+    // empty registries and deleting the surviving legacy file.)
+    const inline = fmt.migrateLegacyNav(navText);
+    const nav = { discussions: inline.discussions, theme: inline.theme };
+    const tags = (await fileExists(dirHandle, LEGACY_TAGS))
+      ? fmt.parseTags(await readFileText(dirHandle, LEGACY_TAGS)) : inline.tags;
+    const names = (await fileExists(dirHandle, LEGACY_NAMES))
+      ? fmt.parseNames(await readFileText(dirHandle, LEGACY_NAMES)) : inline.names;
+    // A "summary" entry in a legacy navigation list was reserved-file
+    // pollution, never a real discussion — drop it during the migration.
+    nav.discussions = (nav.discussions || []).filter(d => d.name !== 'summary');
+
     await writeFileText(dirHandle, NAV_FILE, fmt.serializeNav(nav));
-    return { nav, tags: migrated.tags, names: migrated.names };
+    await writeFileText(dirHandle, TAGS_FILE, fmt.serializeTags(tags));
+    await writeFileText(dirHandle, NAMES_FILE, fmt.serializeNames(names));
+    if ((await fileExists(dirHandle, LEGACY_SUMMARY)) && !(await fileExists(dirHandle, SUMMARY_FILE))) {
+      await writeFileText(dirHandle, SUMMARY_FILE, await readFileText(dirHandle, LEGACY_SUMMARY));
+    }
+    for (const f of [LEGACY_NAV, LEGACY_TAGS, LEGACY_NAMES, LEGACY_SUMMARY]) {
+      try { await dirHandle.removeEntry(f); } catch (_) { /* not present */ }
+    }
+    return { nav, tags, names };
   }
 
   async function saveNav(dirHandle, nav) {
@@ -250,8 +335,9 @@
 
   Chippy.io = {
     NAV_FILE, TAGS_FILE, NAMES_FILE, SUMMARY_FILE,
-    sanitizeName, isSafeImagePath,
-    openFolder, listDiscussions, loadDiscussion, saveDiscussion,
+    sanitizeName, isSafeImagePath, isDiscussionFile,
+    openFolder, listDiscussions, listArchived, reconcileNavWithFiles,
+    loadDiscussion, saveDiscussion,
     archiveDiscussion, renameDiscussion,
     loadIndexes, saveNav, saveTags, saveNames,
     readSummary, writeSummary,

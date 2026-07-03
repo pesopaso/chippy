@@ -631,3 +631,105 @@ reference the requirement (`R#`) / plan step.
 - `ro3TagFilter` state variable added alongside the other per-page filter variables; cleared in `DISC_FILTER_RESET` on fresh navigation.
 - `openRo3` appends an `addCrossDiscFilter` bar (same helper used by all other cross-views); the Refresh button is right-aligned via a `meta-spacer`; the setFilter callback resets `ro3Pick` so the first reconcile after a filter change draws from the new scoped pool.
 - Three new tests in `discussion-tag-filter.spec.mjs`: filter buttons render, DEV filter hides People cards, People filter hides DEV cards.
+
+### v3.1.0-dev.90 — 2026-06-10 — Three-part comment body: state changes in the action log, single Updated line, comment-only editing
+
+> A comment body now consists of at most three things — the comment text, one `Updated:` line, and the action section — and editing only ever touches the comment text.
+
+- **State changes are logged as action bullets** — every task/followup/goal state transition appends `- YYYY-MM-DD : → LABEL` (e.g. `→ WIP`, `→ DONE`, `→ Achieved`) to the entry's action section (`setTaskState`/`setGoalState` via new `logStateAction`). No new `Resolved:`/`Obsolete:`/`Achieved:`/`Canceled:` marker lines are written; existing legacy markers are preserved verbatim and still read as close-date fallback (`resolvedDate`, dashboard `closedMonthOf` now prefer the latest `→ DONE`/`→ OBSL` bullet). No-op transitions (same state) write nothing.
+- **Single `Updated:` line, refreshed in place** — `editEntry` no longer appends a marker per day; one `Updated: <ts>` line records the latest edit and its timestamp is replaced on each subsequent edit. Legacy bodies with several `Updated:` lines consolidate to the most recent on next write.
+- **Comment-only editing** — the inline edit textarea (`ui.entryCard`) now shows only the comment text via new `store.splitBodyParts`; the `Updated:` line and the action section never enter the textarea and are reassembled untouched by `store.joinBodyParts` on save (canonical order: comment, legacy markers, `Updated:`, actions last).
+- New pure helpers `splitBodyParts`/`joinBodyParts` exported for UI and tests; 4 new unit tests in `store-helpers.test.mjs`; e2e expectations updated from `Resolved:`/`Achieved:` markers to `: → DONE`/`: → Achieved` bullets; help texts updated.
+- `datadefinition.md` §2.1 rewritten: three-part body model, state-change bullets, single-`Updated:` rule, legacy markers documented as read-only. Regression harness 7/7 (format layer untouched — body remains opaque to `format.js`); unit suite 18/18.
+
+### v3.1.0-dev.91 — 2026-06-10 — Fix: comments can be promoted to task/followup/goal in the inline editor again
+
+> The edit box silently swallowed `#task`, `#followup`, and `#goal` (the `addTag` filter rejected every reserved tag), so an existing comment could never become a task, followup, or goal. Promotion now works and matches the new-comment box.
+
+- **`taxonomy.js`** — new `PROMOTABLE` regex (`task|followup|goal|high|medium|low`): the reserved tags a user may type by hand. State tags, goal ids, and `muted:` stay app-managed and are still rejected as typed input.
+- **`ui.js`** — the edit box's `addTag` accepts promotable tags (shown as removable chips during the edit for visible feedback) and no longer double-adds a tag the entry already carries hidden.
+- **`store.js`** — new pure `applyEditTagRules` applied in `editEntry`: dedupes, lets the last-typed priority win over an existing one, defaults to `low` when a kind tag is present without priority, and mints a `goal-<id>` when an entry becomes a goal — the same write rules `addEntry` applies on creation.
+- 2 new unit tests in `store-helpers.test.mjs` (promotion defaults + goal-id mint; dedupe + last-priority-wins); help text updated. Unit suite 20/20.
+
+### v3.1.0-dev.92 — 2026-06-10 — App-managed files renamed to *.chippy.md with one-time legacy migration
+
+> The four app-managed files move into a dedicated namespace — `navigation.chippy.md`, `tags.chippy.md`, `names.chippy.md`, `summary.chippy.md` — so they can never collide with user discussions; `navigation`, `tags`, `names`, and `summary` become ordinary discussion names.
+
+- **`io.js`** — index/summary constants renamed; `isDiscussionFile` excludes the `.chippy.md` namespace instead of a reserved-name set (sanitizeName strips dots, so no discussion can ever produce a `.chippy.md` filename); `isDiscussionFile` exported for tests.
+- **One-time migration** (`migrateLegacyIndexes`, runs only when no `navigation.chippy.md` exists): reads the pre-v3.1 split layout (`navigation.md`/`tags.md`/`names.md`) or chains the older gen-1 inline `## Tags`/`## Names` migration, writes the `.chippy.md` files first, renames `summary.md`, then removes the legacy files — effectively a rename. A polluted `summary` entry in a legacy nav list is dropped.
+- **`pages.js`** — the dev.87 sidebar band-aid (`d.name !== 'summary'`) removed; a discussion named "summary" is now legitimate.
+- **Tests/harness** — harness reference data renamed to `*.chippy.md` (roundtrip dispatch accepts both spellings); `init-folder`, `validator`, `run.mjs`, `seed.spec`, `discussions.spec`, `discussion-tag-filter.spec` updated; new `io-migration.test.mjs` (5 tests) drives `loadIndexes` against an in-memory FSA fake covering both legacy generations, summary rename, pollution drop, and chippy-files-win precedence.
+- **`datadefinition.md`** — §1 namespace rule, §3/§4 filenames, §3.4 rewritten as "Legacy layouts and the one-time migration" (two generations). Harness 7/7; unit suite 25/25.
+
+### v3.1.0-dev.93 — 2026-06-10 — Image provenance: folder tooltip, All Images tooltips, carousel captions
+
+> Small UI affordances that show where images and data come from.
+
+- **Open Folder tooltip** — after a successful open, the sidebar button's tooltip shows the loaded folder name ("Loaded folder: <name>"; the File System Access API exposes the name, not the full path).
+- **All Images page** — the thumbnail grid is unchanged; each thumbnail now carries "<discussion> — <created_at>" as its tooltip.
+- **Carousel captions** — `ui.showImageOverlay` accepts `{ url, label }` items (plain URL strings still supported) and renders the label below the image (`.img-caption`). Wired up with "<discussion> — <created_at>" captions on the All Images page and the discussion right-column gallery, whose thumbnails also carry the date tooltip (`collectImages` now returns ref + timestamp).
+
+### v3.1.0-dev.94 — 2026-06-10 — Fix: console error from blocked favicon fetch on file:// origins
+
+> Opening app.html directly from file:// logged "Unsafe attempt to load URL … 'file:' URLs are treated as unique security origins" — the browser-initiated favicon fetch is blocked because every file: URL is its own origin.
+
+- The favicon `<link>` now carries a compact inline `data:` SVG (the indigo tile, visually equivalent at favicon size) instead of fetching `chippy-icon.svg`, so no favicon network/file fetch happens at all. The in-app `<img>` uses of `chippy-icon.svg` are unchanged.
+
+### v3.1.0-dev.95 — 2026-06-10 — Fix: image paste works in the inline comment editor
+
+> Ctrl+V image paste only worked in the new-comment box; the edit textarea had no paste handler.
+
+- `insertAtCursor` and `blobToJpeg` moved from `discussion.js` to `ui.js` (exported, shared by both paste paths).
+- `ui.entryCard`'s edit textarea now handles clipboard image paste exactly like the new-comment box: convert to JPEG, save via `store.saveImage` into the discussion's image folder, insert the `![image](ref)` markdown at the caret (R12). Skipped on the AI-Summary edit path, which has no discussion folder.
+- Help text mentions Ctrl+V in the edit action description.
+
+### v3.1.0-dev.96 — 2026-06-10 — @name autocomplete unified across all text boxes
+
+> Name handling followed the image-paste unification: one shared helper, attached everywhere a name can be typed.
+
+- **`ui.attachNameAutocomplete(field)`** — new shared helper holding the @-name rules in one place: typing `@` (at start or after whitespace) opens a floating dropdown of known names filtered by the token; picking inserts the storage form `@[Full Name] ` at the caret and re-dispatches `input` so drafts and live filters update. Dropdown is body-appended (`.ac-dropdown.ac-float`, position:fixed) so it works in any layout; picking uses mousedown-preventDefault so it never blurs the field (the inline editor saves on blur).
+- **Attached to:** the new-comment composer (its inline name branch removed — composer dropdown now only handles #tags), the inline comment editor, the discussion-history search box, and every cross-view search box (`makeSearchBar`). The sidebar search is excluded — it filters discussion names, where @-references don't apply.
+
+### v3.1.0-dev.97 — 2026-06-12 — Fix: migration data loss for partial legacy index sets + self-healing registries
+
+> A dev.92 migration bug could blank the tags/names registries: when only one of the legacy `tags.md`/`names.md` existed at migration time (e.g. an unmaterialized cloud placeholder), the all-or-nothing check fell back to the gen-1 inline parser for *both* lists — migrating empty registries and deleting the surviving legacy file. An empty names registry is also why the @name dropdown "never appeared": the autocomplete was working, but had nothing to offer.
+
+- **`io.js` `migrateLegacyIndexes`** — each index now falls back independently: `tags.md`/`names.md` are read when present, and only the missing one falls back to the inline `## Tags`/`## Names` sections of `navigation.md`. A missing names file can no longer blank the tags (or vice versa).
+- **`store.js` self-healing registries** — new `registerMemberRefs`: whenever a discussion's entries are loaded (`selectMember`, `reloadMember`, `ensureAllLoaded`), any tag or `@[Name]` reference missing from the persisted unions is re-registered and saved. A lost or blanked `tags.chippy.md`/`names.chippy.md` rebuilds itself from the data still in the entries — opening any cross-discussion page recovers the full registry.
+- New unit test (partial legacy set) in `io-migration.test.mjs`; suite 26/26, harness 10/10.
+
+### v3.1.0-dev.98 — 2026-06-12 — @ trigger can create the very first name
+
+> With an empty name registry (or any unknown name) the @ dropdown had nothing to offer, so the first name could only be entered by hand-typing the @[Full Name] form.
+
+- **`ui.attachNameAutocomplete`** — new `opts.allowNew`: when the typed token matches no existing name (case-insensitive), the dropdown offers a `+ New name "…"` row; picking it inserts `@[token] ` like any other pick. Enabled in the new-comment composer and the inline editor; search boxes keep referencing existing names only. New `.ac-create` style (italic, separated).
+- **`store.editEntry`** — registers `@[Name]` references from the edited text into `names.chippy.md` immediately, exactly like `addEntry` does on creation (previously a name first entered via edit only reached the registry on the next reload via the self-heal).
+- Help text updated for the @ trigger.
+
+### v3.1.0-dev.99 — 2026-06-12 — @name dropdown in the action modal
+
+> Actions often relate to other people; the ⚡ action input now has the same @ support as the comment boxes.
+
+- **`ui.showActionModal`** — the action input gets `attachNameAutocomplete` with `allowNew`, so existing names can be picked and new ones created while typing an action. The floating dropdown (z 1400) renders above the modal overlay (z 1200).
+- **`store.appendAction`** — registers any new `@[Name]` from the action text into `names.chippy.md`, matching `addEntry`/`editEntry`.
+
+### v3.1.0-dev.100 — 2026-06-12 — E2E coverage for the @name autocomplete
+
+> Five Playwright tests pin the @ behaviour on every attached surface.
+
+- New `tests/local/e2e/operate/name-autocomplete.spec.mjs`: composer pick (inserts `@[Full Name] `), composer `+ New name` creation, inline-editor pick incl. persistence of the saved body, search-box pick incl. unified-filter narrowing and the absence of the create row, and the ⚡ action modal incl. the persisted dated action line.
+- Picks are driven via `mousedown` dispatch (the helper's pick event, preventDefault keeps focus); typing uses `pressSequentially` so the caret-anchored token detection is exercised per keystroke.
+
+### v3.1.0-dev.101 — 2026-06-12 — Keyboard selection in the @name dropdown
+
+> Enter used to fall through to the field's own handler (saving the comment instead of confirming the name), and there was no way to select a name without the mouse.
+
+- **`ui.attachNameAutocomplete`** — while the dropdown is open it owns the keyboard: the top match is preselected (highlighted via `.ac-option.active`), ↑/↓ move the highlight with wrap-around, Enter confirms the highlighted row (including the `+ New name` row), Escape closes. The handled keys use `preventDefault` + `stopImmediatePropagation`, so the field's own Enter-save / Escape-cancel never fire on the same keystroke — works on all surfaces because every consumer attaches the helper before its own keydown handlers. With the dropdown closed, all keys pass through unchanged.
+- New e2e test: arrows move the highlight, Enter inserts `@[Tom Reyes] ` without saving, and a second Enter (dropdown closed) saves normally.
+
+### v3.1.0-dev.102 — 2026-06-12 — Unified search on the Kanban board
+
+> The Kanban page gets the same search box (`#tag` / `@name` / freetext, incl. the @name dropdown) as every other cross-discussion view.
+
+- **`pages.js`** — `makeSearchBar` accepts an initial value; `openKanban` mounts the bar above the board and applies `applyUnifiedFilter` to the task pool. Typing rebuilds only the board (input keeps focus); the query survives the full re-renders from drag-drop and the Focus toggle (`kanbanSearch` module state) and resets on fresh navigation (`DISC_FILTER_RESET`).
+- New e2e test in `search.spec.mjs`: board filters on a freetext query and restores when cleared.

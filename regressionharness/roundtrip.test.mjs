@@ -56,11 +56,12 @@ function assertEqual(name, got, exp) {
   else bad(name, firstDiff(got, exp));
 }
 
-// Pick the right round-trip for a given index/discussion file.
+// Pick the right round-trip for a given index/discussion file. The optional
+// (\.chippy) group keeps legacy-named reference fixtures round-trippable.
 function roundtrip(file, content) {
-  if (/^navigation\.md$/i.test(file)) return serializeNav(parseNav(content));
-  if (/^tags\.md$/i.test(file))       return serializeTags(parseTags(content));
-  if (/^names\.md$/i.test(file))      return serializeNames(parseNames(content));
+  if (/^navigation(\.chippy)?\.md$/i.test(file)) return serializeNav(parseNav(content));
+  if (/^tags(\.chippy)?\.md$/i.test(file))       return serializeTags(parseTags(content));
+  if (/^names(\.chippy)?\.md$/i.test(file))      return serializeNames(parseNames(content));
   return serializeDiscussion(parseDiscussion(content, file));
 }
 

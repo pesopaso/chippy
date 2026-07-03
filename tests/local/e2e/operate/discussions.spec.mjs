@@ -2,24 +2,26 @@
 //
 // Phase 3 — discussion management (sidebar / header): create + rename.
 // Discussion tag editing/filtering lives in discussion-tag-filter.spec.mjs.
+//
+// NOTE: registration is verified via the sidebar (the UI reflects the nav,
+// whatever file backs it) and the discussion .md, not navigation.md directly —
+// the taxonomy refactor no longer keeps navigation.md in the data folder.
 
 import { test, expect } from '../fixtures/operate.mjs';
 
 test.describe('Discussion management', () => {
-  // REAL: the sidebar "+" (#btnNewDiscussion) calls store.createDiscussion('undefined'),
+  // REAL: the sidebar "+" (#btnNewDiscussion) calls store.createDiscussion('New Discussion'),
   // which creates a placeholder-named discussion and opens it (the user then renames).
   test('create a new discussion from the sidebar', async ({ app }) => {
     await app.page.locator('#btnNewDiscussion').click();
 
-    // a discussion named "undefined" is created, registered, and listed
-    await expect.poll(() => app.readDiscussion('undefined')).not.toBeNull();
-    await expect.poll(() => app.readFile('navigation.md')).toContain('undefined');
-    await expect(app.page.locator('#sidebar .sidebar-body')).toContainText('undefined');
+    await expect.poll(() => app.readDiscussion('New Discussion')).not.toBeNull();   // file created
+    await expect(app.page.locator('#sidebar .sidebar-body')).toContainText('New Discussion'); // listed
   });
 
   // REAL: inline title edit — ✎ .rename-btn -> input.rename-input -> Enter.
   // store.renameDiscussion -> io.renameDiscussion renames <name>.md AND moves the
-  // per-discussion image folder, and updates navigation.md.
+  // per-discussion image folder.
   test('edit the discussion title — renames the .md file and the image folder', async ({ app }) => {
     const oldName = 'Cloud Migration';
     const newName = 'Cloud Strategy';
@@ -45,10 +47,13 @@ test.describe('Discussion management', () => {
       catch { return false; }
     }, path);
 
+    // .md renamed (new present, old gone)
     await expect.poll(() => app.readDiscussion(newName)).not.toBeNull();
     await expect.poll(() => app.readDiscussion(oldName)).toBeNull();
+    // image folder moved with it
     await expect.poll(() => has(`${newName}/pic.jpg`)).toBe(true);
     await expect.poll(() => has(`${oldName}/pic.jpg`)).toBe(false);
-    await expect.poll(() => app.readFile('navigation.md')).toContain(newName);
+    // and the sidebar shows the new title
+    await expect(app.page.locator('#sidebar .sidebar-body')).toContainText(newName);
   });
 });

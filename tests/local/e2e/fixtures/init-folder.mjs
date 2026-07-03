@@ -27,8 +27,8 @@ export function createSkeleton(dir, discussionNames) {
   // The content discussions plus the Test Execution meta-discussion (run results).
   const allNames = [...discussionNames, TESTRESULT_NAME];
 
-  // Seed per-discussion groups (the "major tag" in navigation.md) so the tag
-  // editor and tag-filter tests have data to act on.
+  // Seed per-discussion groups (the "major tag" in navigation.chippy.md) so the
+  // tag editor and tag-filter tests have data to act on.
   const GROUPS = {
     '1-1 Maria Lopez': 'People',
     '1-1 James Okafor': 'People',
@@ -40,9 +40,9 @@ export function createSkeleton(dir, discussionNames) {
     theme: 'dark',
     discussions: allNames.map(name => ({ name, tag: GROUPS[name] || null, favorite: false, archived: false }))
   };
-  writeFileSync(join(dir, 'navigation.md'), fmt.serializeNav(nav));
-  writeFileSync(join(dir, 'tags.md'), fmt.serializeTags([]));
-  writeFileSync(join(dir, 'names.md'), fmt.serializeNames([]));
+  writeFileSync(join(dir, 'navigation.chippy.md'), fmt.serializeNav(nav));
+  writeFileSync(join(dir, 'tags.chippy.md'), fmt.serializeTags([]));
+  writeFileSync(join(dir, 'names.chippy.md'), fmt.serializeNames([]));
 
   // Same sanitisation rule the app uses: keep [A-Za-z0-9_ -].
   const sanitize = n => String(n).replace(/[^A-Za-z0-9_ -]/g, '');

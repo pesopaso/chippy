@@ -1,260 +1,974 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1480 1060" font-family="Segoe UI, Arial, sans-serif">
-  <defs>
-    <style>
-      .lbl{fill:#e3e7f0;font-size:11px}
-      .mut{fill:#92a3b9;font-size:10px}
-      .badge{fill:#518eaa}
-      .bnum{fill:#fff;font-size:11px;font-weight:700;text-anchor:middle}
-      .leg{fill:#e3e7f0;font-size:12.5px}
-      .legm{fill:#92a3b9;font-size:11px}
-      .grp{fill:#7fb2cc;font-size:12.5px;font-weight:700;letter-spacing:.5px}
-      .chip{fill:#518eaa}
-    </style>
-  </defs>
-
-  <!-- canvas -->
-  <rect x="0" y="0" width="1480" height="1060" fill="#0b0f1f"/>
-  <text x="32" y="36" fill="#e3e7f0" font-size="22" font-weight="700">Chippy — interface overview</text>
-  <text x="32" y="55" class="mut" font-size="12">Every element labelled with its name and CSS class · discussion (main) screen · v3.0.0-dev.46</text>
-
-  <!-- ====================== APP MOCKUP ====================== -->
-  <g>
-    <!-- app frame -->
-    <rect x="24" y="72" width="916" height="956" rx="6" fill="#10152a" stroke="#46556b"/>
-
-    <!-- top chrome -->
-    <rect x="24" y="72" width="916" height="32" rx="6" fill="#3730a3"/>
-    <rect x="24" y="90" width="916" height="14" fill="#3730a3"/>
-    <text x="40" y="93" fill="#fff" font-size="13" font-weight="700">Chippy <tspan fill="#c7d2fe" font-size="10" font-weight="400">v3.0.0-dev.46</tspan></text>
-    <rect x="360" y="80" width="120" height="16" rx="3" fill="#4f46c7"/>
-    <text x="368" y="92" fill="#dfe3f7" font-size="9">Recent ▸ Alpha · Beta</text>
-    <circle cx="872" cy="88" r="10" fill="#4f46c7"/><text x="872" y="92" fill="#fff" font-size="11" text-anchor="middle">🖶</text>
-    <circle cx="900" cy="88" r="10" fill="#4f46c7"/><text x="900" y="92" fill="#fff" font-size="11" text-anchor="middle">☀</text>
-    <circle cx="922" cy="88" r="10" fill="#4f46c7"/><text x="922" y="92" fill="#fff" font-size="11" text-anchor="middle">?</text>
-
-    <!-- sidebar -->
-    <rect x="24" y="104" width="186" height="924" fill="#20293a"/>
-    <line x1="210" y1="104" x2="210" y2="1028" stroke="#46556b"/>
-    <text x="36" y="124" class="mut" letter-spacing="1">DISCUSSIONS</text>
-    <rect x="34" y="132" width="166" height="22" rx="6" fill="#334253" stroke="#46556b"/>
-    <text x="42" y="147" class="mut">Search discussions…</text>
-
-    <text x="36" y="178" class="mut" letter-spacing="1">WORK</text>
-    <!-- discussion item -->
-    <rect x="32" y="186" width="170" height="26" rx="6" fill="#334253"/>
-    <rect x="38" y="191" width="22" height="16" rx="4" fill="#20293a" stroke="#46556b"/><text x="49" y="203" class="mut" text-anchor="middle" font-size="8">PA</text>
-    <text x="66" y="203" class="lbl">Project Alpha</text>
-    <text x="150" y="203" class="mut">☆</text>
-    <rect x="166" y="193" width="30" height="14" rx="7" fill="#334253" stroke="#46556b"/><text x="181" y="203" class="mut" text-anchor="middle" font-size="9">42</text>
-    <rect x="32" y="216" width="170" height="24" rx="6" fill="none"/>
-    <rect x="38" y="221" width="22" height="16" rx="4" fill="#20293a" stroke="#46556b"/><text x="49" y="233" class="mut" text-anchor="middle" font-size="8">BB</text>
-    <text x="66" y="233" class="lbl">Beta Build</text>
-    <rect x="166" y="223" width="30" height="14" rx="7" fill="#334253" stroke="#46556b"/><text x="181" y="233" class="mut" text-anchor="middle" font-size="9">7</text>
-
-    <!-- nav buttons -->
-    <g>
-      <text x="36" y="270" class="mut" letter-spacing="1">PAGES</text>
-      <!-- two columns of nav pills -->
-      <g fill="#334253" stroke="#46556b">
-        <rect x="34" y="278" width="80" height="20" rx="6"/><rect x="120" y="278" width="80" height="20" rx="6"/>
-        <rect x="34" y="302" width="80" height="20" rx="6"/><rect x="120" y="302" width="80" height="20" rx="6"/>
-        <rect x="34" y="326" width="80" height="20" rx="6"/><rect x="120" y="326" width="80" height="20" rx="6"/>
-        <rect x="34" y="350" width="80" height="20" rx="6"/><rect x="120" y="350" width="80" height="20" rx="6"/>
-        <rect x="34" y="374" width="80" height="20" rx="6"/><rect x="120" y="374" width="80" height="20" rx="6"/>
-        <rect x="34" y="398" width="80" height="20" rx="6"/>
-      </g>
-      <g class="lbl" font-size="10" text-anchor="middle" fill="#cdd6e6">
-        <text x="74" y="292">Comments</text><text x="160" y="292">Tasks</text>
-        <text x="74" y="316">Goals</text><text x="160" y="316">Links</text>
-        <text x="74" y="340">Images</text><text x="160" y="340">Names</text>
-        <text x="74" y="364">Tags</text><text x="160" y="364">Kanban</text>
-        <text x="74" y="388">Ro3</text><text x="160" y="388">Activity</text>
-        <text x="74" y="412">Summary</text>
-      </g>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 1480 1100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;">
+    <rect x="0" y="0" width="1480" height="1100" style="fill:rgb(11,15,31);"/>
+    <g transform="matrix(1,0,0,1,32,36)">
+        <text x="0px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:22px;fill:rgb(227,231,240);">Chippy — interface overview (v2)</text>
     </g>
-
-    <!-- open folder + status -->
-    <line x1="30" y1="966" x2="204" y2="966" stroke="#46556b"/>
-    <rect x="34" y="976" width="166" height="26" rx="6" fill="#334253" stroke="#46556b"/>
-    <text x="117" y="993" class="lbl" text-anchor="middle">Open Folder</text>
-    <text x="36" y="1018" class="mut" fill="#5fae7e">Connected: 12 discussions · 8 tags</text>
-
-    <!-- ===== main: middle column ===== -->
-    <!-- sticky header -->
-    <text x="226" y="128" fill="#e3e7f0" font-size="17" font-weight="700">Project Alpha</text>
-    <text x="356" y="128" class="mut" font-size="12">42 comments</text>
-    <g font-size="13"><text x="610" y="128" fill="#e1c025">★</text><text x="634" y="128" class="mut">↻</text><text x="656" y="128" class="mut">⬇</text><text x="678" y="128" class="mut">🗄</text></g>
-    <line x1="222" y1="138" x2="694" y2="138" stroke="#46556b" stroke-dasharray="2 3"/>
-
-    <!-- preparation -->
-    <text x="226" y="158" class="mut" letter-spacing="1">PREPARATION <tspan fill="#92a3b9">✎</tspan></text>
-    <text x="226" y="174" class="mut" font-size="10" font-style="italic">No preparation notes yet.</text>
-
-    <!-- entry box -->
-    <rect x="226" y="184" width="468" height="54" rx="6" fill="#20293a" stroke="#46556b"/>
-    <text x="236" y="206" class="mut">Write a note…  #tag to classify, @ to mention</text>
-    <!-- footer -->
-    <rect x="226" y="244" width="60" height="16" rx="3" fill="#1c2f38" stroke="#3c6a85"/><text x="256" y="256" class="chip" text-anchor="middle" font-size="9" fill="#7fc0dd">design ×</text>
-    <rect x="470" y="244" width="86" height="18" rx="6" fill="#334253" stroke="#46556b"/><text x="513" y="257" class="mut" text-anchor="middle" font-size="9">No goal link</text>
-    <rect x="562" y="244" width="64" height="18" rx="6" fill="#334253" stroke="#46556b"/><text x="594" y="257" class="mut" text-anchor="middle" font-size="9">due</text>
-    <rect x="632" y="244" width="62" height="18" rx="6" fill="#518eaa"/><text x="663" y="257" fill="#fff" text-anchor="middle" font-size="9">Save</text>
-
-    <!-- day label -->
-    <text x="226" y="288" class="mut" letter-spacing="1" font-weight="700">TODAY</text>
-
-    <!-- comment card (open) -->
-    <rect x="222" y="298" width="472" height="96" fill="#20293a"/>
-    <rect x="222" y="298" width="3" height="96" fill="#e19a25"/>
-    <!-- meta row -->
-    <text x="234" y="316" class="mut" font-size="10">14:22:07</text>
-    <rect x="286" y="307" width="34" height="13" rx="2" fill="#e19a25"/><text x="303" y="317" fill="#1b1b1b" font-size="8" text-anchor="middle">OPEN</text>
-    <rect x="326" y="307" width="22" height="13" rx="2" fill="#c25a5a"/><text x="337" y="317" fill="#fff" font-size="8" text-anchor="middle">HI</text>
-    <rect x="354" y="307" width="48" height="13" rx="3" fill="#1c2f38" stroke="#3c6a85"/><text x="378" y="317" fill="#7fc0dd" font-size="8" text-anchor="middle">backend</text>
-    <g font-size="11" fill="#92a3b9"><text x="560" y="317">✎</text><text x="578" y="317">⚡</text><text x="596" y="317">🔇</text><text x="614" y="317">✓</text><text x="632" y="317">➜</text><text x="650" y="317">🗑</text></g>
-    <!-- body -->
-    <text x="234" y="338" class="lbl">Investigate the cache-busting strategy for the asset</text>
-    <text x="234" y="354" class="lbl">pipeline and document the findings.</text>
-    <rect x="234" y="362" width="56" height="24" rx="3" fill="#334253" stroke="#46556b"/><text x="262" y="377" class="mut" font-size="8" text-anchor="middle">🖼 image</text>
-
-    <!-- comment card (finished/collapsed) -->
-    <rect x="222" y="400" width="472" height="30" fill="#20293a" opacity="0.6"/>
-    <rect x="222" y="400" width="3" height="30" fill="#e19a25"/>
-    <text x="234" y="419" class="mut" font-size="10">09:05:11</text>
-    <rect x="286" y="410" width="34" height="13" rx="2" fill="#5fae7e"/><text x="303" y="420" fill="#0b0f1f" font-size="8" text-anchor="middle">DONE</text>
-    <text x="340" y="419" class="lbl" opacity="0.7">Rename cache files…</text>
-    <text x="676" y="419" class="mut">▸</text>
-
-    <!-- ===== main: right column ===== -->
-    <line x1="700" y1="116" x2="700" y2="1020" stroke="#46556b" stroke-dasharray="1 4"/>
-    <!-- open tasks -->
-    <text x="712" y="128" class="mut" letter-spacing="1">OPEN TASKS</text>
-    <rect x="710" y="136" width="216" height="34" fill="#20293a"/><rect x="710" y="136" width="3" height="34" fill="#e19a25"/>
-    <rect x="720" y="144" width="28" height="12" rx="2" fill="#e19a25"/><text x="734" y="153" fill="#1b1b1b" font-size="7" text-anchor="middle">OPEN</text>
-    <rect x="752" y="144" width="18" height="12" rx="2" fill="#c25a5a"/><text x="761" y="153" fill="#fff" font-size="7" text-anchor="middle">HI</text>
-    <text x="720" y="166" class="lbl" font-size="9">Investigate cache-busting…</text>
-
-    <!-- goals -->
-    <text x="712" y="196" class="mut" letter-spacing="1">GOALS</text>
-    <rect x="710" y="204" width="216" height="30" fill="#20293a"/><rect x="710" y="204" width="3" height="30" fill="#7d6cc4"/>
-    <text x="720" y="223" class="lbl" font-size="9">Ship v3.0 to production</text>
-
-    <!-- links -->
-    <text x="712" y="258" class="mut" letter-spacing="1">LINKS</text>
-    <text x="712" y="276" fill="#518eaa" font-size="10">My Chippy</text>
-    <text x="712" y="292" fill="#518eaa" font-size="10">Chippy Digital</text>
-
-    <!-- images -->
-    <text x="712" y="320" class="mut" letter-spacing="1">IMAGES</text>
-    <g fill="#334253" stroke="#46556b"><rect x="712" y="328" width="40" height="40" rx="3"/><rect x="758" y="328" width="40" height="40" rx="3"/><rect x="804" y="328" width="40" height="40" rx="3"/></g>
-
-    <!-- scrollbars -->
-    <rect x="690" y="120" width="4" height="120" rx="2" fill="#46556b"/>
-    <rect x="930" y="120" width="4" height="90" rx="2" fill="#46556b"/>
-  </g>
-
-  <!-- ====================== CALLOUT BADGES ====================== -->
-  <g>
-    <!-- top chrome -->
-    <circle cx="40" cy="62" r="9" class="badge"/><text x="40" y="66" class="bnum">1</text>
-    <circle cx="360" cy="70" r="9" class="badge"/><text x="360" y="74" class="bnum">2</text>
-    <circle cx="872" cy="64" r="9" class="badge"/><text x="872" y="68" class="bnum">3</text>
-    <circle cx="900" cy="64" r="9" class="badge"/><text x="900" y="68" class="bnum">4</text>
-    <circle cx="922" cy="64" r="9" class="badge"/><text x="922" y="68" class="bnum">5</text>
-    <!-- sidebar -->
-    <circle cx="120" cy="120" r="9" class="badge"/><text x="120" y="124" class="bnum">6</text>
-    <circle cx="200" cy="143" r="9" class="badge"/><text x="200" y="147" class="bnum">7</text>
-    <circle cx="20" cy="178" r="9" class="badge"/><text x="20" y="182" class="bnum">8</text>
-    <circle cx="14" cy="199" r="9" class="badge"/><text x="14" y="203" class="bnum">9</text>
-    <circle cx="14" cy="340" r="9" class="badge"/><text x="14" y="344" class="bnum">10</text>
-    <circle cx="14" cy="989" r="9" class="badge"/><text x="14" y="993" class="bnum">11</text>
-    <circle cx="14" cy="1014" r="9" class="badge"/><text x="14" y="1018" class="bnum">12</text>
-    <!-- middle -->
-    <circle cx="300" cy="118" r="9" class="badge"/><text x="300" y="122" class="bnum">13</text>
-    <circle cx="356" cy="114" r="9" class="badge"/><text x="356" y="118" class="bnum">14</text>
-    <circle cx="678" cy="114" r="9" class="badge"/><text x="678" y="118" class="bnum">15</text>
-    <circle cx="226" cy="148" r="9" class="badge"/><text x="226" y="152" class="bnum">16</text>
-    <circle cx="684" cy="196" r="9" class="badge"/><text x="684" y="200" class="bnum">17</text>
-    <circle cx="256" cy="234" r="9" class="badge"/><text x="256" y="238" class="bnum">18</text>
-    <circle cx="663" cy="234" r="9" class="badge"/><text x="663" y="238" class="bnum">19</text>
-    <circle cx="226" cy="278" r="9" class="badge"/><text x="226" y="282" class="bnum">20</text>
-    <!-- comment box -->
-    <circle cx="214" cy="346" r="9" class="badge"/><text x="214" y="350" class="bnum">21</text>
-    <circle cx="234" cy="306" r="9" class="badge"/><text x="234" y="310" class="bnum">22</text>
-    <circle cx="650" cy="306" r="9" class="badge"/><text x="650" y="310" class="bnum">23</text>
-    <circle cx="540" cy="338" r="9" class="badge"/><text x="540" y="342" class="bnum">24</text>
-    <circle cx="300" cy="374" r="9" class="badge"/><text x="300" y="378" class="bnum">25</text>
-    <circle cx="676" cy="406" r="9" class="badge"/><text x="676" y="410" class="bnum">26</text>
-    <!-- right column -->
-    <circle cx="712" cy="120" r="9" class="badge"/><text x="712" y="124" class="bnum">27</text>
-    <circle cx="712" cy="188" r="9" class="badge"/><text x="712" y="192" class="bnum">28</text>
-    <circle cx="712" cy="250" r="9" class="badge"/><text x="712" y="254" class="bnum">29</text>
-    <circle cx="712" cy="312" r="9" class="badge"/><text x="712" y="316" class="bnum">30</text>
-    <circle cx="690" cy="110" r="9" class="badge"/><text x="690" y="114" class="bnum">31</text>
-  </g>
-
-  <!-- ====================== LEGEND ====================== -->
-  <g>
-    <rect x="966" y="72" width="490" height="956" rx="6" fill="#10152a" stroke="#46556b"/>
-    <text x="986" y="98" fill="#e3e7f0" font-size="14" font-weight="700">Element index</text>
-    <text x="986" y="115" class="legm">number — Name (CSS class / selector)</text>
-
-    <!-- Top chrome -->
-    <text x="986" y="142" class="grp">TOP CHROME  (.top-chrome / #topChrome)</text>
-    <text x="986" y="160" class="leg">1  App title + version badge (.app-version, #appVersion)</text>
-    <text x="986" y="178" class="leg">2  Recent-discussion bar (.recent-bar, #recentBar)</text>
-    <text x="986" y="196" class="leg">3  Print button (.chrome-btn, #btnPrintChrome)</text>
-    <text x="986" y="214" class="leg">4  Theme toggle — dark/light (.chrome-btn, #btnThemeToggle)</text>
-    <text x="986" y="232" class="leg">5  Help button (.chrome-btn, #btnHelp)</text>
-
-    <!-- Sidebar -->
-    <text x="986" y="258" class="grp">SIDEBAR  (#sidebar)</text>
-    <text x="986" y="276" class="leg">6  Sidebar header "Discussions" (.sidebar-header)</text>
-    <text x="986" y="294" class="leg">7  Discussion search + clear (.sidebar-search / .search-clear)</text>
-    <text x="986" y="312" class="leg">8  Tag group header (.member-group / .member-group-header)</text>
-    <text x="986" y="330" class="leg">9  Discussion item (.member-item):</text>
-    <text x="1004" y="346" class="legm">avatar (.member-avatar) · name (.member-name) ·</text>
-    <text x="1004" y="361" class="legm">favourite (.fav-star) · count chip (.member-count-badge)</text>
-    <text x="986" y="379" class="leg">10  Cross-view nav buttons (.nav-btn):</text>
-    <text x="1004" y="395" class="legm">Comments·Tasks·Goals·Links·Images·Names·Tags·</text>
-    <text x="1004" y="410" class="legm">Kanban·Ro3·Activity·Summary</text>
-    <text x="986" y="428" class="leg">11  Open Folder button (.btn-open-folder, #btnOpenFolder)</text>
-    <text x="986" y="446" class="leg">12  Folder status line (.folder-status, #folderStatus)</text>
-
-    <!-- Middle column -->
-    <text x="986" y="472" class="grp">DISCUSSION — MIDDLE COLUMN  (.split-left)</text>
-    <text x="986" y="490" class="leg">13  Member title — sticky header (.member-title)</text>
-    <text x="986" y="508" class="leg">14  Comment count (.member-count)</text>
-    <text x="986" y="526" class="leg">15  Header actions (.member-header-actions):</text>
-    <text x="1004" y="542" class="legm">favourite ★ · reload ↻ · export ⬇ · archive 🗄</text>
-    <text x="986" y="560" class="leg">16  Preparation section (.prep-section / .section-label, ✎ edit)</text>
-    <text x="986" y="578" class="leg">17  Entry textarea (.entry-input) + autocomplete (.ac-dropdown)</text>
-    <text x="986" y="596" class="leg">18  Entry footer chips (.entry-footer / .entry-chips / .tag-chip)</text>
-    <text x="986" y="614" class="leg">19  Entry controls (.entry-controls):</text>
-    <text x="1004" y="630" class="legm">goal link (.goal-link) · due date (.entry-due) · Save (.btn-primary)</text>
-    <text x="986" y="648" class="leg">20  Day-group label (.day-group / .day-label — shows "Today")</text>
-
-    <!-- Comment box -->
-    <text x="986" y="674" class="grp">COMMENT BOX — same everywhere  (.entry-card)</text>
-    <text x="986" y="692" class="leg">21  Comment card (.entry-card; left stripe = task/followup/goal)</text>
-    <text x="986" y="710" class="leg">22  Meta row (.entry-meta):</text>
-    <text x="1004" y="726" class="legm">time (.entry-time) · state square (.state-square) ·</text>
-    <text x="1004" y="741" class="legm">priority square (.prio-square) · tags (.tag-chip)</text>
-    <text x="986" y="759" class="leg">23  Action icons (.icon-btn):</text>
-    <text x="1004" y="775" class="legm">edit ✎ · action ⚡ · mute 🔇 · resolve ✓ · move ➜ · delete 🗑</text>
-    <text x="986" y="793" class="leg">24  Body — rendered markdown (.entry-text)</text>
-    <text x="986" y="811" class="leg">25  Inline image (.entry-image — click = carousel)</text>
-    <text x="986" y="829" class="leg">26  Expand triangle (.expand-tri — finished items collapse)</text>
-
-    <!-- Right column -->
-    <text x="986" y="855" class="grp">DISCUSSION — RIGHT COLUMN  (.split-right)</text>
-    <text x="986" y="873" class="leg">27  Open Tasks panel (.tasks-section)</text>
-    <text x="986" y="891" class="leg">28  Goals panel (.goals-section)</text>
-    <text x="986" y="909" class="leg">29  Links panel (.links-section — images excluded)</text>
-    <text x="986" y="927" class="leg">30  Images gallery (.gallery-section)</text>
-    <text x="986" y="945" class="leg">31  Independent scrollbars (middle &amp; right columns)</text>
-
-    <text x="986" y="985" class="legm">Cross-view pages (Comments, Tasks, Goals, Kanban, Ro3,</text>
-    <text x="986" y="1001" class="legm">Activity, AI Summary, All Tags…) reuse the same comment box</text>
-    <text x="986" y="1017" class="legm">(.entry-card) and search bar (.list-search).</text>
-  </g>
+    <g transform="matrix(1,0,0,1,32,55)">
+        <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12px;fill:rgb(146,163,185);">Every element labelled with its name and CSS class · discussion (main) screen · v3.1.0-dev<tspan x="485.982px 489.316px 495.1px 501.773px " y="0px 0px 0px 0px ">.110</tspan></text>
+    </g>
+    <g>
+        <path d="M940,78L940,1066C940,1069.311 937.311,1072 934,1072L30,1072C26.689,1072 24,1069.311 24,1066L24,78C24,74.689 26.689,72 30,72L934,72C937.311,72 940,74.689 940,78Z" style="fill:rgb(16,21,42);stroke:rgb(16,21,42);stroke-width:1px;"/>
+        <path d="M940,78L940,98C940,101.311 937.311,104 934,104L30,104C26.689,104 24,101.311 24,98L24,78C24,74.689 26.689,72 30,72L934,72C937.311,72 940,74.689 940,78Z" style="fill:rgb(55,48,163);"/>
+        <rect x="24" y="90" width="916" height="14" style="fill:rgb(55,48,163);"/>
+        <path d="M50,83L50,93C50,94.656 48.656,96 47,96L37,96C35.344,96 34,94.656 34,93L34,83C34,81.344 35.344,80 37,80L47,80C48.656,80 50,81.344 50,83Z" style="fill:rgb(12,24,160);stroke:white;stroke-width:1.2px;"/>
+        <g transform="matrix(1,0,0,1,56,93)">
+            <text x="0px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:13px;fill:white;">Chippy</text>
+            <text x="47.665px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(199,210,254);">v3.1.0-dev<tspan x="93.617px 96.395px 101.214px 106.776px " y="0px 0px 0px 0px ">.110</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,-143.638167,0)">
+            <path d="M480,83L480,93C480,94.656 478.656,96 477,96L363,96C361.344,96 360,94.656 360,93L360,83C360,81.344 361.344,80 363,80L477,80C478.656,80 480,81.344 480,83Z" style="fill:rgb(79,70,199);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,224.361833,92)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:9px;fill:rgb(223,227,247);">Recent</text>
+            <text x="31.017px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:9px;fill:rgb(223,227,247);">▸</text>
+            <text x="37.521px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:9px;fill:rgb(223,227,247);"><tspan x="37.521px 43.523px " y="0px 0px ">Al</tspan>pha · Beta</text>
+        </g>
+        <circle cx="850" cy="88" r="10" style="fill:rgb(79,70,199);"/>
+        <g transform="matrix(1,0,0,1,850,92)">
+            <text x="-4.125px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:white;">🖶</text>
+        </g>
+        <circle cx="874" cy="88" r="10" style="fill:rgb(79,70,199);"/>
+        <g transform="matrix(1,0,0,1,874,92)">
+            <text x="-5.5px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:11px;fill:white;">☀</text>
+        </g>
+        <circle cx="898" cy="88" r="10" style="fill:rgb(79,70,199);"/>
+        <g transform="matrix(1,0,0,1,898,92)">
+            <text x="-7.552px" y="0px" style="font-family:'SegoeUIEmoji', 'Segoe UI Emoji', sans-serif;font-size:11px;fill:white;">ℹ</text>
+        </g>
+        <circle cx="922" cy="88" r="10" style="fill:rgb(79,70,199);"/>
+        <g transform="matrix(1,0,0,1,922,92)">
+            <text x="-3.059px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:white;">?</text>
+        </g>
+        <rect x="24" y="104" width="186" height="968" style="fill:rgb(32,41,58);"/>
+        <path d="M210,104L210,1072" style="fill:none;fill-rule:nonzero;stroke:rgb(70,85,107);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,36,124)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(146,163,185);">DI<tspan x="10.2px 16.97px 24.292px 31.613px 38.383px 45.153px 48.031px 55.91px 63.231px " y="0px 0px 0px 0px 0px 0px 0px 0px 0px ">SCUSSIONS</tspan></text>
+        </g>
+        <path d="M202,118L202,126C202,128.208 200.208,130 198,130L190,130C187.792,130 186,128.208 186,126L186,118C186,115.792 187.792,114 190,114L198,114C200.208,114 202,115.792 202,118Z" style="fill:rgb(51,66,83);stroke:rgb(70,85,107);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,194,126)">
+            <text x="-3.504px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12px;fill:rgb(205,214,230);">+</text>
+        </g>
+        <path d="M200,138L200,148C200,151.311 197.311,154 194,154L40,154C36.689,154 34,151.311 34,148L34,138C34,134.689 36.689,132 40,132L194,132C197.311,132 200,134.689 200,138Z" style="fill:rgb(51,66,83);stroke:rgb(70,85,107);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,42,147)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(146,163,185);">Search discussions…</text>
+        </g>
+        <path d="M64,168C64,172.415 60.415,176 56,176L42,176C37.585,176 34,172.415 34,168C34,163.585 37.585,160 42,160L56,160C60.415,160 64,163.585 64,168Z" style="fill:rgb(81,142,170);"/>
+        <g transform="matrix(1,0,0,1,49,172)">
+            <text x="-5.001px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:9px;fill:white;">All</text>
+        </g>
+        <path d="M124,168C124,172.415 120.415,176 116,176L76,176C71.585,176 68,172.415 68,168C68,163.585 71.585,160 76,160L116,160C120.415,160 124,163.585 124,168Z" style="fill:rgb(32,41,58);stroke:rgb(95,174,126);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,96,172)">
+            <text x="-14.012px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:9px;fill:rgb(95,174,126);">People</text>
+        </g>
+        <path d="M172,168C172,172.415 168.415,176 164,176L136,176C131.585,176 128,172.415 128,168C128,163.585 131.585,160 136,160L164,160C168.415,160 172,163.585 172,168Z" style="fill:rgb(32,41,58);stroke:rgb(107,140,206);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,150,172)">
+            <text x="-9.253px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:9px;fill:rgb(107,140,206);">DEV</text>
+        </g>
+        <circle cx="40" cy="190" r="4" style="fill:rgb(95,174,126);"/>
+        <g transform="matrix(1,0,0,1,50,194)">
+            <text x="0px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:rgb(95,174,126);">P<tspan x="7.447px 14.894px 23.56px 31.007px 37.836px " y="0px 0px 0px 0px 0px ">EOPLE</tspan></text>
+        </g>
+        <path d="M202,206L202,218C202,221.311 199.311,224 196,224L38,224C34.689,224 32,221.311 32,218L32,206C32,202.689 34.689,200 38,200L196,200C199.311,200 202,202.689 202,206Z" style="fill:rgb(51,66,83);"/>
+        <path d="M60,208L60,216C60,218.208 58.208,220 56,220L42,220C39.792,220 38,218.208 38,216L38,208C38,205.792 39.792,204 42,204L56,204C58.208,204 60,205.792 60,208Z" style="fill:rgb(32,41,58);stroke:rgb(70,85,107);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,49,216)">
+            <text x="-5.039px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:8px;fill:rgb(146,163,185);">P<tspan x="-0.297px " y="0px ">A</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,66,216)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(227,231,240);">Project <tspan x="36.685px 44.021px " y="0px 0px ">Al</tspan>pha</text>
+        </g>
+        <g transform="matrix(1,0,0,1,150,216)">
+            <text x="0px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:10px;fill:rgb(146,163,185);">★</text>
+        </g>
+        <path d="M196,213C196,216.863 192.863,220 189,220L173,220C169.137,220 166,216.863 166,213C166,209.137 169.137,206 173,206L189,206C192.863,206 196,209.137 196,213Z" style="fill:rgb(32,41,58);stroke:rgb(95,174,126);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,181,216)">
+            <text x="-5.005px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:9px;fill:rgb(95,174,126);">42</text>
+        </g>
+        <path d="M60,236L60,244C60,246.208 58.208,248 56,248L42,248C39.792,248 38,246.208 38,244L38,236C38,233.792 39.792,232 42,232L56,232C58.208,232 60,233.792 60,236Z" style="fill:rgb(32,41,58);stroke:rgb(70,85,107);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,49,244)">
+            <text x="-5.336px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:8px;fill:rgb(146,163,185);">BB</text>
+        </g>
+        <g transform="matrix(1,0,0,1,66,244)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(227,231,240);">Beta Build</text>
+        </g>
+        <path d="M196,241C196,244.863 192.863,248 189,248L173,248C169.137,248 166,244.863 166,241C166,237.137 169.137,234 173,234L189,234C192.863,234 196,237.137 196,241Z" style="fill:rgb(32,41,58);stroke:rgb(95,174,126);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,181,244)">
+            <text x="-2.503px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:9px;fill:rgb(95,174,126);">7</text>
+        </g>
+        <path d="M60,264L60,272C60,274.208 58.208,276 56,276L42,276C39.792,276 38,274.208 38,272L38,264C38,261.792 39.792,260 42,260L56,260C58.208,260 60,261.792 60,264Z" style="fill:rgb(32,41,58);stroke:rgb(70,85,107);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,49,272)">
+            <text x="-5.777px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:8px;fill:rgb(146,163,185);">DR</text>
+        </g>
+        <g transform="matrix(1,0,0,1,66,272)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(227,231,240);">Design Review</text>
+        </g>
+        <path d="M196,269C196,272.863 192.863,276 189,276L173,276C169.137,276 166,272.863 166,269C166,265.137 169.137,262 173,262L189,262C192.863,262 196,265.137 196,269Z" style="fill:rgb(32,41,58);stroke:rgb(95,174,126);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,181,272)">
+            <text x="-5.005px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:9px;fill:rgb(95,174,126);">15</text>
+        </g>
+        <path d="M60,292L60,300C60,302.208 58.208,304 56,304L42,304C39.792,304 38,302.208 38,300L38,292C38,289.792 39.792,288 42,288L56,288C58.208,288 60,289.792 60,292Z" style="fill:rgb(32,41,58);stroke:rgb(70,85,107);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,49,300)">
+            <text x="-6px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:8px;fill:rgb(146,163,185);">ON</text>
+        </g>
+        <g transform="matrix(1,0,0,1,66,300)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(227,231,240);">Onboarding</text>
+        </g>
+        <path d="M196,297C196,300.863 192.863,304 189,304L173,304C169.137,304 166,300.863 166,297C166,293.137 169.137,290 173,290L189,290C192.863,290 196,293.137 196,297Z" style="fill:rgb(32,41,58);stroke:rgb(95,174,126);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,181,300)">
+            <text x="-2.503px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:9px;fill:rgb(95,174,126);">9</text>
+        </g>
+        <circle cx="40" cy="326" r="4" style="fill:rgb(107,140,206);"/>
+        <g transform="matrix(1,0,0,1,50,330)">
+            <text x="0px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:rgb(107,140,206);">D<tspan x="8.054px 15.501px " y="0px 0px ">EV</tspan></text>
+        </g>
+        <path d="M60,342L60,350C60,352.208 58.208,354 56,354L42,354C39.792,354 38,352.208 38,350L38,342C38,339.792 39.792,338 42,338L56,338C58.208,338 60,339.792 60,342Z" style="fill:rgb(32,41,58);stroke:rgb(70,85,107);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,49,350)">
+            <text x="-6.221px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:8px;fill:rgb(146,163,185);">CM</text>
+        </g>
+        <g transform="matrix(1,0,0,1,66,350)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(227,231,240);">Cloud Migration</text>
+        </g>
+        <path d="M196,347C196,350.863 192.863,354 189,354L173,354C169.137,354 166,350.863 166,347C166,343.137 169.137,340 173,340L189,340C192.863,340 196,343.137 196,347Z" style="fill:rgb(32,41,58);stroke:rgb(107,140,206);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,181,350)">
+            <text x="-5.005px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:9px;fill:rgb(107,140,206);">23</text>
+        </g>
+        <path d="M60,370L60,378C60,380.208 58.208,382 56,382L42,382C39.792,382 38,380.208 38,378L38,370C38,367.792 39.792,366 42,366L56,366C58.208,366 60,367.792 60,370Z" style="fill:rgb(32,41,58);stroke:rgb(70,85,107);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,49,378)">
+            <text x="-4.893px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:8px;fill:rgb(146,163,185);">S2</text>
+        </g>
+        <g transform="matrix(1,0,0,1,66,378)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(227,231,240);">SOC 2 <tspan x="35.46px 42.797px " y="0px 0px ">Au</tspan>dit</text>
+        </g>
+        <path d="M196,375C196,378.863 192.863,382 189,382L173,382C169.137,382 166,378.863 166,375C166,371.137 169.137,368 173,368L189,368C192.863,368 196,371.137 196,375Z" style="fill:rgb(32,41,58);stroke:rgb(107,140,206);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,181,378)">
+            <text x="-4.671px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:9px;fill:rgb(107,140,206);">1<tspan x="-0.334px " y="0px ">1</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,0,437.114842)">
+            <g transform="matrix(1,0,0,1,36,412)">
+                <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(146,163,185);">P<tspan x="6.028px 12.798px 20.676px 27.446px " y="0px 0px 0px 0px ">AGES</tspan></text>
+            </g>
+            <g>
+                <path d="M114,426L114,434C114,437.311 111.311,440 108,440L40,440C36.689,440 34,437.311 34,434L34,426C34,422.689 36.689,420 40,420L108,420C111.311,420 114,422.689 114,426Z" style="fill:rgb(51,66,83);stroke:rgb(70,85,107);stroke-width:1px;"/>
+                <path d="M200,426L200,434C200,437.311 197.311,440 194,440L126,440C122.689,440 120,437.311 120,434L120,426C120,422.689 122.689,420 126,420L194,420C197.311,420 200,422.689 200,426Z" style="fill:rgb(51,66,83);stroke:rgb(70,85,107);stroke-width:1px;"/>
+                <path d="M114,450L114,458C114,461.311 111.311,464 108,464L40,464C36.689,464 34,461.311 34,458L34,450C34,446.689 36.689,444 40,444L108,444C111.311,444 114,446.689 114,450Z" style="fill:rgb(51,66,83);stroke:rgb(70,85,107);stroke-width:1px;"/>
+                <path d="M200,450L200,458C200,461.311 197.311,464 194,464L126,464C122.689,464 120,461.311 120,458L120,450C120,446.689 122.689,444 126,444L194,444C197.311,444 200,446.689 200,450Z" style="fill:rgb(51,66,83);stroke:rgb(70,85,107);stroke-width:1px;"/>
+                <path d="M114,474L114,482C114,485.311 111.311,488 108,488L40,488C36.689,488 34,485.311 34,482L34,474C34,470.689 36.689,468 40,468L108,468C111.311,468 114,470.689 114,474Z" style="fill:rgb(51,66,83);stroke:rgb(70,85,107);stroke-width:1px;"/>
+                <path d="M200,474L200,482C200,485.311 197.311,488 194,488L126,488C122.689,488 120,485.311 120,482L120,474C120,470.689 122.689,468 126,468L194,468C197.311,468 200,470.689 200,474Z" style="fill:rgb(51,66,83);stroke:rgb(70,85,107);stroke-width:1px;"/>
+                <path d="M114,498L114,506C114,509.311 111.311,512 108,512L40,512C36.689,512 34,509.311 34,506L34,498C34,494.689 36.689,492 40,492L108,492C111.311,492 114,494.689 114,498Z" style="fill:rgb(51,66,83);stroke:rgb(70,85,107);stroke-width:1px;"/>
+                <path d="M200,498L200,506C200,509.311 197.311,512 194,512L126,512C122.689,512 120,509.311 120,506L120,498C120,494.689 122.689,492 126,492L194,492C197.311,492 200,494.689 200,498Z" style="fill:rgb(51,66,83);stroke:rgb(70,85,107);stroke-width:1px;"/>
+                <path d="M114,522L114,530C114,533.311 111.311,536 108,536L40,536C36.689,536 34,533.311 34,530L34,522C34,518.689 36.689,516 40,516L108,516C111.311,516 114,518.689 114,522Z" style="fill:rgb(51,66,83);stroke:rgb(70,85,107);stroke-width:1px;"/>
+                <path d="M200,522L200,530C200,533.311 197.311,536 194,536L126,536C122.689,536 120,533.311 120,530L120,522C120,518.689 122.689,516 126,516L194,516C197.311,516 200,518.689 200,522Z" style="fill:rgb(51,66,83);stroke:rgb(70,85,107);stroke-width:1px;"/>
+                <path d="M114,546L114,554C114,557.311 111.311,560 108,560L40,560C36.689,560 34,557.311 34,554L34,546C34,542.689 36.689,540 40,540L108,540C111.311,540 114,542.689 114,546Z" style="fill:rgb(51,66,83);stroke:rgb(70,85,107);stroke-width:1px;"/>
+            </g>
+            <g>
+                <g transform="matrix(1,0,0,1,74,434)">
+                    <text x="-24.172px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(205,214,230);">Comments</text>
+                </g>
+                <g transform="matrix(1,0,0,1,160,434)">
+                    <text x="-12.781px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(205,214,230);">T<tspan x="-7.781px -2.219px " y="0px 0px ">as</tspan>ks</text>
+                </g>
+                <g transform="matrix(1,0,0,1,74,458)">
+                    <text x="-13.062px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(205,214,230);">Goals</text>
+                </g>
+                <g transform="matrix(1,0,0,1,160,458)">
+                    <text x="-11.672px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(205,214,230);">Links</text>
+                </g>
+                <g transform="matrix(1,0,0,1,74,482)">
+                    <text x="-16.396px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(205,214,230);">Images</text>
+                </g>
+                <g transform="matrix(1,0,0,1,160,482)">
+                    <text x="-15.837px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(205,214,230);">Names</text>
+                </g>
+                <g transform="matrix(1,0,0,1,74,506)">
+                    <text x="-10.562px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(205,214,230);">T<tspan x="-5.562px 0px " y="0px 0px ">ag</tspan>s</text>
+                </g>
+                <g transform="matrix(1,0,0,1,160,506)">
+                    <text x="-17.239px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(205,214,230);">Kanban</text>
+                </g>
+                <g transform="matrix(1,0,0,1,74,530)">
+                    <text x="-9.172px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(205,214,230);">Ro3</text>
+                </g>
+                <g transform="matrix(1,0,0,1,160,530)">
+                    <text x="-15.835px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(205,214,230);">Activity</text>
+                </g>
+                <g transform="matrix(1,0,0,1,74,554)">
+                    <text x="-21.392px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(205,214,230);">Summary</text>
+                </g>
+            </g>
+        </g>
+        <path d="M30,1006L204,1006" style="fill:none;fill-rule:nonzero;stroke:rgb(70,85,107);stroke-width:1px;"/>
+        <path d="M200,1022L200,1036C200,1039.311 197.311,1042 194,1042L40,1042C36.689,1042 34,1039.311 34,1036L34,1022C34,1018.689 36.689,1016 40,1016L194,1016C197.311,1016 200,1018.689 200,1022Z" style="fill:rgb(51,66,83);stroke:rgb(70,85,107);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,117,1033)">
+            <text x="-30.572px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(227,231,240);">Open Folder</text>
+        </g>
+        <g transform="matrix(1,0,0,1,36,1058)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(95,174,126);">Connected: 12 discussions · 8 tags</text>
+        </g>
+        <g transform="matrix(1,0,0,1,226,128)">
+            <text x="0px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:17px;fill:rgb(227,231,240);">Project <tspan x="61.725px 74.001px " y="0px 0px ">Al</tspan>pha</text>
+        </g>
+        <g transform="matrix(1,0,0,1,356,128)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12px;fill:rgb(146,163,185);">42 comments</text>
+        </g>
+        <path d="M510,124C510,128.415 506.415,132 502,132L456,132C451.585,132 448,128.415 448,124C448,119.585 451.585,116 456,116L502,116C506.415,116 510,119.585 510,124Z" style="fill:rgb(31,58,44);stroke:rgb(95,174,126);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,479,128)">
+            <text x="-17.89px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:9px;fill:rgb(127,211,160);">People ×</text>
+        </g>
+        <g>
+            <g transform="matrix(1,0,0,1,610,128)">
+                <text x="0px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:13px;fill:rgb(225,192,37);">★</text>
+            </g>
+            <g transform="matrix(1,0,0,1,634,128)">
+                <text x="0px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:10px;fill:rgb(146,163,185);">↻</text>
+            </g>
+            <g transform="matrix(1,0,0,1,656,128)">
+                <text x="0px" y="0px" style="font-family:'SegoeUIEmoji', 'Segoe UI Emoji', sans-serif;font-size:10px;fill:rgb(146,163,185);">⬇</text>
+            </g>
+            <g transform="matrix(1,0,0,1,678,128)">
+                <text x="0px" y="0px" style="font-family:'SegoeUIEmoji', 'Segoe UI Emoji', sans-serif;font-size:10px;fill:rgb(146,163,185);">🗄</text>
+            </g>
+        </g>
+        <g transform="matrix(1.010893,0,0,1.010893,-2.418301,-1.503268)">
+            <path d="M222,138L694,138" style="fill:none;fill-rule:nonzero;stroke:rgb(70,85,107);stroke-width:1px;stroke-dasharray:2,3;"/>
+        </g>
+        <path d="M694,152L694,162C694,165.311 691.311,168 688,168L232,168C228.689,168 226,165.311 226,162L226,152C226,148.689 228.689,146 232,146L688,146C691.311,146 694,148.689 694,152Z" style="fill:rgb(40,50,66);stroke:rgb(70,85,107);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,236,161)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(146,163,185);">Search this discussion…  #tag or @name</text>
+        </g>
+        <g transform="matrix(1,0,0,1,680,162)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(146,163,185);">×</text>
+        </g>
+        <g transform="matrix(1,0,0,1,226,188)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(146,163,185);">PR<tspan x="14.092px 20.862px 26.889px 33.659px 40.981px 47.009px 53.217px 56.095px 63.974px " y="0px 0px 0px 0px 0px 0px 0px 0px 0px ">EPARATION</tspan></text>
+            <text x="74.174px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:10px;fill:rgb(146,163,185);">✎</text>
+        </g>
+        <g transform="matrix(1,0,0,1,226,204)">
+            <text x="0px" y="0px" style="font-family:'Arial-ItalicMT', 'Arial', sans-serif;font-style:italic;font-size:10px;fill:rgb(146,163,185);">No preparation notes yet.</text>
+        </g>
+        <path d="M694,220L694,258C694,261.311 691.311,264 688,264L232,264C228.689,264 226,261.311 226,258L226,220C226,216.689 228.689,214 232,214L688,214C691.311,214 694,216.689 694,220Z" style="fill:rgb(32,41,58);stroke:rgb(70,85,107);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,236,236)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(146,163,185);">W<tspan x="9.258px 12.588px " y="0px 0px ">ri</tspan>te a note…  #tag to classify<tspan x="134.688px 137.466px " y="0px 0px ">, </tspan>@ to mention a name</text>
+        </g>
+        <path d="M286,273L286,283C286,284.656 284.656,286 283,286L229,286C227.344,286 226,284.656 226,283L226,273C226,271.344 227.344,270 229,270L283,270C284.656,270 286,271.344 286,273Z" style="fill:rgb(28,47,56);stroke:rgb(60,106,133);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,256,282)">
+            <text x="-17.139px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:9px;fill:rgb(127,192,221);">design ×</text>
+        </g>
+        <path d="M556,276L556,282C556,285.311 553.311,288 550,288L476,288C472.689,288 470,285.311 470,282L470,276C470,272.689 472.689,270 476,270L550,270C553.311,270 556,272.689 556,276Z" style="fill:rgb(51,66,83);stroke:rgb(70,85,107);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,513,283)">
+            <text x="-23.513px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:9px;fill:rgb(146,163,185);">No goal link</text>
+        </g>
+        <path d="M626,276L626,282C626,285.311 623.311,288 620,288L568,288C564.689,288 562,285.311 562,282L562,276C562,272.689 564.689,270 568,270L620,270C623.311,270 626,272.689 626,276Z" style="fill:rgb(51,66,83);stroke:rgb(70,85,107);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,594,283)">
+            <text x="-7.508px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:9px;fill:rgb(146,163,185);">due</text>
+        </g>
+        <path d="M694,276L694,282C694,285.311 691.311,288 688,288L638,288C634.689,288 632,285.311 632,282L632,276C632,272.689 634.689,270 638,270L688,270C691.311,270 694,272.689 694,276Z" style="fill:rgb(81,142,170);"/>
+        <g transform="matrix(1,0,0,1,663,283)">
+            <text x="-10.257px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:9px;fill:white;">Save</text>
+        </g>
+        <g transform="matrix(1,0,0,1,226,306)">
+            <text x="0px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:10px;fill:rgb(146,163,185);">TO<tspan x="13.906px 21.228px 27.631px " y="0px 0px 0px ">DAY</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1.114071,0,-35.818228)">
+            <rect x="222" y="314" width="472" height="100" style="fill:rgb(32,41,58);"/>
+        </g>
+        <g transform="matrix(1,0,0,1.114071,0,-35.818228)">
+            <rect x="222" y="314" width="3" height="100" style="fill:rgb(225,154,37);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,234,332)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(146,163,185);">14:22:07</text>
+        </g>
+        <path d="M320,325L320,334C320,335.104 319.104,336 318,336L288,336C286.896,336 286,335.104 286,334L286,325C286,323.896 286.896,323 288,323L318,323C319.104,323 320,323.896 320,325Z" style="fill:rgb(225,154,37);"/>
+        <g transform="matrix(1,0,0,1,303,333)">
+            <text x="-11.336px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:8px;fill:rgb(27,27,27);">OPEN</text>
+        </g>
+        <path d="M348,325L348,334C348,335.104 347.104,336 346,336L328,336C326.896,336 326,335.104 326,334L326,325C326,323.896 326.896,323 328,323L346,323C347.104,323 348,323.896 348,325Z" style="fill:rgb(194,90,90);"/>
+        <g transform="matrix(1,0,0,1,337,333)">
+            <text x="-4px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:8px;fill:white;">HI</text>
+        </g>
+        <path d="M402,326L402,333C402,334.656 400.656,336 399,336L357,336C355.344,336 354,334.656 354,333L354,326C354,324.344 355.344,323 357,323L399,323C400.656,323 402,324.344 402,326Z" style="fill:rgb(28,47,56);stroke:rgb(60,106,133);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,378,333)">
+            <text x="-15.123px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:8px;fill:rgb(127,192,221);">backend</text>
+        </g>
+        <g transform="matrix(1,0,0,1,20.97023,-2.034564)">
+            <g transform="matrix(1,0,0,1,560,333)">
+                <text x="0px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:11px;fill:rgb(146,163,185);">✎</text>
+            </g>
+            <g transform="matrix(1,0,0,1,578,333)">
+                <text x="0px" y="0px" style="font-family:'SegoeUIEmoji', 'Segoe UI Emoji', sans-serif;font-size:11px;fill:rgb(146,163,185);">⚡</text>
+            </g>
+            <g transform="matrix(1,0,0,1,596,333)">
+                <text x="0px" y="0px" style="font-family:'SegoeUIEmoji', 'Segoe UI Emoji', sans-serif;font-size:11px;fill:rgb(146,163,185);">🔇</text>
+            </g>
+            <g transform="matrix(1,0,0,1,614,333)">
+                <text x="0px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:11px;fill:rgb(146,163,185);">✓</text>
+            </g>
+            <g transform="matrix(1,0,0,1,632,333)">
+                <text x="0px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:11px;fill:rgb(146,163,185);">➜</text>
+            </g>
+            <g transform="matrix(1,0,0,1,650,333)">
+                <text x="0px" y="0px" style="font-family:'SegoeUIEmoji', 'Segoe UI Emoji', sans-serif;font-size:11px;fill:rgb(146,163,185);">🗑</text>
+            </g>
+        </g>
+        <g transform="matrix(1,0,0,1,234,354)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(227,231,240);">Investigate the cache-busting strategy for the asset</text>
+        </g>
+        <g transform="matrix(1,0,0,1,234,370)">
+            <g transform="matrix(11,0,0,11,132.09668,0)">
+            </g>
+            <g transform="matrix(11,0,0,11,135.152832,0)">
+            </g>
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(227,231,240);">pipeline and document the ﬁndings.</text>
+        </g>
+        <g id="arch1" transform="matrix(1,0,0,1,234,379.63191)">
+            <path d="M39.5,3.5L39.5,36.5C39.5,38.156 38.156,39.5 36.5,39.5L3.5,39.5C1.844,39.5 0.5,38.156 0.5,36.5L0.5,3.5C0.5,1.844 1.844,0.5 3.5,0.5L36.5,0.5C38.156,0.5 39.5,1.844 39.5,3.5Z" style="fill:rgb(22,28,43);stroke:rgb(70,85,107);stroke-width:1px;"/>
+            <path d="M20,13.5L20,17.5" style="fill:none;fill-rule:nonzero;stroke:rgb(127,141,176);stroke-width:1px;"/>
+            <path d="M20,23.5L20,27.5" style="fill:none;fill-rule:nonzero;stroke:rgb(127,141,176);stroke-width:1px;"/>
+            <path d="M32,8.5L32,12.5C32,13.328 31.328,14 30.5,14L9.5,14C8.672,14 8,13.328 8,12.5L8,8.5C8,7.672 8.672,7 9.5,7L30.5,7C31.328,7 32,7.672 32,8.5Z" style="fill:rgb(77,182,172);"/>
+            <path d="M32,18.5L32,22.5C32,23.328 31.328,24 30.5,24L9.5,24C8.672,24 8,23.328 8,22.5L8,18.5C8,17.672 8.672,17 9.5,17L30.5,17C31.328,17 32,17.672 32,18.5Z" style="fill:rgb(90,127,194);"/>
+            <path d="M32,28.5L32,32.5C32,33.328 31.328,34 30.5,34L9.5,34C8.672,34 8,33.328 8,32.5L8,28.5C8,27.672 8.672,27 9.5,27L30.5,27C31.328,27 32,27.672 32,28.5Z" style="fill:rgb(95,174,126);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,0,11)">
+            <rect x="222" y="420" width="472" height="46" style="fill:rgb(36,31,51);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,0,11)">
+            <rect x="222" y="420" width="3" height="46" style="fill:rgb(125,108,196);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,234,449)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(146,163,185);">13:10:02</text>
+        </g>
+        <g transform="matrix(1,0,0,1,0,9.72007)">
+            <path d="M320,431L320,440C320,441.104 319.104,442 318,442L288,442C286.896,442 286,441.104 286,440L286,431C286,429.896 286.896,429 288,429L318,429C319.104,429 320,429.896 320,431Z" style="fill:rgb(125,108,196);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,303,448.72007)">
+            <text x="-11.115px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:8px;fill:white;">GOAL</text>
+        </g>
+        <g transform="matrix(1,0,0,1,0,9.72007)">
+            <path d="M354,431L354,440C354,441.104 353.104,442 352,442L328,442C326.896,442 326,441.104 326,440L326,431C326,429.896 326.896,429 328,429L352,429C353.104,429 354,429.896 354,431Z" style="fill:rgb(90,127,194);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,340,448.72007)">
+            <text x="-8.889px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:8px;fill:white;">MED</text>
+        </g>
+        <g transform="matrix(1,0,0,1,234,470)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(227,231,240);">Ship v3.1 to production</text>
+        </g>
+        <g transform="matrix(1,0,0,1.308824,0,-134.764706)">
+            <rect x="222" y="472" width="472" height="68" style="fill:rgb(32,41,58);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,234,501)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(146,163,185);">1<tspan x="4.819px 10.381px " y="0px 0px ">1:</tspan>48:30</text>
+        </g>
+        <g transform="matrix(1,0,0,1,234,517)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(227,231,240);">Bumped cache-bust to dev<tspan x="130.04px 133.096px 138.397px 144.515px " y="0px 0px 0px 0px ">.110</tspan> — see</text>
+            <text x="188.536px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(81,142,170);">My Chippy</text>
+        </g>
+        <g id="arch2" transform="matrix(1,0,0,1,234,524.553018)">
+            <path d="M39.5,3.5L39.5,36.5C39.5,38.156 38.156,39.5 36.5,39.5L3.5,39.5C1.844,39.5 0.5,38.156 0.5,36.5L0.5,3.5C0.5,1.844 1.844,0.5 3.5,0.5L36.5,0.5C38.156,0.5 39.5,1.844 39.5,3.5Z" style="fill:rgb(22,28,43);stroke:rgb(70,85,107);stroke-width:1px;"/>
+            <path d="M20,20L20,12" style="fill:none;fill-rule:nonzero;stroke:rgb(127,141,176);stroke-width:1px;"/>
+            <path d="M20,23L10.5,28" style="fill:none;fill-rule:nonzero;stroke:rgb(127,141,176);stroke-width:1px;"/>
+            <path d="M20,23L29.5,28" style="fill:none;fill-rule:nonzero;stroke:rgb(127,141,176);stroke-width:1px;"/>
+            <path d="M26,16.5L26,22.5C26,23.328 25.328,24 24.5,24L15.5,24C14.672,24 14,23.328 14,22.5L14,16.5C14,15.672 14.672,15 15.5,15L24.5,15C25.328,15 26,15.672 26,16.5Z" style="fill:rgb(225,154,37);"/>
+            <path d="M26,6.5L26,10.5C26,11.328 25.328,12 24.5,12L15.5,12C14.672,12 14,11.328 14,10.5L14,6.5C14,5.672 14.672,5 15.5,5L24.5,5C25.328,5 26,5.672 26,6.5Z" style="fill:rgb(125,108,196);"/>
+            <path d="M16,29.5L16,33.5C16,34.328 15.328,35 14.5,35L6.5,35C5.672,35 5,34.328 5,33.5L5,29.5C5,28.672 5.672,28 6.5,28L14.5,28C15.328,28 16,28.672 16,29.5Z" style="fill:rgb(77,182,172);"/>
+            <path d="M35,29.5L35,33.5C35,34.328 34.328,35 33.5,35L25.5,35C24.672,35 24,34.328 24,33.5L24,29.5C24,28.672 24.672,28 25.5,28L33.5,28C34.328,28 35,28.672 35,29.5Z" style="fill:rgb(90,127,194);"/>
+        </g>
+        <g transform="matrix(1,0,0,1.226601,0,-90.724291)">
+            <rect x="222" y="546" width="472" height="68" style="fill:rgb(32,41,58);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,234,597)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(146,163,185);">10:15:02</text>
+        </g>
+        <g transform="matrix(1,0,0,1,234,613)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(227,231,240);">Reviewed the new print layout — ref</text>
+            <text x="179.754px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(81,142,170);">Chippy Digital</text>
+        </g>
+        <g id="arch3" transform="matrix(1,0,0,1,233.915039,618.196809)">
+            <path d="M39.5,3.5L39.5,36.5C39.5,38.156 38.156,39.5 36.5,39.5L3.5,39.5C1.844,39.5 0.5,38.156 0.5,36.5L0.5,3.5C0.5,1.844 1.844,0.5 3.5,0.5L36.5,0.5C38.156,0.5 39.5,1.844 39.5,3.5Z" style="fill:rgb(22,28,43);stroke:rgb(70,85,107);stroke-width:1px;"/>
+            <path d="M18,12.5L22,12.5" style="fill:none;fill-rule:nonzero;stroke:rgb(127,141,176);stroke-width:1px;"/>
+            <path d="M18,26.5L22,26.5" style="fill:none;fill-rule:nonzero;stroke:rgb(127,141,176);stroke-width:1px;"/>
+            <path d="M12,17L12,22" style="fill:none;fill-rule:nonzero;stroke:rgb(127,141,176);stroke-width:1px;"/>
+            <path d="M18,9.5L18,15.5C18,16.328 17.328,17 16.5,17L7.5,17C6.672,17 6,16.328 6,15.5L6,9.5C6,8.672 6.672,8 7.5,8L16.5,8C17.328,8 18,8.672 18,9.5Z" style="fill:rgb(90,127,194);"/>
+            <path d="M34,9.5L34,15.5C34,16.328 33.328,17 32.5,17L23.5,17C22.672,17 22,16.328 22,15.5L22,9.5C22,8.672 22.672,8 23.5,8L32.5,8C33.328,8 34,8.672 34,9.5Z" style="fill:rgb(95,174,126);"/>
+            <path d="M18,23.5L18,29.5C18,30.328 17.328,31 16.5,31L7.5,31C6.672,31 6,30.328 6,29.5L6,23.5C6,22.672 6.672,22 7.5,22L16.5,22C17.328,22 18,22.672 18,23.5Z" style="fill:rgb(225,154,37);"/>
+            <path d="M34,23.5L34,29.5C34,30.328 33.328,31 32.5,31L23.5,31C22.672,31 22,30.328 22,29.5L22,23.5C22,22.672 22.672,22 23.5,22L32.5,22C33.328,22 34,22.672 34,23.5Z" style="fill:rgb(125,108,196);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,0,48.522543)">
+            <rect x="222" y="620" width="472" height="46" style="fill:rgb(32,41,58);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,0,48.522543)">
+            <rect x="222" y="620" width="3" height="46" style="fill:rgb(58,166,185);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,234,686.522543)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(146,163,185);">09:40:1<tspan x="32.622px " y="0px ">1</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,0,47.022543)">
+            <path d="M346,631L346,640C346,641.104 345.104,642 344,642L288,642C286.896,642 286,641.104 286,640L286,631C286,629.896 286.896,629 288,629L344,629C345.104,629 346,629.896 346,631Z" style="fill:rgb(28,57,66);stroke:rgb(58,166,185);stroke-width:1px;"/>
+        </g>
+        <g transform="matrix(1,0,0,1,316,686.022543)">
+            <text x="-14.676px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:8px;fill:rgb(127,214,230);">followup</text>
+        </g>
+        <g transform="matrix(1,0,0,1,0,47.022543)">
+            <path d="M386,631L386,640C386,641.104 385.104,642 384,642L354,642C352.896,642 352,641.104 352,640L352,631C352,629.896 352.896,629 354,629L384,629C385.104,629 386,629.896 386,631Z" style="fill:rgb(225,154,37);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,369,686.022543)">
+            <text x="-11.336px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:8px;fill:rgb(27,27,27);">OPEN</text>
+        </g>
+        <g transform="matrix(1,0,0,1,234,707.522543)">
+            <g transform="matrix(11,0,0,11,20.179199,0)">
+            </g>
+            <g transform="matrix(11,0,0,11,23.235352,0)">
+            </g>
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(227,231,240);">Conﬁrm the vendor SLA<tspan x="116.784px 119.84px " y="0px 0px "> b</tspan>efore the cutover<tspan x="207.899px " y="0px ">.</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,0,48.522543)">
+            <rect x="222" y="672" width="472" height="30" style="fill:rgb(32,41,58);fill-opacity:0.6;"/>
+        </g>
+        <g transform="matrix(1,0,0,1,0,48.522543)">
+            <rect x="222" y="672" width="3" height="30" style="fill:rgb(225,154,37);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,234,739.522543)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(146,163,185);">09:05:1<tspan x="32.622px " y="0px ">1</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,0,47.373609)">
+            <path d="M320,684L320,693C320,694.104 319.104,695 318,695L288,695C286.896,695 286,694.104 286,693L286,684C286,682.896 286.896,682 288,682L318,682C319.104,682 320,682.896 320,684Z" style="fill:rgb(95,174,126);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,303,739.373609)">
+            <text x="-11.557px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:8px;fill:rgb(11,15,31);">DONE</text>
+        </g>
+        <g transform="matrix(1,0,0,1,340,739.522543)">
+            <g transform="matrix(11,0,0,11,77.042969,0)">
+            </g>
+            <g transform="matrix(11,0,0,11,80.099121,0)">
+            </g>
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(227,231,240);">Rename cache ﬁles…</text>
+        </g>
+        <g transform="matrix(1,0,0,1,676,739.522543)">
+            <text x="0px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:10px;fill:rgb(146,163,185);">▸</text>
+        </g>
+        <g transform="matrix(1,0,0,1,3.141614,0)">
+            <path d="M700,116L700,1064" style="fill:none;fill-rule:nonzero;stroke:rgb(70,85,107);stroke-width:1px;stroke-dasharray:1,4;"/>
+        </g>
+        <g transform="matrix(1,0,0,1,712,150)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(146,163,185);">OP<tspan x="14.648px 21.418px 28.74px 31.438px 36.904px 43.674px 50.444px 57.213px " y="0px 0px 0px 0px 0px 0px 0px 0px ">EN TASKS</tspan></text>
+        </g>
+        <rect x="710" y="158" width="216" height="34" style="fill:rgb(32,41,58);"/>
+        <rect x="710" y="158" width="3" height="34" style="fill:rgb(225,154,37);"/>
+        <path d="M748,168L748,176C748,177.104 747.104,178 746,178L722,178C720.896,178 720,177.104 720,176L720,168C720,166.896 720.896,166 722,166L746,166C747.104,166 748,166.896 748,168Z" style="fill:rgb(225,154,37);"/>
+        <g transform="matrix(1,0,0,1,734,175)">
+            <text x="-9.919px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:7px;fill:rgb(27,27,27);">OPEN</text>
+        </g>
+        <path d="M770,168L770,176C770,177.104 769.104,178 768,178L754,178C752.896,178 752,177.104 752,176L752,168C752,166.896 752.896,166 754,166L768,166C769.104,166 770,166.896 770,168Z" style="fill:rgb(194,90,90);"/>
+        <g transform="matrix(1,0,0,1,761,175)">
+            <text x="-3.5px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:7px;fill:white;">HI</text>
+        </g>
+        <g transform="matrix(1,0,0,1,720,188)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:9px;fill:rgb(227,231,240);">Investigate cache-busting…</text>
+        </g>
+        <rect x="710" y="196" width="216" height="30" style="fill:rgb(32,41,58);"/>
+        <rect x="710" y="196" width="3" height="30" style="fill:rgb(58,166,185);"/>
+        <path d="M764,205L764,213C764,214.104 763.104,215 762,215L722,215C720.896,215 720,214.104 720,213L720,205C720,203.896 720.896,203 722,203L762,203C763.104,203 764,203.896 764,205Z" style="fill:rgb(28,57,66);stroke:rgb(58,166,185);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,742,212)">
+            <text x="-12.841px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:7px;fill:rgb(127,214,230);">followup</text>
+        </g>
+        <g transform="matrix(1,0,0,1,720,223)">
+            <g transform="matrix(9,0,0,9,16.510254,0)">
+            </g>
+            <g transform="matrix(9,0,0,9,19.010742,0)">
+            </g>
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:9px;fill:rgb(227,231,240);">Conﬁrm vendor SLA…</text>
+        </g>
+        <g transform="matrix(1,0,0,1,712,248)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(146,163,185);">GO<tspan x="15.757px 22.527px 28.188px " y="0px 0px 0px ">ALS</tspan></text>
+        </g>
+        <rect x="710" y="256" width="216" height="30" style="fill:rgb(36,31,51);"/>
+        <rect x="710" y="256" width="3" height="30" style="fill:rgb(125,108,196);"/>
+        <g transform="matrix(1,0,0,1,720,275)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:9px;fill:rgb(227,231,240);">Ship v3.1 to production</text>
+        </g>
+        <g transform="matrix(1,0,0,1,712,308)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(146,163,185);">LI<tspan x="8.54px 15.862px 22.631px " y="0px 0px 0px ">NKS</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,712,326)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(81,142,170);">My Chippy</text>
+        </g>
+        <g transform="matrix(1,0,0,1,712,342)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(81,142,170);">Chippy Digital</text>
+        </g>
+        <g transform="matrix(1,0,0,1,712,368)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:10px;fill:rgb(146,163,185);">I<tspan x="2.878px 11.308px 18.078px 25.957px 32.727px " y="0px 0px 0px 0px 0px ">MAGES</tspan></text>
+        </g>
+        <g id="arch11" serif:id="arch1" transform="matrix(1,0,0,1,712,376)">
+            <path d="M39.5,3.5L39.5,36.5C39.5,38.156 38.156,39.5 36.5,39.5L3.5,39.5C1.844,39.5 0.5,38.156 0.5,36.5L0.5,3.5C0.5,1.844 1.844,0.5 3.5,0.5L36.5,0.5C38.156,0.5 39.5,1.844 39.5,3.5Z" style="fill:rgb(22,28,43);stroke:rgb(70,85,107);stroke-width:1px;"/>
+            <path d="M20,13.5L20,17.5" style="fill:none;fill-rule:nonzero;stroke:rgb(127,141,176);stroke-width:1px;"/>
+            <path d="M20,23.5L20,27.5" style="fill:none;fill-rule:nonzero;stroke:rgb(127,141,176);stroke-width:1px;"/>
+            <path d="M32,8.5L32,12.5C32,13.328 31.328,14 30.5,14L9.5,14C8.672,14 8,13.328 8,12.5L8,8.5C8,7.672 8.672,7 9.5,7L30.5,7C31.328,7 32,7.672 32,8.5Z" style="fill:rgb(77,182,172);"/>
+            <path d="M32,18.5L32,22.5C32,23.328 31.328,24 30.5,24L9.5,24C8.672,24 8,23.328 8,22.5L8,18.5C8,17.672 8.672,17 9.5,17L30.5,17C31.328,17 32,17.672 32,18.5Z" style="fill:rgb(90,127,194);"/>
+            <path d="M32,28.5L32,32.5C32,33.328 31.328,34 30.5,34L9.5,34C8.672,34 8,33.328 8,32.5L8,28.5C8,27.672 8.672,27 9.5,27L30.5,27C31.328,27 32,27.672 32,28.5Z" style="fill:rgb(95,174,126);"/>
+        </g>
+        <g id="arch21" serif:id="arch2" transform="matrix(1,0,0,1,758,376)">
+            <path d="M39.5,3.5L39.5,36.5C39.5,38.156 38.156,39.5 36.5,39.5L3.5,39.5C1.844,39.5 0.5,38.156 0.5,36.5L0.5,3.5C0.5,1.844 1.844,0.5 3.5,0.5L36.5,0.5C38.156,0.5 39.5,1.844 39.5,3.5Z" style="fill:rgb(22,28,43);stroke:rgb(70,85,107);stroke-width:1px;"/>
+            <path d="M20,20L20,12" style="fill:none;fill-rule:nonzero;stroke:rgb(127,141,176);stroke-width:1px;"/>
+            <path d="M20,23L10.5,28" style="fill:none;fill-rule:nonzero;stroke:rgb(127,141,176);stroke-width:1px;"/>
+            <path d="M20,23L29.5,28" style="fill:none;fill-rule:nonzero;stroke:rgb(127,141,176);stroke-width:1px;"/>
+            <path d="M26,16.5L26,22.5C26,23.328 25.328,24 24.5,24L15.5,24C14.672,24 14,23.328 14,22.5L14,16.5C14,15.672 14.672,15 15.5,15L24.5,15C25.328,15 26,15.672 26,16.5Z" style="fill:rgb(225,154,37);"/>
+            <path d="M26,6.5L26,10.5C26,11.328 25.328,12 24.5,12L15.5,12C14.672,12 14,11.328 14,10.5L14,6.5C14,5.672 14.672,5 15.5,5L24.5,5C25.328,5 26,5.672 26,6.5Z" style="fill:rgb(125,108,196);"/>
+            <path d="M16,29.5L16,33.5C16,34.328 15.328,35 14.5,35L6.5,35C5.672,35 5,34.328 5,33.5L5,29.5C5,28.672 5.672,28 6.5,28L14.5,28C15.328,28 16,28.672 16,29.5Z" style="fill:rgb(77,182,172);"/>
+            <path d="M35,29.5L35,33.5C35,34.328 34.328,35 33.5,35L25.5,35C24.672,35 24,34.328 24,33.5L24,29.5C24,28.672 24.672,28 25.5,28L33.5,28C34.328,28 35,28.672 35,29.5Z" style="fill:rgb(90,127,194);"/>
+        </g>
+        <g id="arch31" serif:id="arch3" transform="matrix(1,0,0,1,804,376)">
+            <path d="M39.5,3.5L39.5,36.5C39.5,38.156 38.156,39.5 36.5,39.5L3.5,39.5C1.844,39.5 0.5,38.156 0.5,36.5L0.5,3.5C0.5,1.844 1.844,0.5 3.5,0.5L36.5,0.5C38.156,0.5 39.5,1.844 39.5,3.5Z" style="fill:rgb(22,28,43);stroke:rgb(70,85,107);stroke-width:1px;"/>
+            <path d="M18,12.5L22,12.5" style="fill:none;fill-rule:nonzero;stroke:rgb(127,141,176);stroke-width:1px;"/>
+            <path d="M18,26.5L22,26.5" style="fill:none;fill-rule:nonzero;stroke:rgb(127,141,176);stroke-width:1px;"/>
+            <path d="M12,17L12,22" style="fill:none;fill-rule:nonzero;stroke:rgb(127,141,176);stroke-width:1px;"/>
+            <path d="M18,9.5L18,15.5C18,16.328 17.328,17 16.5,17L7.5,17C6.672,17 6,16.328 6,15.5L6,9.5C6,8.672 6.672,8 7.5,8L16.5,8C17.328,8 18,8.672 18,9.5Z" style="fill:rgb(90,127,194);"/>
+            <path d="M34,9.5L34,15.5C34,16.328 33.328,17 32.5,17L23.5,17C22.672,17 22,16.328 22,15.5L22,9.5C22,8.672 22.672,8 23.5,8L32.5,8C33.328,8 34,8.672 34,9.5Z" style="fill:rgb(95,174,126);"/>
+            <path d="M18,23.5L18,29.5C18,30.328 17.328,31 16.5,31L7.5,31C6.672,31 6,30.328 6,29.5L6,23.5C6,22.672 6.672,22 7.5,22L16.5,22C17.328,22 18,22.672 18,23.5Z" style="fill:rgb(225,154,37);"/>
+            <path d="M34,23.5L34,29.5C34,30.328 33.328,31 32.5,31L23.5,31C22.672,31 22,30.328 22,29.5L22,23.5C22,22.672 22.672,22 23.5,22L32.5,22C33.328,22 34,22.672 34,23.5Z" style="fill:rgb(125,108,196);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,7.141614,0)">
+            <path d="M694,148L694,264C694,265.104 693.104,266 692,266C690.896,266 690,265.104 690,264L690,148C690,146.896 690.896,146 692,146C693.104,146 694,146.896 694,148Z" style="fill:rgb(70,85,107);"/>
+        </g>
+        <path d="M934,152L934,238C934,239.104 933.104,240 932,240C930.896,240 930,239.104 930,238L930,152C930,150.896 930.896,150 932,150C933.104,150 934,150.896 934,152Z" style="fill:rgb(70,85,107);"/>
+    </g>
+    <g>
+        <g transform="matrix(1,0,0,1,16.590883,9.266979)">
+            <circle cx="40" cy="62" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,56.590883,75.266979)">
+            <text x="-3.059px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">1</text>
+        </g>
+        <g transform="matrix(1,0,0,1,-141.097226,5.266979)">
+            <circle cx="360" cy="70" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,218.902774,79.266979)">
+            <text x="-3.059px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">2</text>
+        </g>
+        <circle cx="850" cy="64" r="9" style="fill:rgb(81,142,170);"/>
+        <g transform="matrix(1,0,0,1,850,68)">
+            <text x="-3.059px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">3</text>
+        </g>
+        <circle cx="874" cy="64" r="9" style="fill:rgb(81,142,170);"/>
+        <g transform="matrix(1,0,0,1,874,68)">
+            <text x="-3.059px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">4</text>
+        </g>
+        <circle cx="898" cy="64" r="9" style="fill:rgb(81,142,170);"/>
+        <g transform="matrix(1,0,0,1,898,68)">
+            <text x="-3.059px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">5</text>
+        </g>
+        <circle cx="922" cy="64" r="9" style="fill:rgb(81,142,170);"/>
+        <g transform="matrix(1,0,0,1,922,68)">
+            <text x="-3.059px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">6</text>
+        </g>
+        <g transform="matrix(1,0,0,1,5.086428,-1.047209)">
+            <circle cx="110" cy="118" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,115.086428,120.952791)">
+            <text x="-3.059px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">7</text>
+        </g>
+        <g transform="matrix(1,0,0,1,1.9448,1.952791)">
+            <circle cx="196" cy="106" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,197.9448,111.952791)">
+            <text x="-3.059px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">8</text>
+        </g>
+        <g transform="matrix(1,0,0,1,-32.76255,-8.047209)">
+            <circle cx="205" cy="143" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,172.23745,138.952791)">
+            <text x="-3.059px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">9</text>
+        </g>
+        <g transform="matrix(1,0,0,1,5.361698,-0.8617)">
+            <circle cx="16" cy="168" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,21.361698,171.1383)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">10</text>
+        </g>
+        <g transform="matrix(1,0,0,1,5.361698,0.47872)">
+            <circle cx="16" cy="190" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,21.361698,194.47872)">
+            <text x="-5.814px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">1<tspan x="-0.303px " y="0px ">1</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,6.902469,0.19149)">
+            <circle cx="14" cy="212" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,20.902469,216.19149)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">12</text>
+        </g>
+        <g transform="matrix(1,0,0,1,6.902469,360.535741)">
+            <circle cx="14" cy="485" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,20.902469,849.535741)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">13</text>
+        </g>
+        <g transform="matrix(1,0,0,1,35.156176,-10.32245)">
+            <circle cx="14" cy="1029" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,49.156176,1022.67755)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">14</text>
+        </g>
+        <g transform="matrix(1,0,0,1,11,0.149605)">
+            <circle cx="14" cy="1054" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,25,1058.149605)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">15</text>
+        </g>
+        <circle cx="300" cy="118" r="9" style="fill:rgb(81,142,170);"/>
+        <g transform="matrix(1,0,0,1,300,122)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">16</text>
+        </g>
+        <circle cx="356" cy="112" r="9" style="fill:rgb(81,142,170);"/>
+        <g transform="matrix(1,0,0,1,356,116)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">17</text>
+        </g>
+        <circle cx="510" cy="111" r="9" style="fill:rgb(81,142,170);"/>
+        <g transform="matrix(1,0,0,1,510,115)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">18</text>
+        </g>
+        <g transform="matrix(1,0,0,1,-30.192413,-1.644136)">
+            <circle cx="678" cy="114" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,647.807587,116.355864)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">19</text>
+        </g>
+        <g transform="matrix(1,0,0,1,446.366226,9)">
+            <circle cx="214" cy="157" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,660.366226,170)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">20</text>
+        </g>
+        <g transform="matrix(1,0,0,1,93.417039,4.670858)">
+            <circle cx="226" cy="184" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,319.417039,192.670858)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">21</text>
+        </g>
+        <g transform="matrix(1,0,0,1,-14.633774,0.478715)">
+            <circle cx="684" cy="214" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,669.366226,218.478715)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">22</text>
+        </g>
+        <g transform="matrix(1,0,0,1,35.573211,11.987288)">
+            <circle cx="256" cy="262" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,291.573211,277.987288)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">23</text>
+        </g>
+        <g transform="matrix(1,0,0,1,20.930679,28.106379)">
+            <circle cx="663" cy="262" r="9" style="fill:rgb(81,142,170);stroke:rgb(16,21,42);stroke-width:1px;stroke-linejoin:round;stroke-miterlimit:2;"/>
+        </g>
+        <g transform="matrix(1,0,0,1,683.930679,294.106379)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">24</text>
+        </g>
+        <g transform="matrix(1,0,0,1,45.48066,0.597874)">
+            <circle cx="226" cy="302" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,271.48066,306.597874)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">25</text>
+        </g>
+        <g transform="matrix(1,0,0,1,9.446321,-23.5)">
+            <circle cx="214" cy="362" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,223.446321,342.5)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">26</text>
+        </g>
+        <g transform="matrix(1,0,0,1,63.21823,-3.437749)">
+            <circle cx="234" cy="320" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,297.21823,320.562251)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">27</text>
+        </g>
+        <g transform="matrix(1,0,0,1,14.459624,-7.566789)">
+            <circle cx="650" cy="320" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,664.459624,316.316512)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">28</text>
+        </g>
+        <g transform="matrix(1,0,0,1,-119.776199,8.712731)">
+            <circle cx="540" cy="354" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,420.223801,366.712731)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">29</text>
+        </g>
+        <g transform="matrix(1,0,0,1,0,1.63191)">
+            <circle cx="278" cy="393" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,278,398.63191)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">30</text>
+        </g>
+        <g transform="matrix(1,0,0,1,0,37.522543)">
+            <circle cx="676" cy="668" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,676,709.522543)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">31</text>
+        </g>
+        <g transform="matrix(1,0,0,1,-90,16.22007)">
+            <circle cx="312" cy="438" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,222,458.22007)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">37</text>
+        </g>
+        <g transform="matrix(1,0,0,1,-114.5,53.522543)">
+            <circle cx="338" cy="638" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,223.5,695.522543)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">38</text>
+        </g>
+        <g transform="matrix(1,0,0,1,81.501562,3.137624)">
+            <circle cx="704" cy="150" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,785.501562,157.137624)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">32</text>
+        </g>
+        <g transform="matrix(1,0,0,1,59.767808,2.754982)">
+            <circle cx="704" cy="248" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,763.767808,254.754982)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">33</text>
+        </g>
+        <g transform="matrix(1,0,0,1,48.365237,-6.7344)">
+            <circle cx="704" cy="308" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,752.365237,305.2656)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">34</text>
+        </g>
+        <g transform="matrix(1,0,0,1,59.738267,-4.362055)">
+            <circle cx="704" cy="368" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,763.738267,367.637945)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">35</text>
+        </g>
+        <g transform="matrix(1,0,0,1,0.141614,45.227949)">
+            <circle cx="690" cy="140" r="9" style="fill:rgb(81,142,170);"/>
+        </g>
+        <g transform="matrix(1,0,0,1,690.141614,189.227949)">
+            <text x="-6.118px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:11px;fill:white;">36</text>
+        </g>
+    </g>
+    <g>
+        <path d="M1456,78L1456,1066C1456,1069.311 1453.311,1072 1450,1072L972,1072C968.689,1072 966,1069.311 966,1066L966,78C966,74.689 968.689,72 972,72L1450,72C1453.311,72 1456,74.689 1456,78Z" style="fill:rgb(16,21,42);stroke:rgb(70,85,107);stroke-width:1px;"/>
+        <g transform="matrix(1,0,0,1,986,98)">
+            <text x="0px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:14px;fill:rgb(227,231,240);">Element index</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,115)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(146,163,185);">number — Name (CSS class / selector) ·</text>
+            <text x="202.329px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:11px;fill:rgb(146,163,185);">★</text>
+            <text x="216.385px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(146,163,185);">= new since v1</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,140)">
+            <text x="0px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:12.5px;fill:rgb(127,178,204);">T<tspan x="7.472px 17.258px 25.432px 28.967px 38.057px 47.146px 56.236px 66.021px 76.496px 84.896px 88.432px 91.967px 96.192px 99.728px 103.953px 111.651px 119.349px 123.574px 130.588px 138.286px 143.213px 150.911px 162.088px 169.103px 172.638px 176.173px 179.709px 186.723px 190.948px 198.646px 206.344px 215.434px 223.132px 228.059px 235.757px 246.934px " y="0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px ">OP CHROME  (.top-chrome / #topChrome</tspan>)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,157)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">1  <tspan x="13.208px 21.545px " y="0px 0px ">Ap</tspan>p icon + title + version badge (.app-icon / #appV<tspan x="293.256px 300.208px " y="0px 0px ">er</tspan>sion)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,174)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">2  Recent-discussion bar (.recent-bar)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,191)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">3  Print — prints the .md as plain Markdown (#btnPrintChrome)</text>
+            <text x="352.222px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">★</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,208)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">4  <tspan x="13.672px 21.307px " y="0px 0px ">Th</tspan>eme toggle (#btnThemeT<tspan x="167.224px 174.176px " y="0px 0px ">og</tspan>gle)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,225)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">5  <tspan x="13.208px 21.545px " y="0px 0px ">Ab</tspan>out button (#btnAbout)</text>
+            <text x="156.366px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">★</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,242)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">6  Help button (#btnHelp)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,266)">
+            <text x="0px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:12.5px;fill:rgb(127,178,204);">SI<tspan x="11.935px 21.025px 29.425px 38.514px 47.604px 56.694px 60.229px 63.764px 67.99px 75.004px 82.018px 85.554px 93.252px 100.266px 107.964px 114.979px 119.906px " y="0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px ">DEBAR  (#sidebar)</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,283)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">7  Sidebar header &quot;Discussions&quot; (.sidebar-header)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,300)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">8  New-discussion button (.btn-new-discussion)</text>
+            <text x="265.393px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">★</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,317)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">9  Discussion search + clear (.sidebar-search)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,334)">
+            <g transform="matrix(12.5,0,0,12.5,106.298828,0)">
+            </g>
+            <g transform="matrix(12.5,0,0,12.5,109.771729,0)">
+            </g>
+            <g transform="matrix(12.5,0,0,12.5,233.428955,0)">
+            </g>
+            <g transform="matrix(12.5,0,0,12.5,236.901855,0)">
+            </g>
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">10  Discussion tag-ﬁlter buttons (.disc-tag-ﬁlter-btn)</text>
+            <text x="286.218px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">★</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,351)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">1<tspan x="6.024px 12.976px 16.449px 19.696px 25.946px 32.898px " y="0px 0px 0px 0px 0px 0px ">1  Tag</tspan> group header — colored per tag (ui.getDiscT<tspan x="289.288px 296.24px " y="0px 0px ">ag</tspan>Color)</text>
+            <text x="340.698px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">★</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,368)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">12  Discussion item (avatar · name ·</text>
+            <text x="204.236px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">★</text>
+            <text x="220.209px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">fav · tag-colored count chip)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,385)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">13  Cross-view nav buttons (.nav-btn ×1<tspan x="220.361px 227.313px " y="0px 0px ">1)</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,402)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">14  Open Folder button (#btnOpenFolder)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,419)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">15  Folder status line (#folderStatus)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,443)">
+            <text x="0px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:12.5px;fill:rgb(127,178,204);">DI<tspan x="12.625px 21.025px 30.115px 39.204px 47.604px 56.004px 59.539px 69.325px 78.414px 81.95px 94.512px 98.048px 108.523px 112.058px 121.148px 130.237px 137.935px 146.335px 149.871px 158.96px 168.746px 176.444px 185.533px 196.008px 205.098px 208.633px 212.169px 216.394px 219.929px 226.944px 234.642px 238.177px 241.712px 245.938px 250.163px 253.698px 260.712px 264.938px 269.163px " y="0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px ">SCUSSION — MIDDLE COLUMN  (.split-left)</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,460)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">16  Member title — sticky (.member-title)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,477)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">17  Comment count (.member-count)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,494)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">18  Discussion tag chip / editor (.disc-tag-chip / .disc-tag-input)</text>
+            <text x="348.761px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">★</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,511)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">19  Header actions:</text>
+            <text x="111.871px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">★</text>
+            <text x="127.844px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">fav ·</text>
+            <text x="155.627px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">↻</text>
+            <text x="167.401px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">reload ·</text>
+            <text x="213.257px" y="0px" style="font-family:'SegoeUIEmoji', 'Segoe UI Emoji', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">⬇</text>
+            <text x="233.893px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">export ·</text>
+            <text x="279.742px" y="0px" style="font-family:'SegoeUIEmoji', 'Segoe UI Emoji', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">🗄</text>
+            <text x="300.378px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">archive</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,528)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">20  Discussion-local search (.list-search)</text>
+            <text x="227.85px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">★</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,545)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">21  Preparation section (.prep-section)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,562)">
+            <g transform="matrix(12.5,0,0,12.5,365.991211,0)">
+            </g>
+            <g transform="matrix(12.5,0,0,12.5,369.464111,0)">
+            </g>
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">22  Entry textarea (.entry-input) + @name/#tag autocomplete (.ac-ﬂoat)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,579)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">23  Entry footer chips (.tag-chip)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,596)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">24  Entry controls: goal link · due · Save (.btn-primary)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,613)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">25  Day-group label (.day-label — &quot;T<tspan x="201.062px 208.014px " y="0px 0px ">od</tspan>ay&quot;)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,637)">
+            <text x="0px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:12.5px;fill:rgb(127,178,204);">CO<tspan x="18.875px 29.35px 39.825px 48.225px 57.315px 65.013px 68.548px 77.638px 87.423px 95.823px 99.358px 111.921px 115.456px 122.471px 129.485px 140.662px 147.677px 151.212px 158.226px 165.241px 172.255px 177.182px 184.197px 193.982px 201.68px 208.694px 213.621px 220.636px 224.171px 227.707px 231.932px 235.467px 242.481px 250.179px 254.405px 259.332px 266.346px 270.571px 277.585px 284.6px 289.527px " y="0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px ">MMENT BOX — same everywhere  (.entry-card</tspan>)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,654)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">26  <tspan x="20.624px 26.874px 33.826px " y="0px 0px 0px ">Tas</tspan>k card — orange stripe (.entry-task)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,671)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">27  Meta row: time · state square · priority square · tags</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,688)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">28  <tspan x="20.16px 28.497px " y="0px 0px ">Ac</tspan>tion icons (.icon-btn):</text>
+            <text x="154.242px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">✎</text>
+            <text x="170.215px" y="0px" style="font-family:'SegoeUIEmoji', 'Segoe UI Emoji', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">⚡</text>
+            <text x="190.851px" y="0px" style="font-family:'SegoeUIEmoji', 'Segoe UI Emoji', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">🔇</text>
+            <text x="211.487px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">✓</text>
+            <text x="227.46px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">➜</text>
+            <text x="243.433px" y="0px" style="font-family:'SegoeUIEmoji', 'Segoe UI Emoji', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">🗑</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,705)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">29  Body — rendered markdown (.entry-text)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,722)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">30  Inline image (.entry-image — thumbnail, click = carousel)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,739)">
+            <g transform="matrix(12.5,0,0,12.5,193.85376,0)">
+            </g>
+            <g transform="matrix(12.5,0,0,12.5,197.32666,0)">
+            </g>
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">31  Expand triangle (.expand-tri — ﬁnished items collapse)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,756)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">37  Goal card — purple stripe (.entry-goal; mirrors Goals panel)</text>
+            <text x="353.613px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">★</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,773)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">38  Followup card — cyan stripe (.entry-followup; mirrors panel)</text>
+            <text x="354.993px" y="0px" style="font-family:'MS-UIGothic', 'MS UI Gothic', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">★</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,797)">
+            <text x="0px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:12.5px;fill:rgb(127,178,204);">DI<tspan x="12.625px 21.025px 30.115px 39.204px 47.604px 56.004px 59.539px 69.325px 78.414px 81.95px 94.512px 98.048px 107.137px 110.673px 120.458px 129.548px 137.246px 140.781px 149.871px 159.656px 167.354px 176.444px 186.919px 196.008px 199.544px 203.079px 207.304px 210.84px 217.854px 225.552px 229.087px 232.623px 236.848px 241.073px 246px 249.535px 257.233px 264.931px 269.156px " y="0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px 0px ">SCUSSION — RIGHT COLUMN  (.split-right)</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,814)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">32  Open <tspan x="54.675px 60.925px 67.877px " y="0px 0px 0px ">Tas</tspan>ks panel — tasks + followups (.tasks-section)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,831)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">33  Goals panel (.goals-section)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,848)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">34  Links panel (.links-section — links extracted from comments)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,865)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">35  Images gallery (.gallery-section — thumbnails match inline images)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986,882)">
+            <g transform="matrix(12.5,0,0,12.5,285.559082,0)">
+            </g>
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12.5px;fill:rgb(227,231,240);">36  Independent scrollbars (middle &amp; right columns)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986.030762,920.699058)">
+            <text x="0px" y="0px" style="font-family:'Arial-BoldMT', 'Arial', sans-serif;font-weight:700;font-size:12.5px;fill:rgb(127,178,204);">NE<tspan x="17.49px 29.35px 32.885px 41.285px 44.821px 53.91px 63px 71.4px 74.935px " y="0px 0px 0px 0px 0px 0px 0px 0px 0px ">W SINCE v</tspan>1</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986.030762,934.685059)">
+            <g transform="matrix(11,0,0,11,270.445312,0)">
+            </g>
+            <g transform="matrix(11,0,0,11,273.501465,0)">
+            </g>
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(146,163,185);">• Sidebar groups discussions under colored tags with a ﬁlter row;</text>
+        </g>
+        <g transform="matrix(1,0,0,1,1000.030762,949.685059)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(146,163,185);">each discussion has an inline tag chip (#18).</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986.030762,967.685059)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(146,163,185);">• Per-discussion search (#20) mirrors the cross-view search bar<tspan x="308.897px " y="0px ">.</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,986.030762,985.685059)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(146,163,185);">• Print (#3) renders the .md as regular Markdown, not the styled view<tspan x="334.001px " y="0px ">.</tspan></text>
+        </g>
+        <g transform="matrix(1,0,0,1,986.030762,1003.685059)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(146,163,185);">• <tspan x="6.3px 13.637px " y="0px 0px ">AI</tspan> Summary page adds a &quot;Remove names&quot; privacy toggle (.summary-privacy)</text>
+        </g>
+        <g transform="matrix(1,0,0,1,1000.030762,1018.685059)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(146,163,185);">that anonymizes names to initials (PS, MRL) before calling the <tspan x="305.701px 313.038px " y="0px 0px ">AP</tspan>I.</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986.030762,1036.685059)">
+            <g transform="matrix(11,0,0,11,282.723633,0)">
+            </g>
+            <g transform="matrix(11,0,0,11,285.779785,0)">
+            </g>
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(146,163,185);">• Startup reconciles navigation.chippy<tspan x="182.193px 185.249px " y="0px 0px ">.m</tspan>d with the folder&apos;s ﬁles</text>
+        </g>
+        <g transform="matrix(1,0,0,1,1000.030762,1051.685059)">
+            <g transform="matrix(11,0,0,11,252.221191,0)">
+            </g>
+            <g transform="matrix(11,0,0,11,255.277344,0)">
+            </g>
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(146,163,185);">(folder = source of truth: stale entries dropped, new ﬁles added).</text>
+        </g>
+        <g transform="matrix(1,0,0,1,986.030762,1069.685059)">
+            <text x="0px" y="0px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:11px;fill:rgb(146,163,185);">Stream shows task, goal, comment, followup &amp; collapsed-done cards.</text>
+        </g>
+    </g>
 </svg>

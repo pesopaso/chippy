@@ -9,7 +9,7 @@
 
   // Single source of truth for the version. Used for display and as the cache-bust
   // query param on the CSS/JS tags in app.html (bump both together on release).
-  const VERSION = '3.0.0';
+  const VERSION = '3.1.0-dev.114';
   Chippy.VERSION = VERSION;
 
   const THEME_KEY = 'chippy_theme';
@@ -198,8 +198,8 @@
 
       section('Comments — functions & special tags',
         'Comments support Markdown (headings, bold/italic, lists, code, quotes), auto-linked URLs, @[Name] mentions and inline images.', [
-        ['Actions', '✎ edit inline (tags are editable here — type #tag or use "+ tag"; × removes one), ⚡ add a dated action, 🔇 mute, ➜ move to another discussion, 🗑 delete.'],
-        ['"Updated:"', 'added automatically when you edit a comment on a later day than it was created.'],
+        ['Actions', '✎ edit inline (tags are editable here — type #tag or use "+ tag"; × removes one; #task / #followup / #goal and priorities promote the comment; Ctrl+V pastes an image), ⚡ add a dated action, 🔇 mute, ➜ move to another discussion, 🗑 delete.'],
+        ['"Updated:"', 'a single line recording the latest edit on a later day than creation; refreshed in place on every further edit. Editing only touches the comment text — actions and the Updated line are preserved.'],
         ['Classify', '#task, #followup or #goal turn a comment into that item type.'],
         ['Priority', '#high / #medium / #low (the priority square cycles them).'],
         ['Reserved tags (hidden from the chip row)', 'state tags (opentask, inprogresstask, checktask, onholdtask, purgatorytask, resolvedtask, obsoletetask, resolvedfollowup), goal states (achievedgoal, canceledgoal), muted:<date> (temporary mute) and goal-<id> (links a comment to a goal).']
@@ -225,16 +225,16 @@
         ['[label](https://…)', 'link'],
         ['![alt](path.jpg)', 'image — or just paste with Ctrl+V'],
         ['https://…', 'bare URLs link automatically'],
-        ['@[Full Name]', 'name mention (becomes a chip)'],
+        ['@[Full Name]', 'name mention (becomes a chip) — type @ and pick from the dropdown (↑/↓ + Enter, or click), or create a new name right there'],
         ['#tag', 'tag — classifies the comment'],
         ['blank line', 'separates paragraphs']
       ]);
 
       section('Tasks, FollowUps & Goals', 'Classified comments gain a state machine and controls.', [
-        ['Task states', 'OPEN, WIP (in progress), CHK (check), HOLD (on hold), PRGT (purgatory), DONE (resolved), OBSL (obsolete) — click the state square for the menu.'],
+        ['Task states', 'OPEN, WIP (in progress), CHK (check), HOLD (on hold), PRGT (purgatory), DONE (resolved), OBSL (obsolete) — click the state square for the menu. Every state change is logged as a dated "→ STATE" line in the action section.'],
         ['Collapse', 'DONE / OBSL (and achieved/canceled goals) collapse to one line; click ▸ to expand.'],
         ['FollowUps', 'behave like tasks; resolving one marks it resolvedfollowup.'],
-        ['Goals', '✓ achieve or ✕ cancel writes an "Achieved:" / "Canceled:" marker; goals are visually highlighted. Link a comment to a goal, and double-click any task/goal to jump to its source entry.'],
+        ['Goals', '✓ achieve or ✕ cancel logs a dated "→ Achieved" / "→ Canceled" line in Goal Actions; goals are visually highlighted. Link a comment to a goal, and double-click any task/goal to jump to its source entry.'],
         ['Mute', 'hides a task for 5 days (muted:<date>) to cut noise in Ro3 and the kanban.']
       ]);
       chipLegend('Task-state chips (click the square for the menu):', [
@@ -288,11 +288,72 @@
     document.body.classList.toggle('slim', window.innerWidth < 800);
   }
 
+  // Populate the print surface with the raw .md of the active discussion so the
+  // printout matches the on-disk file exactly (reserved tags, markers, full
+  // timestamps), not the filtered/styled view. Only the member (discussion)
+  // screen maps to a single .md file; on any other screen leave the flag off so
+  // the existing DOM-based print of that screen still applies.
+  // Blob URLs minted for print images, revoked before each rebuild so repeated
+  // prints don't leak object URLs.
+  let printBlobUrls = [];
+  function revokePrintBlobs() {
+    printBlobUrls.forEach((u) => { try { URL.revokeObjectURL(u); } catch (_) {} });
+    printBlobUrls = [];
+  }
+
+  async function preparePrintArea() {
+    const area = document.getElementById('printArea');
+    if (!area) return;
+    const store = Chippy.store;
+    const fmt = Chippy.format;
+    const ui = Chippy.ui;
+    const screen = Chippy.pages && Chippy.pages.getCurrentScreen
+      ? Chippy.pages.getCurrentScreen() : null;
+    let md = '';
+    if (screen === 'member' && store && fmt) {
+      const m = store.getActiveMember && store.getActiveMember();
+      if (m) md = fmt.serializeDiscussion(m);
+    }
+    revokePrintBlobs();
+    if (md && ui) {
+      // Render the .md as regular Markdown — no discussion-specific renderings.
+      ui.safeSetHtml(area, ui.renderMarkdownPlain(md));
+      document.body.classList.add('print-md');
+      // Resolve image references to blob URLs (the data folder isn't
+      // URL-addressable), the same way the discussion view does. Awaited so the
+      // images are present before the print dialog opens.
+      if (store && store.getImageUrl) {
+        const imgs = Array.prototype.slice.call(area.querySelectorAll('img[data-src]'));
+        await Promise.all(imgs.map((img) =>
+          store.getImageUrl(img.getAttribute('data-src'))
+            .then((u) => { if (u) { img.src = u; printBlobUrls.push(u); } })
+            .catch(() => {})
+        ));
+      }
+    } else {
+      area.textContent = '';
+      document.body.classList.remove('print-md');
+    }
+  }
+
   function init() {
     const ver = document.getElementById('appVersion');
     if (ver) ver.textContent = 'v' + VERSION;
 
     applyTheme(currentTheme());
+
+    // General rule: any web link opens in a new tab, no matter where it lives.
+    // Anchors already targeting _blank are left to the browser; downloads and
+    // non-web (mailto / relative / blob) hrefs are not intercepted, and modifier
+    // or middle clicks keep their native behavior.
+    document.addEventListener('click', (ev) => {
+      if (ev.defaultPrevented || ev.button !== 0 || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
+      const a = ev.target && ev.target.closest && ev.target.closest('a[href]');
+      if (!a || a.hasAttribute('download') || a.target === '_blank') return;
+      if (!/^https?:\/\//i.test(a.getAttribute('href') || '')) return;
+      ev.preventDefault();
+      window.open(a.href, '_blank', 'noopener,noreferrer');
+    });
 
     const themeBtn = document.getElementById('btnThemeToggle');
     if (themeBtn) {
@@ -308,7 +369,27 @@
     if (help) help.addEventListener('click', showHelp);
 
     const printBtn = document.getElementById('btnPrintChrome');
-    if (printBtn) printBtn.addEventListener('click', () => window.print());
+    // Print = the .md file rendered as regular Markdown, never the on-screen
+    // presentation. Populate #printArea + set the print-md flag explicitly on the
+    // button click (robust even if 'beforeprint' doesn't fire), and also on the
+    // 'beforeprint' event so Ctrl+P works too.
+    if (printBtn) printBtn.addEventListener('click', async () => { await preparePrintArea(); window.print(); });
+    // Do NOT sanitize/build inside 'beforeprint' — DOMPurify's Trusted Types
+    // policy callback cannot run during the print lifecycle (it throws
+    // "callback is no longer runnable"). The print area is already built (on the
+    // button click and when a discussion opens), so for Ctrl+P we only need to
+    // re-assert the CSS flag synchronously here.
+    window.addEventListener('beforeprint', () => {
+      const area = document.getElementById('printArea');
+      const onMember = Chippy.pages && Chippy.pages.getCurrentScreen &&
+        Chippy.pages.getCurrentScreen() === 'member';
+      if (onMember && area && area.childNodes.length) {
+        document.body.classList.add('print-md');
+      }
+    });
+    window.addEventListener('afterprint', () => {
+      document.body.classList.remove('print-md');
+    });
 
     setSlimTab('mid');
     document.querySelectorAll('.slim-tab').forEach(b =>
@@ -352,6 +433,9 @@
             if (pages) { pages.noteRecent(cs.name); pages.renderSidebar(); pages.renderRecent(); }
             if (Chippy.discussion) Chippy.discussion.render(store.getActiveMember(), { fresh: true });
             if (pages) pages.showScreen('member');
+            // Pre-build the print surface (with resolved images) so Ctrl+P works
+            // too, not only the print button which awaits the build.
+            preparePrintArea();
             // Slim mode: jump from the Navigation tab to the Discussion tab.
             if (document.body.classList.contains('slim')) setSlimTab('mid');
             break;
@@ -401,10 +485,16 @@
     }
 
     // Open Folder button -> store.openFolder(); errors surface on the status line.
+    // After a successful open, the button's tooltip shows the loaded folder
+    // (the File System Access API exposes the folder name, not the full path).
     const openBtn = document.getElementById('btnOpenFolder');
     if (openBtn && store) {
       openBtn.addEventListener('click', async () => {
-        try { await store.openFolder(); }
+        try {
+          const st = await store.openFolder();
+          const fname = st && st.dirHandle && st.dirHandle.name;
+          if (fname) openBtn.title = 'Loaded folder: ' + fname;
+        }
         catch (err) {
           if (err && err.name === 'AbortError') return; // user dismissed picker
           if (status) {

@@ -1,0 +1,33 @@
+# .gitattributes — pin line endings so branch switches stop rewriting every file.
+#
+# Rename this file to ".gitattributes" and place it at the repository root
+# (same folder as the .git directory and package.json).
+#
+# How it works:
+#   Git stores text files with LF in the committed blob and, on checkout, writes
+#   them to your working tree with CRLF. This is deterministic and independent of
+#   each machine's core.autocrlf setting, so switching staging<->main no longer
+#   shows every file as "modified" and no longer rewrites line endings. Real
+#   changes (and real corruption) become visible instead of buried in EOL noise.
+#
+# One-time setup after adding this file (expected to touch many files once):
+#   git add .gitattributes
+#   git commit -m "Add .gitattributes to pin line endings"
+#   git add --renormalize .
+#   git commit -m "Normalize line endings"
+# After that, diffs and branch switches are clean.
+
+# Default: treat everything as text, store as LF, check out as CRLF (Windows).
+* text=auto eol=crlf
+
+# Vendored, minified library — keep byte-for-byte; never touch line endings.
+src/local/dompurify.min.js -text
+
+# Binary assets — never normalize.
+*.af    binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.ico   binary
+*.woff  binary
+*.woff2 binary

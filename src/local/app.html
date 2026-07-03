@@ -5,16 +5,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Chippy</title>
-  <link rel="icon" type="image/svg+xml" href="chippy-icon.svg?v=3.0.0" />
-  <link rel="stylesheet" href="style.css?v=3.0.0" />
+  <!-- Favicon is inlined as a data: URI so no file fetch happens: when app.html
+       is opened from file://, the browser-initiated favicon load is blocked
+       ("file: URLs are treated as unique security origins") and logs a console
+       error. At favicon size the icon reads as the indigo tile, so a compact
+       inline equivalent replaces fetching chippy-icon.svg. -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='7' y='7' width='86' height='86' rx='10' fill='%230c18a0' stroke='white' stroke-width='5'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="style.css?v=3.1.0-dev.114" />
   <!-- DOMPurify is vendored flat (no subfolder). Loaded before the app so the global is ready. -->
-  <script src="dompurify.min.js?v=3.0.0"></script>
+  <script src="dompurify.min.js?v=3.1.0-dev.114"></script>
 </head>
 <body>
   <!-- Top chrome: 36px bar across the viewport (R56). Hardcoded indigo, identical in both themes. -->
   <div id="topChrome" class="top-chrome">
     <div class="tc-left">
-      <img class="app-icon" src="chippy-icon.svg?v=3.0.0" alt="" />
+      <img class="app-icon" src="chippy-icon.svg?v=3.1.0-dev.114" alt="" />
       <h2>Chippy <span id="appVersion" class="app-version"></span></h2>
     </div>
     <div class="tc-middle">
@@ -52,6 +57,7 @@
         <button class="nav-btn" data-screen="allNames">Names</button>
         <button class="nav-btn" data-screen="allTags">Tags</button>
         <button class="nav-btn" data-screen="kanban">Kanban</button>
+        <button class="nav-btn" data-screen="calendar">Calendar</button>
         <button class="nav-btn" data-screen="ro3">Ro3</button>
         <button class="nav-btn" data-screen="activity">Activity</button>
         <button class="nav-btn" data-screen="summary">Summary</button>
@@ -80,23 +86,30 @@
       <section id="allNamesScreen" class="screen"></section>
       <section id="allTagsScreen" class="screen"></section>
       <section id="kanbanScreen" class="screen"></section>
+      <section id="calendarScreen" class="screen"></section>
       <section id="ro3Screen" class="screen"></section>
       <section id="activityScreen" class="screen"></section>
       <section id="summaryScreen" class="screen"></section>
     </main>
   </div>
 
+  <!-- Print surface: filled on demand with the raw .md of the active discussion
+       (exactly the on-disk file, via format.serializeDiscussion) so printing
+       reflects the stored file, not the rendered presentation. Hidden on screen;
+       shown only under @media print when body has the print-md class. -->
+  <div id="printArea" class="print-area" aria-hidden="true"></div>
+
   <!-- Classic scripts (no ES modules) so the app runs directly from file://.
        Load order matters: each file attaches to the global Chippy namespace,
        and later files depend on earlier ones (io needs format; main needs all). -->
-  <script src="format.js?v=3.0.0"></script>
-  <script src="taxonomy.js?v=3.0.0"></script>
-  <script src="io.js?v=3.0.0"></script>
-  <script src="store.js?v=3.0.0"></script>
-  <script src="ui.js?v=3.0.0"></script>
-  <script src="discussion.js?v=3.0.0"></script>
-  <script src="pages.js?v=3.0.0"></script>
-  <script src="dashboard.js?v=3.0.0"></script>
-  <script src="main.js?v=3.0.0"></script>
+  <script src="format.js?v=3.1.0-dev.114"></script>
+  <script src="taxonomy.js?v=3.1.0-dev.114"></script>
+  <script src="io.js?v=3.1.0-dev.114"></script>
+  <script src="store.js?v=3.1.0-dev.114"></script>
+  <script src="ui.js?v=3.1.0-dev.114"></script>
+  <script src="discussion.js?v=3.1.0-dev.114"></script>
+  <script src="pages.js?v=3.1.0-dev.114"></script>
+  <script src="dashboard.js?v=3.1.0-dev.114"></script>
+  <script src="main.js?v=3.1.0-dev.114"></script>
 </body>
 </html>

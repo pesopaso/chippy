@@ -1,0 +1,118 @@
+name: Release
+
+# Manual, fully-in-CI release pipeline.
+#
+# What it does, in order:
+#   1. Stamps the chosen version across the source tree (main.js + app.html).
+#   2. Validates that documentation/changelog.md has an entry for the version
+#      (this is the guard — no changelog entry, no release).
+#   3. Makes the release commit and pushes it, then creates and pushes the tag.
+#   4. Builds chippy.zip (app + demo data) with the dependency-free packager.
+#   5. Publishes a GitHub Release with the changelog section as the body and the
+#      zip(s) attached.
+#
+# Trigger it from the Actions tab → "Release" → Run workflow, and enter the
+# version (e.g. 3.1.0). Run it from the branch you release from (main).
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version, semver without the leading v (e.g. 3.1.0)"
+        required: true
+        type: string
+      prerelease:
+        description: "Mark the GitHub Release as a pre-release"
+        required: false
+        type: boolean
+        default: false
+
+# Allow the job to push the release commit/tag and create the Release.
+permissions:
+  contents: write
+
+# Never run two releases at once.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the release branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Normalize and validate version
+        id: ver
+        run: |
+          VERSION="${{ inputs.version }}"
+          VERSION="${VERSION#v}"
+          if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "::error::Invalid version '$VERSION' (expected semver like 3.1.0 or 3.1.0-rc.1)"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Fail if the tag already exists
+        run: |
+          TAG="${{ steps.ver.outputs.tag }}"
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "::error::Tag $TAG already exists. Bump the version or delete the tag."
+            exit 1
+          fi
+
+      - name: Extract changelog notes (guards that an entry exists)
+        run: node scripts/release-notes.mjs "${{ steps.ver.outputs.version }}" release-notes.md
+
+      - name: Stamp version into the source tree
+        run: |
+          node scripts/stamp-version.mjs "${{ steps.ver.outputs.version }}"
+          node scripts/stamp-version.mjs --check
+
+      - name: Make the release commit and tag, then push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/local/main.js src/local/app.html
+          if git diff --cached --quiet; then
+            echo "No version changes to commit (already stamped); tagging current HEAD."
+          else
+            git commit -m "Release ${{ steps.ver.outputs.tag }}"
+          fi
+          git tag -a "${{ steps.ver.outputs.tag }}" -m "Chippy ${{ steps.ver.outputs.tag }}"
+          git push origin HEAD
+          git push origin "${{ steps.ver.outputs.tag }}"
+
+      - name: Build chippy.zip
+        run: node scripts/build-package.mjs --versioned
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PRERELEASE=""
+          if [ "${{ inputs.prerelease }}" = "true" ]; then PRERELEASE="--prerelease"; fi
+          gh release create "${{ steps.ver.outputs.tag }}" \
+            dist/chippy.zip \
+            "dist/chippy-${{ steps.ver.outputs.version }}.zip" \
+            --title "Chippy ${{ steps.ver.outputs.tag }}" \
+            --notes-file release-notes.md \
+            $PRERELEASE
+
+      - name: Upload build artifact (always, for inspection)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chippy-zip
+          path: dist/*.zip
+          if-no-files-found: ignore

@@ -733,3 +733,54 @@ reference the requirement (`R#`) / plan step.
 
 - **`pages.js`** — `makeSearchBar` accepts an initial value; `openKanban` mounts the bar above the board and applies `applyUnifiedFilter` to the task pool. Typing rebuilds only the board (input keeps focus); the query survives the full re-renders from drag-drop and the Focus toggle (`kanbanSearch` module state) and resets on fresh navigation (`DISC_FILTER_RESET`).
 - New e2e test in `search.spec.mjs`: board filters on a freetext query and restores when cleared.
+
+### v3.1.0-dev.103 — 2026-06-15 — Links always open in a new tab
+
+> Rendered links open in a new browser tab rather than replacing the app.
+
+- **`ui.js`** — rendered `<a>` links carry `target="_blank" rel="noopener noreferrer"`.
+- **`main.js`** — a document-level click handler opens bare `http(s)` links via `window.open(…, '_blank', 'noopener,noreferrer')`, leaving Ctrl/⌘/middle-clicks to the browser.
+
+### v3.1.0-dev.107 — 2026-06-16 — Print renders the `.md` as regular Markdown
+
+> The print button now prints the on-disk `.md` rendered as plain Markdown (images included), never the styled discussion UI.
+
+- **`main.js`** — `preparePrintArea()` serializes the active discussion with `format.serializeDiscussion` (byte-identical to the file), renders it through a discussion-free Markdown renderer, resolves image references to blob URLs, and toggles a `print-md` body flag. Runs on the print button (awaited so images are ready) and is pre-built on discussion open so Ctrl+P works too; print blob URLs are revoked between prints.
+- **`ui.js`** — `parseMd` accepts an optional inline renderer; new `mdInlinePlain` / `renderMarkdownPlain` render standard Markdown without the discussion-specific transforms (no `@[Name]` chips, no lazy image `data-src`). Added a reusable `hideTime` option to `entryCard`.
+- **`app.html` / `style.css`** — a `#printArea` surface plus `@media print` rules that show only the rendered Markdown and hide the app.
+- **Fix** — `beforeprint` no longer runs DOMPurify; its Trusted Types policy cannot execute during the print lifecycle and threw `createHTML … callback is no longer runnable` when a print dialog was cancelled. The surface is built before `window.print()` instead.
+
+### v3.1.0-dev.108 — 2026-06-16 — Startup reconciles navigation with the folder's files
+
+> On opening a folder the navigation list is reconciled against the actual discussion files — the folder is the source of truth (files may be added/removed by external or automated processes).
+
+- **`io.js`** — new `reconcileNavWithFiles(dirHandle, nav)` (+ `listArchived`): drops nav entries whose `.md` is gone, adds entries for files not yet listed, matches archived entries to `*.archive.md`, preserves each kept entry's metadata and order, and reports whether anything changed. Pure except for the directory read.
+- **`store.js`** — `openFolder` runs the reconcile after `loadIndexes` and persists `navigation.chippy.md` only when it changed (idempotent; errors are caught so startup never breaks).
+
+### v3.1.0-dev.110 — 2026-06-16 — AI Summary: name-privacy toggle
+
+> A "Remove names" toggle on the AI Summary page anonymizes names before any text is sent to the API — for use with public/non-local endpoints.
+
+- **`pages.js`** — `redactNames` (+ `initialsOf`): before the prompt is POSTed, `@[Full Name]` references and any registered name are replaced with the person's initials (`Philipp Sommer` → `PS`, `Maria Rodriguez Lopez` → `MRL`); names sharing initials get a numeric suffix (`PS`, `PS2`). Applied only when the toggle is on; the preference persists in `localStorage`. Only the outbound prompt is affected — nothing on disk changes.
+- **`style.css`** — `.summary-privacy` toggle styling.
+
+### v3.1.0-dev.112 — 2026-06-20 — Calendar page (day / focus / work-week / full-week / month)
+
+> A new Calendar cross-view places open tasks and followups that have a due date into five layouts.
+
+- **`app.html`** — `Calendar` nav button + `#calendarScreen`.
+- **`pages.js`** — `openCalendar` with five views: **Day** (due today), **Focus** (overdue / due today / next two days), **Work week** (Mon–Fri), **Full week** (Mon–Sun) and **Month** (this week + the next three). Shares the disc-tag filter and unified search, reuses the interactive task card (state / priority / action / mute), and re-renders through `pages.refresh()` on task/due changes. Today's column/cell is highlighted; closed and obsolete tasks are excluded, muted ones dimmed.
+- Calendar task cards drop the redundant timestamp (`hideTime`); month cells are ~60% taller and show a compact info box per task (state label, priority dot, two-line title, discussion name) that opens the discussion on click.
+- **`style.css`** — calendar board / columns / month grid / info-box styles.
+
+### v3.1.0-dev.113 — 2026-06-26 — Fix: `#tag` recognized anywhere in a comment and while editing
+
+> Tagging worked reliably only at the end of an empty comment and not at all while editing; it now works anywhere in the text and can promote an existing comment to a task.
+
+- **`discussion.js`** (composer) and **`ui.js`** (inline editor) — the `#tag ` extractor now matches the completed tag immediately **before the caret** instead of only at the very end of the whole value, and restores the cursor. This fixes mid-comment tagging and lets an existing comment be turned into a task by typing `#task ` while editing.
+
+### v3.1.0-dev.114 — 2026-07-02 — Fix: URLs with underscores no longer mangled
+
+> Underscores inside a URL were being turned into `<em>` by the Markdown emphasis pass, which broke the link.
+
+- **`ui.js`** — both the discussion renderer (`mdInline`) and the print renderer (`mdInlinePlain`) shield generated `<a>` / `<img>` / name-chip HTML behind placeholders before the bold/italic/strikethrough passes and restore them afterward (the same technique already used for code spans), so underscores and other special characters in links survive intact.

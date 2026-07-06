@@ -447,6 +447,7 @@
           case 'actionAppended':
           case 'muteToggled':
           case 'goalStateChanged':
+          case 'ideaStateChanged':
           case 'entryEdited': {
             const onMember = pages && pages.getCurrentScreen && pages.getCurrentScreen() === 'member';
             const handled = onMember && Chippy.discussion && Chippy.discussion.refreshEntry &&

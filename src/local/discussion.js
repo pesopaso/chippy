@@ -459,6 +459,60 @@
     return wrap;
   }
 
+  /* --------------------------- ideas panel ------------------------------ */
+
+  function renderIdeaRow(member, idea) {
+    const idx = (member.entries || []).indexOf(idea);
+    const row = el('div', 'idea-item');
+
+    // Idea state badge
+    let ideaState = 'Considered';
+    let ideaClass = 'state-considered';
+    if ((idea.tags || []).includes('exploredidea')) { ideaState = 'Explored'; ideaClass = 'state-explored'; }
+    else if ((idea.tags || []).includes('promoteditea')) { ideaState = 'Promoted'; ideaClass = 'state-promoted'; }
+    else if ((idea.tags || []).includes('shelvedidea')) { ideaState = 'Shelved'; ideaClass = 'state-shelved'; }
+    const ideaBadge = el('span', 'idea-state-badge ' + ideaClass, ideaState); ideaBadge.title = 'Change idea state';
+    ideaBadge.addEventListener('click', () =>
+      ui().showIdeaStateDropdown(ideaBadge, ideaState.toLowerCase(), (newState) =>
+        store().updateIdeaState(member.name, idea.created_at, newState, idx)));
+
+    // Priority dot (if present)
+    const prio = priorityOf(idea.tags) || 'low';
+    const ps = el('span', 'prio-square prio-' + prio, PRIO_LABEL[prio]);
+    ps.title = 'Change priority';
+    ps.addEventListener('click', () => store().cyclePriority(member.name, idea.created_at, idx));
+
+    // Idea text (first line)
+    const txt = el('div', 'idea-text');
+    ui().safeSetHtml(txt, ui().renderEntryText(firstLine(idea.body)));
+    txt.addEventListener('dblclick', () => scrollToEntry(idea.created_at));
+
+    // Top row: text with controls
+    const top = el('div', 'idea-top');
+    top.append(txt);
+
+    // Meta row: badge, priority, spacer, action button
+    const meta = el('div', 'idea-meta');
+    meta.append(ideaBadge, ps);
+    meta.append(el('span', 'meta-spacer'));
+    const act = el('span', 'icon-btn act', '⚡'); act.title = 'Add action';
+    act.addEventListener('click', () =>
+      ui().showActionModal('Add action', (text) => store().appendAction(member.name, idea.created_at, text, idx)));
+    meta.append(act);
+
+    row.append(top, meta);
+    return row;
+  }
+
+  function renderIdeasPanel(member) {
+    const wrap = el('div', 'ideas-section');
+    wrap.append(el('div', 'section-label', 'Open Ideas'));
+    const ideas = store().getOpenIdeas(member);
+    if (!ideas.length) { wrap.append(el('div', 'panel-empty', 'No open ideas.')); return wrap; }
+    for (const idea of ideas) wrap.append(renderIdeaRow(member, idea));
+    return wrap;
+  }
+
   /* --------------------------- links + gallery ------------------------- */
 
   function renderLinksPanel(member) {
@@ -597,7 +651,7 @@
     if (right) {
       const sc = right.scrollTop;
       right.replaceChildren(
-        renderTasksPanel(member), renderGoalsPanel(member),
+        renderTasksPanel(member), renderGoalsPanel(member), renderIdeasPanel(member),
         renderLinksPanel(member), renderGallery(member));
       right.scrollTop = sc;
     }
@@ -709,6 +763,7 @@
     left.append(histHost);
     right.append(renderTasksPanel(member));
     right.append(renderGoalsPanel(member));
+    right.append(renderIdeasPanel(member));
     right.append(renderLinksPanel(member));
     right.append(renderGallery(member));
 

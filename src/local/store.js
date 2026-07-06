@@ -157,6 +157,10 @@
       const m = member || selectors.getActiveMember();
       return m && m.entries ? m.entries.filter(isOpenGoal) : [];
     },
+    getOpenIdeas: (member) => {
+      const m = member || selectors.getActiveMember();
+      return m && m.entries ? m.entries.filter(isOpenIdea) : [];
+    },
     getDiscussionTags: () => {
       const seen = new Set();
       const tags = [];
@@ -545,6 +549,36 @@
     await ensureTagsInUnion(e.tags);
     await io().saveDiscussion(state.dirHandle, m);
     emit({ type: 'muteToggled', name, entryId });
+  }
+
+  /* ----------------------------- ideas --------------------------------- */
+
+  const IDEA_STATE_TAGS = ['consideredidea', 'exploredidea', 'promoteditea', 'shelvedidea'];
+  const IDEA_STATE_LABEL = { considered: 'Considered', explored: 'Explored', promoted: 'Promoted', shelved: 'Shelved' };
+
+  // Idea state transition: change from one state to another (considered / explored / promoted / shelved).
+  // Logs the transition as an Idea Actions bullet.
+  async function updateIdeaState(name, entryId, newState, idx) {
+    const [m, e] = findEntry(name, entryId, idx);
+    if (!e || !isIdeaEntry(e)) return;
+    const currentState = getIdeaState(e);
+    if (currentState === newState) return; // no change
+
+    // Strip all idea state tags and add the new one
+    e.tags = e.tags.filter(t => !IDEA_STATE_TAGS.includes(t));
+    const stateTag = newState === 'considered' ? null :
+                     newState === 'explored' ? 'exploredidea' :
+                     newState === 'promoted' ? 'promoteditea' :
+                     newState === 'shelved' ? 'shelvedidea' : null;
+    if (stateTag) e.tags.push(stateTag);
+
+    // Log the state transition as an action bullet
+    const label = IDEA_STATE_LABEL[newState] || newState;
+    logStateAction(e, label);
+
+    await ensureTagsInUnion(e.tags);
+    await io().saveDiscussion(state.dirHandle, m);
+    emit({ type: 'ideaStateChanged', name, entryId, state: newState });
   }
 
   /* ----------------------------- goals --------------------------------- */
@@ -957,7 +991,7 @@
       subscribe, openFolder, selectMember, setActiveScreen, setTheme,
       toggleFavorite, setDiscussionTag, reloadMember, archiveDiscussion, renameDiscussion, createDiscussion, setPrep, addEntry,
       setTaskState, cyclePriority, setDue, appendAction, toggleMute, isMuted,
-      setGoalState, editEntry, getLinks, renameLink, moveEntry, deleteEntry,
+      setGoalState, updateIdeaState, editEntry, getLinks, renameLink, moveEntry, deleteEntry,
       saveImage, getImageUrl,
       ensureAllLoaded, collectEntries, applyUnifiedFilter, getAllNames, getAllTags,
       getRo3Candidates, pickRo3, doneRecent, resolvedDate,

@@ -38,13 +38,24 @@
 
   const CLOSED_TASK = new Set(['resolvedtask', 'obsoletetask', 'resolvedfollowup']);
   const CLOSED_GOAL = new Set(['achievedgoal', 'canceledgoal', 'resolvedgoal']);
+  const IDEA_STATES = new Set(['consideredidea', 'exploredidea', 'promoteditea', 'shelvedidea']);
   const PRIORITY = ['high', 'medium', 'low'];
-  const KINDS = ['task', 'followup', 'goal'];
+  const KINDS = ['task', 'followup', 'goal', 'idea'];
 
   const isTaskEntry = e => e.tags && (e.tags.includes('task') || e.tags.includes('followup'));
   const isOpenTask = e => isTaskEntry(e) && !e.tags.some(t => CLOSED_TASK.has(t));
   const isGoalEntry = e => e.tags && e.tags.includes('goal');
   const isOpenGoal = e => isGoalEntry(e) && !e.tags.some(t => CLOSED_GOAL.has(t));
+  const isIdeaEntry = e => e.tags && e.tags.includes('idea');
+  const getIdeaState = e => {
+    // Returns 'considered', 'explored', 'promoted', or 'shelved'
+    if (!isIdeaEntry(e)) return null;
+    if (e.tags.includes('exploredidea')) return 'explored';
+    if (e.tags.includes('promoteditea')) return 'promoted';
+    if (e.tags.includes('shelvedidea')) return 'shelved';
+    return 'considered'; // default if no state tag
+  };
+  const isOpenIdea = e => isIdeaEntry(e) && !e.tags.includes('shelvedidea');
 
   function io() {
     if (!Chippy.io) throw new Error('Chippy.io not loaded — io.js must load before store.js');

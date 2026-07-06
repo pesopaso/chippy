@@ -127,13 +127,13 @@ and the body is consolidated to a single line on the next write.)
 
 **Resolution-action log** — a single section at the end of the body recording dated actions.
 The header depends on entry type: `Task Resolution Actions` (task), `Followup Actions`
-(followup), or `Goal Actions` (goal). Each action is a bullet `- YYYY-MM-DD : <text>` — date
+(followup), `Goal Actions` (goal), or `Idea Actions` (idea). Each action is a bullet `- YYYY-MM-DD : <text>` — date
 only, one space on each side of the colon.
 
-**State changes are logged here.** Every task, followup, or goal state transition appends an
+**State changes are logged here.** Every task, followup, goal, or idea state transition appends an
 action bullet `- YYYY-MM-DD : → <LABEL>`, where `<LABEL>` is the state's display label (task
 states `OPEN`, `WIP`, `CHK`, `HOLD`, `PRGT`, `DONE`, `OBSL`; goal states `Achieved`,
-`Canceled`, `Open`). The bullet does **not** carry the entry's state — the state is always the
+`Canceled`, `Open`; idea states `Considered`, `Explored`, `Promoted`, `Shelved`). The bullet does **not** carry the entry's state — the state is always the
 state tag in the header (section 2.2); the bullet is only a human-readable record of *when*
 the transition happened.
 
@@ -178,6 +178,7 @@ state markers are ever written**. The only marker still written is the move mark
 | `task`, `followup` | Classifies the entry as a task or a followup. Open by default. |
 | `goal` | Classifies the entry as a goal. |
 | `goal-<5 chars>` | A goal's unique identity tag (a 5-character base-36 suffix). Copied onto every comment linked to that goal, forming the historical trail. |
+| `idea` | Classifies the entry as an idea — an exploratory thought or possibility not yet committed as a task or goal. |
 | `high`, `medium`, `low` | Priority. |
 | `muted:<YYYY-MM-DD>` | Parking-lot mute marker; the encoded date is the auto-unmute expiry. |
 
@@ -211,13 +212,24 @@ Naming note: the "Archived" state is stored as the `achievedgoal` tag and its bo
 `Achieved:` — the human-facing label ("Archived") and the stored token (`achieved…`) differ;
 the data uses the `achieved` form. The older `resolvedgoal` tag is still accepted on read.
 
+**Idea states.** An idea's state is carried by its state tag. There are four states:
+
+| State | Label | Tag |
+|---|---|---|
+| Considered | Entry is captured and under consideration | `consideredidea` (or no state tag) |
+| Explored | Idea has been discussed or researched | `exploredidea` |
+| Promoted | Idea has graduated to a task or goal | `promoteditea` |
+| Shelved | Idea is deprioritized or deemed not viable | `shelvedidea` |
+
+The absence of any state tag is read as Considered (so `consideredidea` is rarely written explicitly). A shelved idea may transition back to Considered if circumstances change (unshelving).
+
 Value rules:
 
 - A `task`, `followup`, or `goal` entry with no priority tag is stored as `low`.
-- The absence of any state tag is read as OPEN (tasks) or as an open goal.
+- The absence of any state tag is read as OPEN (tasks), as an open goal, or as Considered (ideas).
 - Every `goal` entry carries one unique `goal-<5 chars>` identity tag.
 
-State, priority, `task`/`followup`, and `muted:*` tags remain in the file but are hidden from
+State, priority, `task`/`followup`, `idea`, and `muted:*` tags remain in the file but are hidden from
 the on-screen tag chips.
 
 ### 2.3 Legacy `## Goals` section (read-only)

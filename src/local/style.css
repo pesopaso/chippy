@@ -429,6 +429,7 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .history-entry.entry-task { border-left: 3px solid var(--orange); }
 .history-entry.entry-followup { border-left: 3px solid var(--followup); }
 .history-entry.entry-goal { border-left: 3px solid var(--goal); }
+.history-entry.entry-idea { border-left: 3px solid var(--idea, #9c27b0); }
 .history-entry.collapsed .entry-text {
   display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
 }
@@ -444,7 +445,20 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .state-resolvedtask { background: var(--state-done); }
 .state-obsoletetask { background: var(--state-obsl); }
 .state-open { background: var(--state-open); }
+
+/* ---- Idea state badges -------------------------------------------------- */
+.idea-state-badge {
+  font-size: .6rem; font-weight: 700; color: #000;
+  padding: 1px 5px; border-radius: 3px; flex: 0 0 auto;
+}
+.idea-state-badge.state-considered { background: #b3e5fc; }
+.idea-state-badge.state-explored { background: #fff9c4; }
+.idea-state-badge.state-promoted { background: #c8e6c9; }
+.idea-state-badge.state-shelved { background: #e0e0e0; }
+.idea-icon { font-size: .9rem; flex: 0 0 auto; }
+
 .history-entry.closed { opacity: .6; }
+.history-entry.shelved { opacity: .7; }
 
 /* ---- Right-panel tasks ------------------------------------------------- */
 .tasks-section { margin-bottom: 0; }

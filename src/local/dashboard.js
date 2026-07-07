@@ -27,7 +27,7 @@
   const imageCount = body => ((String(body).match(/!\[[^\]]*\]\(/g) || []).length);
 
   function inflowByRange(entries, range) {
-    const c = { comment: 0, task: 0, followup: 0, goal: 0 };
+    const c = { comment: 0, task: 0, followup: 0, goal: 0, idea: 0 };
     for (const e of entries) if (withinRange(e.created_at, range)) c[entryType(e)]++;
     return c;
   }
@@ -50,16 +50,29 @@
     }
     return c;
   }
+  function ideaStateCounts(entries) {
+    const c = { considered: 0, explored: 0, promoted: 0, shelved: 0 };
+    for (const e of entries) {
+      const t = e.tags || [];
+      if (!t.includes('idea')) continue;
+      if (t.includes('exploredidea')) c.explored++;
+      else if (t.includes('promoteditea')) c.promoted++;
+      else if (t.includes('shelvedidea')) c.shelved++;
+      else c.considered++;
+    }
+    return c;
+  }
   function monthlyTimeline(entries) {
     const map = new Map();
     for (const e of entries) {
       const mo = (e.created_at || '').slice(0, 7);
       if (!mo) continue;
-      if (!map.has(mo)) map.set(mo, { month: mo, comments: 0, tasks: 0, links: 0, images: 0 });
+      if (!map.has(mo)) map.set(mo, { month: mo, comments: 0, tasks: 0, ideas: 0, links: 0, images: 0 });
       const r = map.get(mo);
       const ty = entryType(e);
       if (ty === 'comment') r.comments++;
       else if (ty === 'task' || ty === 'followup') r.tasks++;
+      else if (ty === 'idea') r.ideas++;
       r.links += linkCount(e.body);
       r.images += imageCount(e.body);
     }
@@ -209,13 +222,13 @@
     box.append(el('div', 'chart-title', 'Activity over time'));
     if (!rows.length) { box.append(el('div', 'panel-empty', 'No data.')); return box; }
     const W = Math.max(320, rows.length * 40), H = 140, pad = 24;
-    const max = Math.max(1, ...rows.flatMap(r => [r.comments, r.tasks, r.links, r.images]));
+    const max = Math.max(1, ...rows.flatMap(r => [r.comments, r.tasks, r.ideas || 0, r.links, r.images]));
     const s = svg('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', height: H });
     const x = i => pad + (rows.length === 1 ? 0 : i * (W - 2 * pad) / (rows.length - 1));
     const y = v => H - pad - (v / max) * (H - 2 * pad);
-    const series = [['comments', VAR('--accent')], ['tasks', VAR('--orange')], ['links', VAR('--green')], ['images', VAR('--pink')]];
+    const series = [['comments', VAR('--accent')], ['tasks', VAR('--orange')], ['ideas', VAR('--idea')], ['links', VAR('--green')], ['images', VAR('--pink')]];
     for (const [key, color] of series) {
-      const pts = rows.map((r, i) => `${x(i)},${y(r[key])}`).join(' ');
+      const pts = rows.map((r, i) => `${x(i)},${y(r[key] || 0)}`).join(' ');
       s.append(svg('polyline', { points: pts, fill: 'none', stroke: color, 'stroke-width': 2 }));
     }
     box.append(s);
@@ -299,7 +312,7 @@
 
     const grid = el('div', 'chart-grid');
     // Five time-range comment-inflow pies.
-    const TYPE_COLORS = [['comment', VAR('--accent')], ['task', VAR('--orange')], ['followup', VAR('--followup')], ['goal', VAR('--goal')]];
+    const TYPE_COLORS = [['comment', VAR('--accent')], ['task', VAR('--orange')], ['followup', VAR('--followup')], ['goal', VAR('--goal')], ['idea', VAR('--idea')]];
     for (const [range, title] of [['week', 'Last Week'], ['month', 'Last Month'], ['quarter', 'Last Quarter'], ['year', 'Last Year'], ['all', 'All Time']]) {
       const c = inflowByRange(entries, range);
       grid.append(pie(title, TYPE_COLORS.map(([k, col]) => [k, c[k], col])));
@@ -317,6 +330,12 @@
     grid.append(pie('Goal states', [
       ['Open', gs.open, VAR('--goal')], ['Achieved', gs.achieved, VAR('--green')], ['Canceled', gs.canceled, VAR('--red')]
     ]));
+    // Idea states (colors match the idea state badges in style.css).
+    const is = ideaStateCounts(entries);
+    grid.append(pie('Idea states', [
+      ['Considered', is.considered, '#b3e5fc'], ['Explored', is.explored, '#fff9c4'],
+      ['Promoted', is.promoted, '#c8e6c9'], ['Shelved', is.shelved, '#e0e0e0']
+    ]));
     container.append(grid);
 
     container.append(timeline(monthlyTimeline(entries)));
@@ -327,7 +346,7 @@
   Chippy.dashboard = {
     render,
     // pure aggregations exposed for tests
-    inflowByRange, taskStateCounts, goalStateCounts, monthlyTimeline, cumulative, entryType,
+    inflowByRange, taskStateCounts, goalStateCounts, ideaStateCounts, monthlyTimeline, cumulative, entryType,
     taskBurndown, closedMonthOf, monthsBetween, taskExecution, daysBetween
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -784,3 +784,17 @@ reference the requirement (`R#`) / plan step.
 > Underscores inside a URL were being turned into `<em>` by the Markdown emphasis pass, which broke the link.
 
 - **`ui.js`** — both the discussion renderer (`mdInline`) and the print renderer (`mdInlinePlain`) shield generated `<a>` / `<img>` / name-chip HTML behind placeholders before the bold/italic/strikethrough passes and restore them afterward (the same technique already used for code spans), so underscores and other special characters in links survive intact.
+
+### v3.2.0-dev.115 — 2026-07-07 — Ideas: new entry type with lifecycle, panel, search and dashboard integration
+
+> Ideas (💡) capture possibilities that aren't yet commitments — a middle ground between comments and tasks/goals. Tag a comment `#idea`; it carries a four-state lifecycle (Considered → Explored → Promoted / Shelved) with transitions logged as dated action bullets. Shipped across three phases (data model, interaction, cross-discussion integration).
+
+- **`datadefinition.md`** — `idea` reserved tag, idea state tags (`consideredidea`, `exploredidea`, `promoteditea`, `shelvedidea`) and the Idea Actions log format.
+- **`taxonomy.js`** — `idea` and the idea state tags join `RESERVED` (hidden from chip rows and tag suggestions); `idea` joins `PROMOTABLE` (typeable like `#task`); `entryType()` classifies ideas.
+- **`store.js`** — `isIdeaEntry` / `getIdeaState` / `isOpenIdea` helpers and the `getOpenIdeas` selector; `updateIdeaState(name, entryId, newState, idx)` strips the old state tag, adds the new one and logs `- YYYY-MM-DD : → <Label>`; unified search understands `#idea:<state>` / `#state:<state>` (considered / explored / promoted / shelved).
+- **`ui.js`** — `entryCard` renders ideas with a 💡 icon and a clickable state badge (opens `showIdeaStateDropdown`); shelved ideas collapse to one line.
+- **`discussion.js`** — "Open Ideas" right-panel section: state badge, priority dot, ⚡ action, double-click jump; re-rendered in place on single-entry mutations.
+- **`main.js`** — `ideaStateChanged` joins the single-entry refresh group; the help dialog documents the idea lifecycle, badges and search syntax.
+- **`pages.js` / `app.html`** — new "Ideas" cross-discussion page with state tabs (All / Considered / Explored / Promoted / Shelved) plus disc-tag filter and unified search; All Comments gains a "💡 Ideas only" toggle.
+- **`dashboard.js`** — inflow pies count ideas as their own slice; new "Idea states" pie (badge colors); the activity timeline plots an ideas series.
+- **`style.css`** — `--idea` accent variable, idea state badge palette, ideas-panel and dropdown styles.

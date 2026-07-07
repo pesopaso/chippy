@@ -28,6 +28,7 @@
   --followup: #d9a3bc;
   --goal: #225a7a;
   --goal-bg: #203043; /* surface with a hint of goal teal (dark) */
+  --idea: #9c27b0;
 
   /* Task-state fills (WIP/CHK are dedicated; others reuse accents) */
   --state-open: var(--orange);

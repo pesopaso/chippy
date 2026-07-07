@@ -23,6 +23,9 @@
   let allLinksTagFilter = null;
   let allNamesTagFilter = null;
   let allTagsTagFilter = null;
+  let allIdeasTagFilter = null;
+  let allIdeasStateTab = 'all';       // All Ideas page: state tab filter
+  let allCommentsIdeasOnly = false;   // All Comments: 💡 ideas-only toggle
   let ro3TagFilter = null;
   const recent = []; // discussion names, insertion order, max 10
 
@@ -257,11 +260,19 @@
     const total = store().collectEntries().length;
     crossScreen('allCommentsScreen', 'All Comments', (c, q) => {
       const items = store().applyUnifiedFilter(store().collectEntries({ discTag: allCommentsTagFilter }), q)
+        .filter(e => !allCommentsIdeasOnly || (e.tags || []).includes('idea'))
         .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
       if (!items.length) { c.append(el('div', 'panel-empty', 'No comments.')); return; }
       for (const e of items) c.append(entryRow(e, OVERVIEW_OPTS));
-    }, total, (screen) => addCrossDiscFilter(screen, 'allCommentsFilters',
-      () => allCommentsTagFilter, v => { allCommentsTagFilter = v; }, openComments));
+    }, total, (screen) => {
+      addCrossDiscFilter(screen, 'allCommentsFilters',
+        () => allCommentsTagFilter, v => { allCommentsTagFilter = v; }, openComments);
+      const row = el('div', 'cross-disc-tag-filters');
+      const btn = el('button', 'disc-tag-filter-btn' + (allCommentsIdeasOnly ? ' active' : ''), '💡 Ideas only');
+      btn.addEventListener('click', () => { allCommentsIdeasOnly = !allCommentsIdeasOnly; openComments(); });
+      row.append(btn);
+      screen.append(row);
+    });
   }
   function openTasks() {
     crossScreen('allTasksScreen', 'All Tasks', (c, q) => {
@@ -286,6 +297,31 @@
       for (const e of items) c.append(entryRow(e, GOAL_OVERVIEW_OPTS));
     }, undefined, (screen) => addCrossDiscFilter(screen, 'allGoalsFilters',
       () => allGoalsTagFilter, v => { allGoalsTagFilter = v; }, openGoals));
+  }
+  // All Ideas: every #idea entry across discussions, filterable by lifecycle
+  // state (Considered / Explored / Promoted / Shelved) via a tab row.
+  const IDEA_STATE_TABS = [['all', 'All'], ['considered', 'Considered'], ['explored', 'Explored'], ['promoted', 'Promoted'], ['shelved', 'Shelved']];
+  const ideaStateOf = tags => tags.includes('exploredidea') ? 'explored' :
+    tags.includes('promoteditea') ? 'promoted' : tags.includes('shelvedidea') ? 'shelved' : 'considered';
+  function openIdeas() {
+    crossScreen('allIdeasScreen', 'All Ideas', (c, q) => {
+      const items = store().applyUnifiedFilter(store().collectEntries({ discTag: allIdeasTagFilter }), q)
+        .filter(e => (e.tags || []).includes('idea'))
+        .filter(e => allIdeasStateTab === 'all' || ideaStateOf(e.tags || []) === allIdeasStateTab)
+        .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')); // newest first
+      if (!items.length) { c.append(el('div', 'panel-empty', 'No ideas.')); return; }
+      for (const e of items) c.append(entryRow(e, OVERVIEW_OPTS));
+    }, undefined, (screen) => {
+      addCrossDiscFilter(screen, 'allIdeasFilters',
+        () => allIdeasTagFilter, v => { allIdeasTagFilter = v; }, openIdeas);
+      const tabs = el('div', 'cross-disc-tag-filters idea-state-tabs');
+      for (const [key, label] of IDEA_STATE_TABS) {
+        const btn = el('button', 'disc-tag-filter-btn' + (allIdeasStateTab === key ? ' active' : ''), label);
+        btn.addEventListener('click', () => { allIdeasStateTab = key; openIdeas(); });
+        tabs.append(btn);
+      }
+      screen.append(tabs);
+    });
   }
   function openLinks() {
     crossScreen('allLinksScreen', 'All Links', (c, q) => {
@@ -867,16 +903,17 @@
   const CAL_MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   const CROSS = {
-    allComments: openComments, allTasks: openTasks, allGoals: openGoals,
+    allComments: openComments, allTasks: openTasks, allGoals: openGoals, allIdeas: openIdeas,
     allLinks: openLinks, allImages: openImages, allNames: openNames, allTags: openTags,
     kanban: openKanban, calendar: openCalendar, ro3: openRo3, activity: openActivity, summary: openSummary
   };
 
   // Reset maps for disc tag filters so each page starts at "All" on fresh navigation.
   const DISC_FILTER_RESET = {
-    allComments: () => { allCommentsTagFilter = null; },
+    allComments: () => { allCommentsTagFilter = null; allCommentsIdeasOnly = false; },
     allTasks:    () => { allTasksTagFilter = null; },
     allGoals:    () => { allGoalsTagFilter = null; },
+    allIdeas:    () => { allIdeasTagFilter = null; allIdeasStateTab = 'all'; },
     allImages:   () => { allImagesTagFilter = null; },
     allLinks:    () => { allLinksTagFilter = null; },
     allNames:    () => { allNamesTagFilter = null; },

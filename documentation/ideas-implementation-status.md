@@ -1,7 +1,7 @@
 # Ideas Feature — Implementation Status
 
 **Date**: 2026-07-07  
-**Phase**: 1 — Data Model & Core Rendering (Complete)
+**Phase**: 3 — Cross-Discussion Integration (Complete); Phases 1 & 2 complete
 
 ---
 
@@ -119,52 +119,33 @@ Idea Actions
 
 ---
 
-## Known Limitations (Phase 1)
+## Known Limitations (after Phase 3)
 
-- **No state transition UI yet** — To change idea state in Phase 1, manually edit the entry and add/remove state tags
-- **No "Open Ideas" right panel** — Ideas don't appear in a dedicated panel (Phase 2 feature)
-- **No idea-specific action controls** — The ⚡ action button is not rendered on ideas yet (Phase 2)
-- **No cross-discussion idea filtering** — All Comments page shows ideas but doesn't filter by state yet (Phase 3)
-- **No Activity Dashboard metrics** — Idea creation/state change counts not visible yet (Phase 3)
+- **No one-click promotion** — promoting an idea means creating the task/goal manually and setting the idea state to Promoted (Phase 4: `promoteIdeaToTask`).
+- **No Kanban integration** — ideas don't appear on the Kanban board (Phase 4, optional).
+- **No interest-level indicator** — comment/link counts per idea are not displayed (Phase 4, stretch).
 
 ---
 
-## Phase 2 Roadmap
+## Phase 2: UI Widgets & State Management ✅
 
-Phase 2 will add the interactive layer (1.5 sprints):
+1. **Right-panel "Open Ideas" widget** (`discussion.js`) — non-shelved ideas with state badge, priority dot, ⚡ action button, double-click jump-to-entry. Re-rendered in place on single-entry mutations.
+2. **State transition dropdown** (`ui.js` `showIdeaStateDropdown`) — opens from the state badge in the right panel AND on the entry card in history; picking a state calls `store.updateIdeaState()`.
+3. **Store action** — `updateIdeaState(name, entryId, newState, idx)` strips the old state tag, adds the new one, logs `- YYYY-MM-DD : → <Label>` in Idea Actions, saves, and emits `ideaStateChanged` (handled in `main.js` for in-place refresh).
 
-1. **Right-panel "Open Ideas" widget**
-   - List of non-shelved ideas by creation date
-   - State badge for each idea
-   - Action button (⚡) to open state-transition menu
-   - Priority dots (if present)
-   - Jump-to-entry double-click
+## Phase 3: Cross-Discussion Integration ✅
 
-2. **State transition menu**
-   - Modal or dropdown: choose new state (Considered / Explored / Promoted / Shelved)
-   - Confirm → appends action bullet to Idea Actions section
-   - Calls `store.updateIdeaState()` 
+1. **"All Ideas" page** (`pages.js` `openIdeas`, nav button + screen in `app.html`) — all `#idea` entries across discussions, with state tabs (All / Considered / Explored / Promoted / Shelved), the disc-tag filter row and the unified search box.
+2. **Search syntax** (`store.js` `entryMatches`) — `#idea:explored` / `#state:explored` (and considered / promoted / shelved) filter ideas by lifecycle state in every list view; plain `#idea` matches all ideas.
+3. **All Comments** — "💡 Ideas only" toggle; resets on fresh navigation like the disc-tag filters.
+4. **Activity Dashboard** (`dashboard.js`) — ideas as their own slice in the inflow pies (`entryType` in `taxonomy.js` now classifies ideas), a new "Idea states" pie using the badge palette, and an ideas series in the activity timeline. `ideaStateCounts` exported for tests.
+5. **Help dialog** (`main.js`) — Ideas section with lifecycle, badge legend and search syntax; Open Ideas panel and Ideas page documented.
+6. **Taxonomy** (`taxonomy.js`) — `idea` + state tags are now RESERVED (hidden from chip rows/suggestions); `idea` is PROMOTABLE (typeable like `#task`).
 
-3. **Store actions**
-   - `updateIdeaState(discussionName, createdAt, newState)` → strips old state tag, adds new, appends action
-   - `promoteIdeaToTask(...)` → creates task, links in action log
-   - File I/O via surgical `Edit` operations (per Write Safety rules)
+## Phase 4 Roadmap (optional, not started)
 
-4. **Integration**
-   - Ideas searchable in All Comments with state filter
-   - Activity Dashboard pie chart and timeline include ideas
-   - Help dialog documents idea lifecycle
-
----
-
-## Phase 3 Roadmap
-
-Cross-discussion integration (1 sprint):
-
-- "All Ideas" cross-discussion page with state tabs
-- Idea-specific search syntax and autocomplete
-- Cross-discussion idea state filtering
-- Dashboard idea metrics (creation rate, promotion rate)
+- Kanban column for ideas (toggle), interest-level indicators, "All Ideas Mentioning [Name]" view, performance testing with large idea counts.
+- `promoteIdeaToTask()` / `promoteIdeaToGoal()` one-click promotion (currently: create the task manually and set the idea state to Promoted).
 
 ---
 

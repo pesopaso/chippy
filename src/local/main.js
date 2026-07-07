@@ -192,6 +192,7 @@
       section('Right column', 'A live summary of the discussion, each section scrolls on its own.', [
         ['Open Tasks', 'your open tasks — priority and state squares on the left, controls on the right.'],
         ['Goals', 'highlighted with a goal tint; ⚡ action, ✎ edit, ✓ achieved, ✕ canceled at the bottom-right.'],
+        ['Open Ideas', 'non-shelved ideas (💡) — click the state badge to change the lifecycle state, ⚡ adds an action; double-click jumps to the entry.'],
         ['Links', 'links found in the comments and description, deduped (images excluded); ✎ renames a link.'],
         ['Images', 'a gallery of pasted images; click one for the full-screen carousel.']
       ]);
@@ -200,9 +201,9 @@
         'Comments support Markdown (headings, bold/italic, lists, code, quotes), auto-linked URLs, @[Name] mentions and inline images.', [
         ['Actions', '✎ edit inline (tags are editable here — type #tag or use "+ tag"; × removes one; #task / #followup / #goal and priorities promote the comment; Ctrl+V pastes an image), ⚡ add a dated action, 🔇 mute, ➜ move to another discussion, 🗑 delete.'],
         ['"Updated:"', 'a single line recording the latest edit on a later day than creation; refreshed in place on every further edit. Editing only touches the comment text — actions and the Updated line are preserved.'],
-        ['Classify', '#task, #followup or #goal turn a comment into that item type.'],
+        ['Classify', '#task, #followup, #goal or #idea turn a comment into that item type.'],
         ['Priority', '#high / #medium / #low (the priority square cycles them).'],
-        ['Reserved tags (hidden from the chip row)', 'state tags (opentask, inprogresstask, checktask, onholdtask, purgatorytask, resolvedtask, obsoletetask, resolvedfollowup), goal states (achievedgoal, canceledgoal), muted:<date> (temporary mute) and goal-<id> (links a comment to a goal).']
+        ['Reserved tags (hidden from the chip row)', 'state tags (opentask, inprogresstask, checktask, onholdtask, purgatorytask, resolvedtask, obsoletetask, resolvedfollowup), goal states (achievedgoal, canceledgoal), idea states (exploredidea, promoteditea, shelvedidea), muted:<date> (temporary mute) and goal-<id> (links a comment to a goal).']
       ]);
       chipLegend('Priority chips (click to cycle):', [
         ['prio-square prio-high', 'HI', 'high'],
@@ -247,17 +248,31 @@
         ['state-square state-obsoletetask', 'OBSL', 'obsolete']
       ]);
 
+      section('Ideas', 'Ideas (💡) capture possibilities that aren’t yet commitments — a middle ground between comments and tasks/goals.', [
+        ['Capture', 'tag a comment #idea; it appears in history with a 💡 icon and in the "Open Ideas" panel on the right.'],
+        ['Lifecycle', 'Considered (default) → Explored → Promoted or Shelved — click the state badge for the menu. Transitions are logged as dated "→ STATE" lines in Idea Actions.'],
+        ['Shelved', 'shelved ideas collapse to one line in history and leave the Open Ideas panel; unshelve them via the badge any time.'],
+        ['Search', '#idea finds all ideas; #idea:explored (or #state:explored) filters by lifecycle state — works in every search box.']
+      ]);
+      chipLegend('Idea-state badges (click for the menu):', [
+        ['idea-state-badge state-considered', 'Considered', 'captured, ready for discussion (default)'],
+        ['idea-state-badge state-explored', 'Explored', 'discussed or researched'],
+        ['idea-state-badge state-promoted', 'Promoted', 'became a task or goal'],
+        ['idea-state-badge state-shelved', 'Shelved', 'deprioritized; collapsed in history']
+      ]);
+
       section('Page overview', 'Sidebar buttons open these cross-discussion pages, each with the unified #tag / @name / free-text search.', [
         ['Comments', 'every comment across all discussions.'],
         ['Tasks', 'all open tasks.'],
         ['Goals', 'all open goals.'],
+        ['Ideas', 'all ideas across discussions, with state tabs (Considered / Explored / Promoted / Shelved).'],
         ['Links', 'all links, deduped (images excluded), renameable.'],
         ['Images', 'every image; click for the carousel.'],
         ['Names', '@[Name] references — counts, last-seen and a drill-down.'],
         ['Tags', 'every tag with its total uses and the date last used.'],
         ['Kanban', 'drag tasks between state columns; the DONE column shows ~2 months.'],
         ['Ro3', 'Rule of Three — one task per priority; Refresh re-rolls.'],
-        ['Activity', 'charts: comment inflow, task/goal states, monthly timeline, an open-task burndown, and tasks-created-per-day by state.'],
+        ['Activity', 'charts: comment inflow (incl. ideas), task/goal/idea states, monthly timeline, an open-task burndown, and tasks-created-per-day by state.'],
         ['AI Summary', 'generate a summary of your comments via a local LLM.']
       ]);
 

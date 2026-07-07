@@ -795,9 +795,18 @@
   }
 
   // Does an entry satisfy a parsed query? Tags AND names AND freetext.
+  // `#idea:<state>` / `#state:<state>` filter ideas by their lifecycle state
+  // (considered / explored / promoted / shelved).
   function entryMatches(e, parsed) {
     const tags = (e.tags || []).map(t => t.toLowerCase());
-    for (const t of parsed.tags) if (!tags.some(x => x.includes(t))) return false;
+    for (const t of parsed.tags) {
+      const im = /^(?:idea|state):(considered|explored|promoted|shelved)$/.exec(t);
+      if (im) {
+        if (!isIdeaEntry(e) || getIdeaState(e) !== im[1]) return false;
+        continue;
+      }
+      if (!tags.some(x => x.includes(t))) return false;
+    }
     if (parsed.names.length) {
       const en = extractNameTokens(e.body || '').map(x => x.toLowerCase());
       for (const n of parsed.names) if (!en.some(x => x.includes(n))) return false;

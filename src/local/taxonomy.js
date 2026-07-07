@@ -15,14 +15,14 @@
   /* ----------------------------- reserved tags ------------------------- */
   // Tags that the app manages internally (state, priority, goal/followup
   // markers, mutes, goal ids). These are never shown as free-form chips.
-  const RESERVED = /^(task|followup|goal|opentask|inprogresstask|checktask|onholdtask|purgatorytask|resolvedtask|obsoletetask|resolvedfollowup|achievedgoal|canceledgoal|resolvedgoal|high|medium|low|goal-[a-z0-9]{5}|muted:.*)$/;
+  const RESERVED = /^(task|followup|goal|idea|opentask|inprogresstask|checktask|onholdtask|purgatorytask|resolvedtask|obsoletetask|resolvedfollowup|achievedgoal|canceledgoal|resolvedgoal|consideredidea|exploredidea|promoteditea|shelvedidea|high|medium|low|goal-[a-z0-9]{5}|muted:.*)$/;
   const isReserved = (tag) => RESERVED.test(tag);
 
   // The reserved tags a user may legitimately type by hand (in the new-comment
   // box or the inline editor) to classify or prioritize an entry: the three
   // kind tags and the three priorities. State tags, goal ids, and mutes stay
   // app-managed and are never accepted as typed input.
-  const PROMOTABLE = /^(task|followup|goal|high|medium|low)$/;
+  const PROMOTABLE = /^(task|followup|goal|idea|high|medium|low)$/;
 
   /* ------------------------------ task state --------------------------- */
   // Ordered: first state whose tags match wins; the fallback is 'open'.
@@ -54,6 +54,7 @@
     if (t.includes('goal')) return 'goal';
     if (t.includes('followup')) return 'followup';
     if (t.includes('task')) return 'task';
+    if (t.includes('idea')) return 'idea';
     return 'comment';
   }
 

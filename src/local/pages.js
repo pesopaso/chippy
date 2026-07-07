@@ -429,6 +429,8 @@
                        ['onhold', 'HOLD'], ['purgatory', 'PRGT'], ['resolved', 'DONE']];
   const PRIO_LABEL = Chippy.tags.PRIO_LABEL; // taxonomy.js
   let kanbanFocus = false; // when on, hide the HOLD and PRGT columns
+  let kanbanShowIdeas = false; // when on, append the idea lifecycle columns (off by default)
+  const KANBAN_IDEA_COLS = [['considered', 'Considered'], ['explored', 'Explored'], ['promoted', 'Promoted'], ['shelved', 'Shelved']];
   let kanbanSearch = '';   // unified search query; survives board re-renders
 
   // Tag taxonomy lives in taxonomy.js (Chippy.tags); aliased here for brevity.
@@ -441,9 +443,11 @@
   let kanbanDrag = null;
 
   function kanbanCard(e) {
-    const card = el('div', 'kanban-card' + (e.tags.includes('followup') ? ' followup' : '') + (store().isMuted(e) ? ' muted' : ''));
+    const isIdea = e.tags.includes('idea');
+    const card = el('div', 'kanban-card' + (e.tags.includes('followup') ? ' followup' : '') + (isIdea ? ' idea' : '') + (store().isMuted(e) ? ' muted' : ''));
     card.draggable = true;
-    const ref = { m: e._member, id: e.created_at, idx: e._idx };
+    // kind guards the drop targets: ideas only land in idea columns, tasks in task columns.
+    const ref = { m: e._member, id: e.created_at, idx: e._idx, kind: isIdea ? 'idea' : 'task' };
     card.addEventListener('dragstart', ev => {
       kanbanDrag = ref;
       ev.dataTransfer.effectAllowed = 'move';
@@ -493,6 +497,10 @@
     focusBtn.title = 'Focus: hide the HOLD and PRGT columns';
     focusBtn.addEventListener('click', () => { kanbanFocus = !kanbanFocus; openKanban(); });
     header.append(focusBtn);
+    const ideasBtn = el('button', 'btn-sm kanban-focus-btn' + (kanbanShowIdeas ? ' active' : ''), '💡 Ideas');
+    ideasBtn.title = 'Show the idea lifecycle columns (Considered / Explored / Promoted / Shelved)';
+    ideasBtn.addEventListener('click', () => { kanbanShowIdeas = !kanbanShowIdeas; openKanban(); });
+    header.append(ideasBtn);
     screen.append(header);
     addCrossDiscFilter(screen, 'kanbanFilters',
       () => allTasksTagFilter, v => { allTasksTagFilter = v; }, openKanban);
@@ -531,13 +539,40 @@
           let ref = kanbanDrag;
           if (!ref) { try { ref = JSON.parse(ev.dataTransfer.getData('text/plain')); } catch (_) {} }
           kanbanDrag = null;
-          if (!ref || !ref.id) return;
+          if (!ref || !ref.id || ref.kind === 'idea') return; // ideas don't take task states
           try {
             await store().setTaskState(ref.m, ref.id, key, ref.idx);
             openKanban();
           } catch (_) {}
         });
         board.append(col);
+      }
+      // Idea lifecycle columns (💡 toggle, off by default): drag to transition state.
+      if (kanbanShowIdeas) {
+        const ideas = store().applyUnifiedFilter(
+          store().collectEntries({ discTag: allTasksTagFilter }), kanbanSearch
+        ).filter(e => (e.tags || []).includes('idea'));
+        for (const [key, label] of KANBAN_IDEA_COLS) {
+          const col = el('div', 'kanban-col idea-col');
+          col.append(el('div', 'kanban-col-header idea', '💡 ' + label));
+          const colIdeas = ideas.filter(e => ideaStateOf(e.tags || []) === key);
+          colIdeas.sort((a, b) => rank(a) - rank(b) || (b.created_at || '').localeCompare(a.created_at || ''));
+          for (const e of colIdeas) col.append(kanbanCard(e));
+          col.addEventListener('dragover', ev => { ev.preventDefault(); ev.dataTransfer.dropEffect = 'move'; col.classList.add('drag-over'); });
+          col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
+          col.addEventListener('drop', async ev => {
+            ev.preventDefault(); col.classList.remove('drag-over');
+            let ref = kanbanDrag;
+            if (!ref) { try { ref = JSON.parse(ev.dataTransfer.getData('text/plain')); } catch (_) {} }
+            kanbanDrag = null;
+            if (!ref || !ref.id || ref.kind !== 'idea') return; // tasks don't take idea states
+            try {
+              await store().updateIdeaState(ref.m, ref.id, key, ref.idx);
+              openKanban();
+            } catch (_) {}
+          });
+          board.append(col);
+        }
       }
       boardWrap.append(board);
     }

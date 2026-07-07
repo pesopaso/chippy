@@ -508,6 +508,8 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .idea-state-option { padding: 5px 14px; cursor: pointer; font-size: .76rem; }
 .idea-state-option:hover { background: var(--card); }
 .idea-state-option.current { font-weight: 700; color: var(--accent); }
+.idea-state-option.promote { color: var(--idea, #9c27b0); font-weight: 600; }
+.idea-state-divider { border-top: 1px solid var(--border); margin: 2px 0; }
 
 /* ---- Modal ------------------------------------------------------------ */
 .modal-overlay {
@@ -535,6 +537,12 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .idea-top { display: flex; align-items: flex-start; gap: 6px; }
 .idea-text { flex: 1; min-width: 0; font-size: .82rem; }
 .idea-meta { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; margin-top: 6px; padding-left: 2px; }
+.idea-interest { font-size: .68rem; font-weight: 700; color: var(--idea, #9c27b0); flex: 0 0 auto; }
+
+/* Kanban idea columns (💡 toggle) */
+.kanban-card.idea { border-left: 3px solid var(--idea, #9c27b0); }
+.kanban-col-header.idea { color: var(--idea, #9c27b0); }
+.kanban-col.idea-col { border-top: 2px solid var(--idea, #9c27b0); }
 
 /* ---- Goals panel ------------------------------------------------------ */
 .goals-section { margin-bottom: 0; }

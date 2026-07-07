@@ -252,6 +252,9 @@
         ['Capture', 'tag a comment #idea; it appears in history with a 💡 icon and in the "Open Ideas" panel on the right.'],
         ['Lifecycle', 'Considered (default) → Explored → Promoted or Shelved — click the state badge for the menu. Transitions are logged as dated "→ STATE" lines in Idea Actions.'],
         ['Shelved', 'shelved ideas collapse to one line in history and leave the Open Ideas panel; unshelve them via the badge any time.'],
+        ['Promote', 'the badge menu’s "→ Task…" / "→ Goal…" create the new entry (title prompt, prefilled), set the idea to Promoted, and cross-link both action logs.'],
+        ['Interest', 'a ▲n indicator counts the actions and links an idea has attracted — a hint which ideas are generating discussion.'],
+        ['Kanban', 'the 💡 Ideas toggle on the Kanban page adds the four lifecycle columns; drag an idea between them to change its state.'],
         ['Search', '#idea finds all ideas; #idea:explored (or #state:explored) filters by lifecycle state — works in every search box.']
       ]);
       chipLegend('Idea-state badges (click for the menu):', [
@@ -270,7 +273,7 @@
         ['Images', 'every image; click for the carousel.'],
         ['Names', '@[Name] references — counts, last-seen and a drill-down.'],
         ['Tags', 'every tag with its total uses and the date last used.'],
-        ['Kanban', 'drag tasks between state columns; the DONE column shows ~2 months.'],
+        ['Kanban', 'drag tasks between state columns; the DONE column shows ~2 months. The 💡 Ideas toggle adds the idea lifecycle columns.'],
         ['Ro3', 'Rule of Three — one task per priority; Refresh re-rolls.'],
         ['Activity', 'charts: comment inflow (incl. ideas), task/goal/idea states, monthly timeline, an open-task burndown, and tasks-created-per-day by state.'],
         ['AI Summary', 'generate a summary of your comments via a local LLM.']
@@ -471,6 +474,7 @@
             break;
           }
           case 'memberReloaded':
+          case 'ideaPromoted':
           case 'entryAdded':
           case 'entryMoved':
           case 'entryDeleted':

@@ -1,7 +1,7 @@
 # Ideas Feature — Implementation Status
 
 **Date**: 2026-07-07  
-**Phase**: 3 — Cross-Discussion Integration (Complete); Phases 1 & 2 complete
+**Phase**: 4 — Polish & Stretch Goals (Complete); all phases complete
 
 ---
 
@@ -119,11 +119,10 @@ Idea Actions
 
 ---
 
-## Known Limitations (after Phase 3)
+## Known Limitations
 
-- **No one-click promotion** — promoting an idea means creating the task/goal manually and setting the idea state to Promoted (Phase 4: `promoteIdeaToTask`).
-- **No Kanban integration** — ideas don't appear on the Kanban board (Phase 4, optional).
-- **No interest-level indicator** — comment/link counts per idea are not displayed (Phase 4, stretch).
+- **Promotion targets the same discussion** — `promoteIdea` creates the task/goal in the idea's discussion; move the entry afterwards if it belongs elsewhere.
+- **Interest level is derived, not stored** — recomputed from action bullets + links on render; no history of interest over time.
 
 ---
 
@@ -142,10 +141,14 @@ Idea Actions
 5. **Help dialog** (`main.js`) — Ideas section with lifecycle, badge legend and search syntax; Open Ideas panel and Ideas page documented.
 6. **Taxonomy** (`taxonomy.js`) — `idea` + state tags are now RESERVED (hidden from chip rows/suggestions); `idea` is PROMOTABLE (typeable like `#task`).
 
-## Phase 4 Roadmap (optional, not started)
+## Phase 4: Polish & Stretch Goals ✅
 
-- Kanban column for ideas (toggle), interest-level indicators, "All Ideas Mentioning [Name]" view, performance testing with large idea counts.
-- `promoteIdeaToTask()` / `promoteIdeaToGoal()` one-click promotion (currently: create the task manually and set the idea state to Promoted).
+1. **One-click promotion** (`store.js` `promoteIdea`) — "→ Task…" / "→ Goal…" in the badge dropdown open a title prompt (prefilled with the idea's first line), create the entry in the same discussion, set the idea to Promoted, and cross-link both action logs. Emits `ideaPromoted`.
+2. **Interest-level indicator** — `ideaInterestOf(e)` counts action bullets + links; shown as ▲n on idea cards (history, All Ideas) and Open Ideas rows when n > 0.
+3. **Kanban idea columns** (`pages.js`) — "💡 Ideas" toggle (off by default) appends Considered / Explored / Promoted / Shelved columns; drag-and-drop calls `updateIdeaState`; kind-guarded drops keep ideas and tasks in their own columns.
+4. **"All Ideas Mentioning [Name]"** — covered by unified search: `#idea @[Name]` on the All Ideas page (no separate view needed).
+5. **Performance** — unit-tested budget: filtering, state distribution, timeline and interest over 5000 ideas complete well under 1s (`tests/local/unit/ideas.test.mjs`).
+6. **Data-format fix** — `Idea Actions` added to `ACTION_HEADERS` / `actionLabelFor`; state transitions previously wrote a `Task Resolution Actions` header on ideas and spec-format sections duplicated on round-trip.
 
 ---
 

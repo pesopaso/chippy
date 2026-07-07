@@ -798,3 +798,15 @@ reference the requirement (`R#`) / plan step.
 - **`pages.js` / `app.html`** — new "Ideas" cross-discussion page with state tabs (All / Considered / Explored / Promoted / Shelved) plus disc-tag filter and unified search; All Comments gains a "💡 Ideas only" toggle.
 - **`dashboard.js`** — inflow pies count ideas as their own slice; new "Idea states" pie (badge colors); the activity timeline plots an ideas series.
 - **`style.css`** — `--idea` accent variable, idea state badge palette, ideas-panel and dropdown styles.
+
+### v3.2.0-dev.116 — 2026-07-07 — Ideas: promotion, interest levels, Kanban columns
+
+> Phase 4 of the Ideas feature: one-click promotion to task/goal, an interest-level indicator, and optional idea lifecycle columns on the Kanban board.
+
+- **`store.js`** — `promoteIdea(name, entryId, kind, title, idx)` creates the task/goal in the same discussion, sets the idea to Promoted and cross-links both action logs (`Derived from idea: …` on the new entry, `Promoted to <kind>: … (created <ts>)` on the idea); emits `ideaPromoted`. New pure helper `ideaInterestOf(e)` = action bullets + links. **Fix**: `Idea Actions` joins `ACTION_HEADERS` and `actionLabelFor` — idea state transitions previously wrote a `Task Resolution Actions` header, and a spec-format `Idea Actions` section duplicated its header on round-trip.
+- **`ui.js`** — the idea state dropdown gains "→ Task…" / "→ Goal…" promote options; new `showPromoteIdeaModal` (title prompt prefilled with the idea's first line). Idea cards show a ▲n interest indicator when n > 0.
+- **`discussion.js`** — Open Ideas rows wire the promote options and show the interest indicator.
+- **`pages.js`** — Kanban "💡 Ideas" toggle (off by default) appends the four lifecycle columns (Considered / Explored / Promoted / Shelved); drag-and-drop transitions idea state; drops are kind-guarded so ideas never take task states and vice versa. Idea cards carry the purple accent.
+- **`main.js`** — `ideaPromoted` triggers a full refresh; help documents promotion, interest and the Kanban toggle.
+- **`style.css`** — `.idea-interest`, promote-option and divider styles, Kanban idea column accents.
+- **`tests/local/unit/ideas.test.mjs`** — new suite: taxonomy classification, `#idea:<state>` search, Idea Actions round-trip, interest levels, dashboard aggregations, and a performance budget over 5000 ideas (Phase 4 acceptance).

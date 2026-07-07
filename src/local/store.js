@@ -374,12 +374,13 @@
     open: null, inprogress: 'inprogresstask', check: 'checktask', onhold: 'onholdtask',
     purgatory: 'purgatorytask', resolved: 'resolvedtask', obsolete: 'obsoletetask'
   };
-  const ACTION_HEADERS = new Set(['Task Resolution Actions', 'Followup Actions', 'Goal Actions']);
+  const ACTION_HEADERS = new Set(['Task Resolution Actions', 'Followup Actions', 'Goal Actions', 'Idea Actions']);
   const BULLET_RE = /^- \d{4}-\d{2}-\d{2} : /;
 
   function actionLabelFor(e) {
     if (e.tags.includes('goal')) return 'Goal Actions';
     if (e.tags.includes('followup')) return 'Followup Actions';
+    if (e.tags.includes('idea')) return 'Idea Actions';
     return 'Task Resolution Actions';
   }
 
@@ -579,6 +580,42 @@
     await ensureTagsInUnion(e.tags);
     await io().saveDiscussion(state.dirHandle, m);
     emit({ type: 'ideaStateChanged', name, entryId, state: newState });
+  }
+
+  // Promote an idea to a task or goal: create the new entry in the same
+  // discussion, set the idea to Promoted, and cross-link both action logs
+  // ("Derived from idea: …" on the new entry, "Promoted to <kind>: … (created …)"
+  // on the idea). Returns the created entry.
+  async function promoteIdea(name, entryId, kind, title, idx) {
+    if (kind !== 'task' && kind !== 'goal') return null;
+    const [m, e] = findEntry(name, entryId, idx);
+    if (!e || !isIdeaEntry(e)) return null;
+    const text = String(title || '').trim() || (e.body || '').split('\n')[0];
+    const created = await addEntry(name, { text, tags: [kind] });
+    if (!created) return null;
+    const day = nowISO().slice(0, 10);
+    // Origin note on the new task/goal.
+    const cp = splitBodyParts(created.body);
+    cp.bullets.push('- ' + day + ' : Derived from idea: ' + (e.body || '').split('\n')[0].slice(0, 80));
+    created.body = joinBodyParts(cp, created);
+    // The idea: state → Promoted, with a link to what it became.
+    e.tags = e.tags.filter(t => !IDEA_STATE_TAGS.includes(t));
+    e.tags.push('promoteditea');
+    const ip = splitBodyParts(e.body);
+    ip.bullets.push('- ' + day + ' : Promoted to ' + kind + ': ' + text.split('\n')[0].slice(0, 80) + ' (created ' + created.created_at + ')');
+    e.body = joinBodyParts(ip, e);
+    await ensureTagsInUnion(e.tags);
+    await io().saveDiscussion(state.dirHandle, m);
+    emit({ type: 'ideaPromoted', name, entryId, kind, targetCreatedAt: created.created_at });
+    return created;
+  }
+
+  // Interest level of an idea: how much activity it has attracted — logged
+  // action bullets plus links in the body. Pure; used for the ▲n indicator.
+  function ideaInterestOf(e) {
+    const parts = splitBodyParts(e.body || '');
+    const links = (String(e.body || '').match(/\[[^\]]+\]\(([^)]+)\)/g) || []).length;
+    return parts.bullets.length + links;
   }
 
   /* ----------------------------- goals --------------------------------- */
@@ -1000,7 +1037,7 @@
       subscribe, openFolder, selectMember, setActiveScreen, setTheme,
       toggleFavorite, setDiscussionTag, reloadMember, archiveDiscussion, renameDiscussion, createDiscussion, setPrep, addEntry,
       setTaskState, cyclePriority, setDue, appendAction, toggleMute, isMuted,
-      setGoalState, updateIdeaState, editEntry, getLinks, renameLink, moveEntry, deleteEntry,
+      setGoalState, updateIdeaState, promoteIdea, ideaInterestOf, editEntry, getLinks, renameLink, moveEntry, deleteEntry,
       saveImage, getImageUrl,
       ensureAllLoaded, collectEntries, applyUnifiedFilter, getAllNames, getAllTags,
       getRo3Candidates, pickRo3, doneRecent, resolvedDate,

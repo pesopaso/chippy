@@ -474,7 +474,9 @@
     const ideaBadge = el('span', 'idea-state-badge ' + ideaClass, ideaState); ideaBadge.title = 'Change idea state';
     ideaBadge.addEventListener('click', () =>
       ui().showIdeaStateDropdown(ideaBadge, ideaState.toLowerCase(), (newState) =>
-        store().updateIdeaState(member.name, idea.created_at, newState, idx)));
+        store().updateIdeaState(member.name, idea.created_at, newState, idx),
+        (kind) => ui().showPromoteIdeaModal(kind, firstLine(idea.body),
+          (title) => store().promoteIdea(member.name, idea.created_at, kind, title, idx))));
 
     // Priority dot (if present)
     const prio = priorityOf(idea.tags) || 'low';
@@ -491,9 +493,15 @@
     const top = el('div', 'idea-top');
     top.append(txt);
 
-    // Meta row: badge, priority, spacer, action button
+    // Meta row: badge, priority, interest, spacer, action button
     const meta = el('div', 'idea-meta');
     meta.append(ideaBadge, ps);
+    const interest = store().ideaInterestOf ? store().ideaInterestOf(idea) : 0;
+    if (interest) {
+      const ii = el('span', 'idea-interest', '▲' + interest);
+      ii.title = interest + ' action(s) / link(s) on this idea';
+      meta.append(ii);
+    }
     meta.append(el('span', 'meta-spacer'));
     const act = el('span', 'icon-btn act', '⚡'); act.title = 'Add action';
     act.addEventListener('click', () =>

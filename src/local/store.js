@@ -948,19 +948,16 @@
     });
   }
 
-  // Pick up to 3: one high, one medium, one low; fill from any bucket if empty.
+  // Pick up to 3 distinct tasks uniformly at random from all candidates.
+  // (No priority slots: every open/non-muted task is equally likely, so Refresh
+  // gives genuine variety and untagged tasks surface like any other.)
   function pickRo3(cands, rng) {
     rng = rng || Math.random;
-    const by = { high: [], medium: [], low: [], none: [] };
-    for (const c of cands) {
-      const p = (c.tags || []).find(t => t === 'high' || t === 'medium' || t === 'low') || 'none';
-      by[p].push(c);
-    }
-    const take = arr => arr.length ? arr.splice(Math.floor(rng() * arr.length), 1)[0] : null;
+    const pool = (cands || []).slice();
     const out = [];
-    for (const p of ['high', 'medium', 'low']) { const x = take(by[p]); if (x) out.push(x); }
-    const rest = [].concat(by.high, by.medium, by.low, by.none);
-    while (out.length < 3 && rest.length) { const x = take(rest); if (x) out.push(x); }
+    while (out.length < 3 && pool.length) {
+      out.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
+    }
     return out;
   }
 

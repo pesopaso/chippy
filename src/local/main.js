@@ -274,7 +274,7 @@
         ['Names', '@[Name] references — counts, last-seen and a drill-down.'],
         ['Tags', 'every tag with its total uses and the date last used.'],
         ['Kanban', 'drag tasks between state columns; the DONE column shows ~2 months. The 💡 Ideas toggle adds the idea lifecycle columns.'],
-        ['Ro3', 'Rule of Three — one task per priority; Refresh re-rolls.'],
+        ['Ro3', 'Rule of Three — three open tasks picked at random; Refresh re-rolls.'],
         ['Activity', 'charts: comment inflow (incl. ideas), task/goal/idea states, monthly timeline, an open-task burndown, and tasks-created-per-day by state.'],
         ['AI Summary', 'generate a summary of your comments via a local LLM.']
       ]);

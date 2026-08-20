@@ -490,6 +490,17 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .task-due.collapsed::-webkit-calendar-picker-indicator { margin: 0; opacity: .85; cursor: pointer; }
 .icon-btn { cursor: pointer; font-size: .82rem; opacity: .8; }
 .icon-btn:hover { opacity: 1; }
+/* Delete: set apart from the other card controls and ~20% larger. */
+.icon-btn.del-btn { margin-left: 14px; font-size: 1rem; }
+/* Sensitive toggle (🔓 open ⇄ 🔒 locked): dimmed grey when unlocked, full
+   color when marked. Marked cards get a red left border + a "sensitive" chip. */
+.icon-btn.sens { opacity: .35; filter: grayscale(1); }
+.icon-btn.sens:hover { opacity: .7; }
+.icon-btn.sens.on { opacity: 1; filter: none; }
+.reload-btn.sens { opacity: .45; filter: grayscale(1); }
+.reload-btn.sens.on { opacity: 1; filter: none; }
+.sens-chip { background: rgba(224, 82, 82, .18); color: var(--danger, #e05252);
+  border-radius: 8px; padding: 1px 7px; font-size: .66rem; flex: 0 0 auto; }
 
 /* ---- State dropdown --------------------------------------------------- */
 .state-dropdown {
@@ -825,6 +836,15 @@ body.slim.slim-right #memberScreen .split-left { display: none; }
 .entry-card.entry-goal { border-left: 3px solid var(--goal); background: var(--goal-bg); }
 .entry-card.closed { opacity: .6; }
 .entry-card.dimmed { opacity: .55; }
+/* Task links: 🔗 marks a resolved link card, ⚠ a link whose origin is gone.
+   Stub cards (broken/pending) are read-only and rendered dimmed. */
+.link-badge { font-size: .8rem; flex: 0 0 auto; cursor: default; }
+.link-badge.broken { color: var(--danger, #e05252); }
+.link-badge.pending { opacity: .5; }
+.entry-card.link-broken { opacity: .55; border-left: 3px dashed var(--muted); }
+.entry-card.link-pending { opacity: .7; }
+/* Sensitive-marked card: red left border (after the kind rules, so it wins). */
+.entry-card.sens-marked { border-left: 3px solid var(--danger, #e05252); }
 .entry-card.collapsed .entry-text { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 .entry-card .entry-meta { flex-wrap: wrap; }
 .summary-meta { font-size: .72rem; color: var(--muted); margin-bottom: 4px; }

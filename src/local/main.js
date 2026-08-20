@@ -182,7 +182,7 @@
       ]);
 
       section('Discussion', 'The middle column is where you read and write a discussion.', [
-        ['Title & actions', 'the discussion name with its comment count; on the right: ★ favourite, ↻ reload from disk, ⬇ export a contribution summary, 🗄 archive (renames the file to *.archive.md — nothing is deleted).'],
+        ['Title & actions', 'the discussion name with its comment count; on the right: ★ favourite, 🔓/🔒 sensitive (locks the whole discussion out of AI summaries — a red "sensitive" chip appears next to the title), ↻ reload from disk, ⬇ export a contribution summary, 🗄 archive (renames the file to *.archive.md — nothing is deleted).'],
         ['Description', 'editable notes for the discussion (✎ at the top-right); the "Description" label hides once it has text.'],
         ['New comment', 'type a note — #tag to classify, @ to mention a name, Ctrl+V to paste an image. Below the box: tag chips on the left; goal link, due date and Save on the right. The box clears after saving.'],
         ['Search this discussion', 'filters the comments below by #tag / @name / free text.'],
@@ -190,20 +190,20 @@
       ]);
 
       section('Right column', 'A live summary of the discussion, each section scrolls on its own.', [
-        ['Open Tasks', 'your open tasks — priority and state squares on the left, controls on the right.'],
+        ['Open Tasks', 'your open tasks — priority and state squares on the left; age, due date, ⚡ action and 🔇 mute on the right (muting lives only here: it hides a task for 5 days). Tasks linked from other discussions appear here too, marked 🔗.'],
         ['Goals', 'highlighted with a goal tint; ⚡ action, ✎ edit, ✓ achieved, ✕ canceled at the bottom-right.'],
-        ['Open Ideas', 'non-shelved ideas (💡) — click the state badge to change the lifecycle state, ⚡ adds an action; double-click jumps to the entry.'],
+        ['Open Ideas', 'non-shelved ideas (💡) — click the state badge to change the lifecycle state, ⚡ adds an action; double-click jumps to the entry. Linked ideas from other discussions appear here too, marked 🔗.'],
         ['Links', 'links found in the comments and description, deduped (images excluded); ✎ renames a link.'],
         ['Images', 'a gallery of pasted images; click one for the full-screen carousel.']
       ]);
 
       section('Comments — functions & special tags',
         'Comments support Markdown (headings, bold/italic, lists, code, quotes), auto-linked URLs, @[Name] mentions and inline images.', [
-        ['Actions', '✎ edit inline (tags are editable here — type #tag or use "+ tag"; × removes one; #task / #followup / #goal and priorities promote the comment; Ctrl+V pastes an image), ⚡ add a dated action, 🔇 mute, ➜ move to another discussion, 🗑 delete.'],
+        ['Actions', '✎ edit inline (tags are editable here — type #tag or use "+ tag"; × removes one; #task / #followup / #goal and priorities promote the comment; Ctrl+V pastes an image), ⚡ add a dated action, 🔓/🔒 mark sensitive, ➜ move to another discussion, 🔗 connect to another discussion, and — set slightly apart — 🗑 delete. On a linked comment ✂ disconnects instead (removes only the link). Muting moved to the task rows in the right column.'],
         ['"Updated:"', 'a single line recording the latest edit on a later day than creation; refreshed in place on every further edit. Editing only touches the comment text — actions and the Updated line are preserved.'],
         ['Classify', '#task, #followup, #goal or #idea turn a comment into that item type.'],
         ['Priority', '#high / #medium / #low (the priority square cycles them).'],
-        ['Reserved tags (hidden from the chip row)', 'state tags (opentask, inprogresstask, checktask, onholdtask, purgatorytask, resolvedtask, obsoletetask, resolvedfollowup), goal states (achievedgoal, canceledgoal), idea states (exploredidea, promoteditea, shelvedidea), muted:<date> (temporary mute) and goal-<id> (links a comment to a goal).']
+        ['Reserved tags (hidden from the chip row)', 'state tags (opentask, inprogresstask, checktask, onholdtask, purgatorytask, resolvedtask, obsoletetask, resolvedfollowup), goal states (achievedgoal, canceledgoal), idea states (consideredidea, exploredidea, promoteditea, shelvedidea), muted:<date> (temporary mute), sensitive (excluded from AI summaries — shows the red chip instead), goal-<id> (links a comment to a goal) and <discussion>:link-<id> (task-link identity shared by a connected task and its references).']
       ]);
       chipLegend('Priority chips (click to cycle):', [
         ['prio-square prio-high', 'HI', 'high'],
@@ -236,7 +236,9 @@
         ['Collapse', 'DONE / OBSL (and achieved/canceled goals) collapse to one line; click ▸ to expand.'],
         ['FollowUps', 'behave like tasks; resolving one marks it resolvedfollowup.'],
         ['Goals', '✓ achieve or ✕ cancel logs a dated "→ Achieved" / "→ Canceled" line in Goal Actions; goals are visually highlighted. Link a comment to a goal, and double-click any task/goal to jump to its source entry.'],
-        ['Mute', 'hides a task for 5 days (muted:<date>) to cut noise in Ro3 and the kanban.']
+        ['Mute', 'hides a task for 5 days (muted:<date>) to cut noise in Ro3 and the kanban; the 🔇 button lives only on the task rows in the right column — muted tasks render dimmed and sort last elsewhere.'],
+        ['Connect (🔗)', 'links a task/followup/idea into other discussions: each connected discussion shows it live (🔗 badge) at the date it was connected, and in its Open Tasks/Ideas panel. Changes made anywhere are saved in the task’s own discussion. ✂ disconnects (removes only the link); ⚠ marks a link whose origin is gone.'],
+        ['Sensitive (🔒)', 'excludes content from AI summaries. Click the 🔓 on a comment (discussion stream only) to lock that comment, or the 🔓 next to the discussion title to lock the whole discussion — locked content shows a red "sensitive" chip and is never sent to the LLM. Click the 🔒 to unlock.']
       ]);
       chipLegend('Task-state chips (click the square for the menu):', [
         ['state-square state-open', 'OPEN', 'open'],
@@ -264,7 +266,7 @@
         ['idea-state-badge state-shelved', 'Shelved', 'deprioritized; collapsed in history']
       ]);
 
-      section('Page overview', 'Sidebar buttons open these cross-discussion pages, each with the unified #tag / @name / free-text search.', [
+      section('Page overview', 'Sidebar buttons open these cross-discussion pages, each with the unified #tag / @name / free-text search. Double-click any comment card (Comments, Tasks, Goals, Ideas, Ro3, Calendar) to jump to that exact comment in its discussion.', [
         ['Comments', 'every comment across all discussions.'],
         ['Tasks', 'all open tasks.'],
         ['Goals', 'all open goals.'],
@@ -274,15 +276,18 @@
         ['Names', '@[Name] references — counts, last-seen and a drill-down.'],
         ['Tags', 'every tag with its total uses and the date last used.'],
         ['Kanban', 'drag tasks between state columns; the DONE column shows ~2 months. The 💡 Ideas toggle adds the idea lifecycle columns.'],
+        ['Calendar', 'a due-date calendar over open tasks/followups — day, focus, work, full and month views.'],
         ['Ro3', 'Rule of Three — three open tasks picked at random; Refresh re-rolls.'],
         ['Activity', 'charts: comment inflow (incl. ideas), task/goal/idea states, monthly timeline, an open-task burndown, and tasks-created-per-day by state.'],
-        ['AI Summary', 'generate a summary of your comments via a local LLM.']
+        ['AI Summary', 'generate a summary of your comments via a local LLM — 🔒 sensitive comments and discussions are never included.']
       ]);
 
       section('AI Summary — settings', 'The Summary page talks to a local, OpenAI-compatible LLM endpoint.', [
         ['Endpoint & model', 'set the API URL and model name; both are saved to summary.md and your browser.'],
         ['Range', 'choose day, week or month of comments to summarise.'],
         ['Generate', 'posts the selected comments to the endpoint and renders the reply (sanitised).'],
+        ['Sensitive content', 'comments marked 🔒 and whole discussions locked via the title toggle are filtered out before the prompt is built — they never reach the LLM.'],
+        ['Remove names', 'the privacy toggle replaces all names with initials before sending — for use with non-local endpoints.'],
         ['Saved summaries', 'each generated summary is kept as a card you can edit, delete, or move into a discussion as a comment.']
       ]);
 
@@ -464,6 +469,7 @@
           case 'dueChanged':
           case 'actionAppended':
           case 'muteToggled':
+          case 'sensitiveToggled':
           case 'goalStateChanged':
           case 'ideaStateChanged':
           case 'entryEdited': {
@@ -475,16 +481,20 @@
           }
           case 'memberReloaded':
           case 'ideaPromoted':
+          case 'discussionSensitiveChanged':
           case 'entryAdded':
           case 'entryMoved':
           case 'entryDeleted':
+          case 'entryConnected':
+          case 'entryDisconnected':
           case 'linkRenamed':
           case 'summarySaved':
           case 'summaryDeleted':
           case 'summaryMoved':
             if (pages) pages.refresh();
             // Comment counts in the sidebar can change with these mutations.
-            if (pages && (cs.type === 'entryAdded' || cs.type === 'entryDeleted' || cs.type === 'entryMoved')) {
+            if (pages && (cs.type === 'entryAdded' || cs.type === 'entryDeleted' || cs.type === 'entryMoved' ||
+                          cs.type === 'entryConnected' || cs.type === 'entryDisconnected')) {
               pages.renderSidebar();
             }
             break;

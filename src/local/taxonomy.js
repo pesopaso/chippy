@@ -14,8 +14,9 @@
 
   /* ----------------------------- reserved tags ------------------------- */
   // Tags that the app manages internally (state, priority, goal/followup
-  // markers, mutes, goal ids). These are never shown as free-form chips.
-  const RESERVED = /^(task|followup|goal|idea|opentask|inprogresstask|checktask|onholdtask|purgatorytask|resolvedtask|obsoletetask|resolvedfollowup|achievedgoal|canceledgoal|resolvedgoal|consideredidea|exploredidea|promoteditea|shelvedidea|high|medium|low|goal-[a-z0-9]{5}|muted:.*)$/;
+  // markers, mutes, goal ids, link ids, the sensitive marker). These are never
+  // shown as free-form chips.
+  const RESERVED = /^(task|followup|goal|idea|opentask|inprogresstask|checktask|onholdtask|purgatorytask|resolvedtask|obsoletetask|resolvedfollowup|achievedgoal|canceledgoal|resolvedgoal|consideredidea|exploredidea|promoteditea|shelvedidea|high|medium|low|sensitive|goal-[a-z0-9]{5}|[A-Za-z0-9_ -]+:link-[a-z0-9]{5}|muted:.*)$/;
   const isReserved = (tag) => RESERVED.test(tag);
 
   // The reserved tags a user may legitimately type by hand (in the new-comment
@@ -58,6 +59,24 @@
     return 'comment';
   }
 
+  /* ------------------------------ task links --------------------------- */
+  // A linked (multi-discussion) entry carries "<origin-stem>:link-<id>": the
+  // origin discussion's sanitized filename stem, a colon, and a 5-char base-36
+  // link id. The identical tag sits on the origin entry and on every reference
+  // to it in other discussions — within a discussion, prefix === own stem means
+  // origin, any other prefix means reference. The stem alphabet [A-Za-z0-9_ -]
+  // contains no comma and no colon, so the tag is safe in the comma-separated
+  // tags field and splits unambiguously on its first colon.
+  // (documentation/task-linking-implementation.md)
+  const LINK_TAG_RE = /^([A-Za-z0-9_ -]+):link-([a-z0-9]{5})$/;
+  // The link tag present, or null when the entry is not linked.
+  const linkTagOf = (tags) => (tags || []).find((t) => LINK_TAG_RE.test(t)) || null;
+  // "<stem>:link-<id>" -> { stem, id }, or null for a non-link tag.
+  function parseLinkTag(tag) {
+    const m = LINK_TAG_RE.exec(tag || '');
+    return m ? { stem: m[1], id: m[2] } : null;
+  }
+
   /* ------------------------------ priority ----------------------------- */
   const PRIO_RANK = { high: 0, medium: 1, low: 2 };
   const PRIO_LABEL = { high: 'HI', medium: 'MI', low: 'LO' };
@@ -69,6 +88,7 @@
     RESERVED, isReserved, PROMOTABLE,
     STATES, stateKeyOf, STATE_SQUARE,
     entryType,
+    LINK_TAG_RE, linkTagOf, parseLinkTag,
     PRIO_RANK, PRIO_LABEL, priorityOf
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

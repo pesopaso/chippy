@@ -82,6 +82,16 @@
     return 'goal-' + s;
   }
 
+  // A link identity's 5-char base-36 suffix. The full tag is
+  // "<origin-stem>:link-<id>" (taxonomy.js LINK_TAG_RE); minted only when an
+  // entry is first connected to another discussion — never on creation.
+  function mintLinkId(rng) {
+    rng = rng || (root.__chippyTest && root.__chippyTest.rng) || Math.random;
+    let s = '';
+    for (let i = 0; i < 5; i++) s += Math.floor(rng() * 36).toString(36);
+    return s;
+  }
+
   // Inline #tag extraction (the # trigger): returns { text, tags } with the
   // #tokens removed from text. "# Heading" (space after #) is left untouched.
   function extractInlineTags(text) {
@@ -253,6 +263,16 @@
     emit({ type: 'discussionTagChanged', name, tag: d.tag });
   }
 
+  // Discussion-level sensitive flag (navigation.chippy.md "| sensitive"):
+  // every entry of a sensitive discussion is excluded from AI summaries.
+  async function toggleDiscussionSensitive(name) {
+    const d = state.nav.discussions.find(x => x.name === name);
+    if (!d) return;
+    d.sensitive = !d.sensitive;
+    await io().saveNav(state.dirHandle, state.nav);
+    emit({ type: 'discussionSensitiveChanged', name, sensitive: d.sensitive });
+  }
+
   async function reloadMember(name) {
     const member = await io().loadDiscussion(state.dirHandle, name);
     state.members.set(name, member);
@@ -288,6 +308,32 @@
     if (!wasLoaded) state.members.set(trimmed, null); // preserve lazy-load slot
     if (state.activeMemberName === oldName) state.activeMemberName = trimmed;
     await io().saveNav(state.dirHandle, state.nav);
+    // Task links carry the origin's stem inside their "<stem>:link-<id>" tag.
+    // Renaming a discussion therefore rewrites that prefix on its own origin
+    // entries AND on every reference to them in other discussions — the same
+    // find-and-rewrite pattern io.renameDiscussion applies to image refs.
+    // Skipped when the sanitized stem didn't change (the tag carries the stem,
+    // not the display name).
+    const oldStem = io().sanitizeName(oldName);
+    const newStem = io().sanitizeName(trimmed);
+    if (oldStem !== newStem) {
+      try {
+        if (!state.members.has(trimmed)) state.members.set(trimmed, null);
+        await ensureAllLoaded();
+        for (const [, mm] of state.members) {
+          if (!mm || !mm.entries) continue;
+          let changed = false;
+          for (const e of mm.entries) {
+            const t = e.tags || [];
+            for (let k = 0; k < t.length; k++) {
+              const p = Chippy.tags.parseLinkTag(t[k]);
+              if (p && p.stem === oldStem) { t[k] = newStem + ':link-' + p.id; changed = true; }
+            }
+          }
+          if (changed) await io().saveDiscussion(state.dirHandle, mm);
+        }
+      } catch (err) { console.warn('[chippy] link-tag rename cascade failed:', err); }
+    }
     // Reload the renamed discussion from disk so that image refs in the in-memory
     // cache point to the new folder name. reloadMember emits 'memberReloaded'
     // which triggers pages.refresh() and re-renders the discussion view with
@@ -552,6 +598,32 @@
     emit({ type: 'muteToggled', name, entryId });
   }
 
+  /* ---------------------------- sensitive ------------------------------- */
+  // Entry-level sensitive marker: the reserved 'sensitive' tag. Sensitive
+  // entries — and every entry of a discussion flagged sensitive in the nav —
+  // are excluded from automatically created AI summaries. The tag is hidden
+  // from chips (taxonomy RESERVED) and toggled only from the discussion stream.
+
+  const isSensitiveEntry = e => ((e && e.tags) || []).includes('sensitive');
+
+  async function toggleSensitiveEntry(name, entryId, idx) {
+    const [m, e] = findEntry(name, entryId, idx);
+    if (!e) return;
+    if (isSensitiveEntry(e)) e.tags = e.tags.filter(t => t !== 'sensitive');
+    else e.tags.push('sensitive');
+    await ensureTagsInUnion(e.tags);
+    await io().saveDiscussion(state.dirHandle, m);
+    emit({ type: 'sensitiveToggled', name, entryId, sensitive: isSensitiveEntry(e) });
+  }
+
+  // Filter for summary building: drop entries tagged 'sensitive' and every
+  // entry belonging to a discussion flagged sensitive. Expects collectEntries
+  // output (entries carrying _member).
+  function excludeSensitive(entries) {
+    const sens = new Set(state.nav.discussions.filter(d => d.sensitive).map(d => d.name));
+    return (entries || []).filter(e => !isSensitiveEntry(e) && !sens.has(e._member));
+  }
+
   /* ----------------------------- ideas --------------------------------- */
 
   const IDEA_STATE_TAGS = ['consideredidea', 'exploredidea', 'promoteditea', 'shelvedidea'];
@@ -771,6 +843,121 @@
     emit({ type: 'entryDeleted', name, entryId });
   }
 
+  /* --------------------------- task linking ---------------------------- */
+  // Origin + reference model (documentation/task-linking-implementation.md):
+  // a task/followup/idea lives once in its ORIGIN discussion; every other
+  // connected discussion holds a lightweight REFERENCE entry that carries the
+  // same "<origin-stem>:link-<id>" tag, the kind tag, and a cached one-line
+  // title as its body (the broken-link fallback). Content, state, actions, due
+  // and images live only at the origin; references resolve to it at read time.
+
+  // True when, within `memberName`, this entry is a reference to an origin
+  // that lives elsewhere (its link-tag stem names a different discussion).
+  function isReference(e, memberName) {
+    const lt = Chippy.tags.linkTagOf(e && e.tags);
+    if (!lt) return false;
+    return Chippy.tags.parseLinkTag(lt).stem !== io().sanitizeName(memberName);
+  }
+
+  // The nav discussion whose sanitized filename stem matches, or null.
+  function discussionByStem(stem) {
+    return state.nav.discussions.find(d => io().sanitizeName(d.name) === stem) || null;
+  }
+
+  // Resolve a reference to its live origin entry with a targeted load of just
+  // the origin discussion. Returns { name, member, entry, idx } on success or
+  // { broken: true } when the origin is gone, archived, unreadable (e.g. an
+  // unmaterialized cloud placeholder), or no longer carries the link tag.
+  async function resolveOrigin(refEntry) {
+    const lt = Chippy.tags.linkTagOf(refEntry && refEntry.tags);
+    if (!lt) return { broken: true };
+    const stem = Chippy.tags.parseLinkTag(lt).stem;
+    const d = discussionByStem(stem);
+    if (!d || d.archived) return { broken: true };
+    let m = state.members.get(d.name);
+    if (!m) {
+      try {
+        m = await io().loadDiscussion(state.dirHandle, d.name);
+        state.members.set(d.name, m);
+        await registerMemberRefs(m);
+      } catch (err) {
+        console.warn('[chippy] link origin not loadable: ' + d.name, err);
+        return { broken: true };
+      }
+    }
+    const idx = (m.entries || []).findIndex(e =>
+      Chippy.tags.linkTagOf(e.tags) === lt && !isReference(e, d.name));
+    if (idx < 0) return { broken: true };
+    return { name: d.name, member: m, entry: m.entries[idx], idx };
+  }
+
+  // Connect an entry to another discussion. Mints the "<stem>:link-<id>" tag
+  // on the origin on first connect (identity on demand — no backfill), then
+  // appends a reference entry to the target, timestamped now so it sits in the
+  // target's history at the moment it became relevant there. Idempotent:
+  // connecting to the origin itself or to an already-connected discussion is a
+  // no-op. Connecting from a reference links the origin, never the reference.
+  // Tasks, followups and ideas only — goals keep their goal-<id> trail.
+  async function connectToDiscussion(name, entryId, targetName, idx) {
+    let [m, e] = findEntry(name, entryId, idx);
+    if (!e) return null;
+    let originName = name;
+    if (isReference(e, name)) {
+      const r = await resolveOrigin(e);
+      if (r.broken) return null;
+      m = r.member; e = r.entry; originName = r.name;
+    }
+    const kind = KINDS.find(k => e.tags.includes(k));
+    if (!kind || kind === 'goal') return null;
+    const originStem = io().sanitizeName(originName);
+    if (io().sanitizeName(targetName) === originStem) return null; // self-connect
+
+    let lt = Chippy.tags.linkTagOf(e.tags);
+    if (!lt) {
+      lt = originStem + ':link-' + mintLinkId();
+      e.tags.push(lt);
+      await ensureTagsInUnion(e.tags);
+      await io().saveDiscussion(state.dirHandle, m);
+    }
+
+    let tgt = state.members.get(targetName);
+    if (!tgt) {
+      try {
+        tgt = await io().loadDiscussion(state.dirHandle, targetName);
+        state.members.set(targetName, tgt);
+      } catch (err) {
+        console.warn('[chippy] connect target not loadable: ' + targetName, err);
+        return null;
+      }
+    }
+    if ((tgt.entries || []).some(x => Chippy.tags.linkTagOf(x.tags) === lt)) return lt;
+
+    const title = (e.body || '').split('\n')[0];
+    tgt.entries.push({ created_at: nowISO(), tags: [kind, lt], goal: null, due: null, body: title });
+    await io().saveDiscussion(state.dirHandle, tgt);
+    emit({ type: 'entryConnected', origin: originName, target: targetName, linkTag: lt });
+    return lt;
+  }
+
+  // Remove a discussion's reference to a linked entry ("delete the link").
+  // The origin — and every other discussion's reference — is untouched.
+  async function disconnectFromDiscussion(targetName, linkTag) {
+    let tgt = state.members.get(targetName);
+    if (!tgt) {
+      try {
+        tgt = await io().loadDiscussion(state.dirHandle, targetName);
+        state.members.set(targetName, tgt);
+      } catch (_) { return false; }
+    }
+    const idx = (tgt.entries || []).findIndex(e =>
+      Chippy.tags.linkTagOf(e.tags) === linkTag && isReference(e, targetName));
+    if (idx < 0) return false;
+    tgt.entries.splice(idx, 1);
+    await io().saveDiscussion(state.dirHandle, tgt);
+    emit({ type: 'entryDisconnected', target: targetName, linkTag });
+    return true;
+  }
+
   /* ------------------------------ images ------------------------------- */
 
   async function saveImage(name, blob) { return io().ImageStore.saveImage(state.dirHandle, name, blob); }
@@ -812,7 +999,13 @@
         const nav = state.nav.discussions.find(d => d.name === name);
         if (!nav || nav.tag !== discTag) continue;
       }
-      (m.entries || []).forEach((e, i) => out.push(Object.assign({ _member: name, _idx: i }, e)));
+      (m.entries || []).forEach((e, i) => {
+        // Reference stubs are skipped: a linked entry surfaces once, at its
+        // origin, so cross-views (kanban, Ro3, calendar, dashboard, search,
+        // summary) never double-count it.
+        if (isReference(e, name)) return;
+        out.push(Object.assign({ _member: name, _idx: i }, e));
+      });
     }
     return out;
   }
@@ -1034,13 +1227,15 @@
       subscribe, openFolder, selectMember, setActiveScreen, setTheme,
       toggleFavorite, setDiscussionTag, reloadMember, archiveDiscussion, renameDiscussion, createDiscussion, setPrep, addEntry,
       setTaskState, cyclePriority, setDue, appendAction, toggleMute, isMuted,
+      toggleSensitiveEntry, toggleDiscussionSensitive, isSensitiveEntry, excludeSensitive,
       setGoalState, updateIdeaState, promoteIdea, ideaInterestOf, editEntry, getLinks, renameLink, moveEntry, deleteEntry,
+      isReference, resolveOrigin, connectToDiscussion, disconnectFromDiscussion,
       saveImage, getImageUrl,
       ensureAllLoaded, collectEntries, applyUnifiedFilter, getAllNames, getAllTags,
       getRo3Candidates, pickRo3, doneRecent, resolvedDate,
       loadSummary, saveSummaryConfig, appendSummary, deleteSummary, updateSummary, moveSummaryToDiscussion, exportContribution, shortId,
       // pure helpers exposed for the UI and for tests
-      nowISO, mintGoalId, extractInlineTags, autoLinkUrls, extractNameTokens, applyEditTagRules,
+      nowISO, mintGoalId, mintLinkId, extractInlineTags, autoLinkUrls, extractNameTokens, applyEditTagRules,
       splitTrailingActions, splitBodyParts, joinBodyParts, actionLabelFor, extractLinks, parseSearchQuery,
       _state: state
     },

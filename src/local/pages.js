@@ -244,9 +244,24 @@
     }
   }
 
+  // Open the entry's discussion and scroll to the exact comment — the
+  // double-click navigation used by the cross pages (Comments, Tasks, Goals,
+  // Ideas, Ro3, Calendar). selectMember renders the discussion screen via the
+  // memberSelected subscriber before resolving, so the card exists to scroll to.
+  async function jumpToEntry(memberName, entryId) {
+    await store().selectMember(memberName);
+    if (Chippy.discussion && Chippy.discussion.scrollToEntry) {
+      Chippy.discussion.scrollToEntry(entryId);
+    }
+  }
+
   // Every cross-view row is the shared, fully-interactive comment card.
+  // Double-click jumps to the exact comment in its discussion.
   function entryRow(e, extra) {
-    return ui().entryCard(e, Object.assign({ member: e._member, showMember: true, idx: e._idx }, extra || {}));
+    return ui().entryCard(e, Object.assign(
+      { member: e._member, showMember: true, idx: e._idx,
+        onJump: () => jumpToEntry(e._member, e.created_at) },
+      extra || {}));
   }
 
   // All Comments / All Tasks are overview pages: drop edit/move/delete and keep
@@ -468,9 +483,9 @@
     const act = el('span', 'icon-btn act', '⚡'); act.title = 'Add action'; stop(act);
     act.addEventListener('click', (ev) => { ev.stopPropagation();
       ui().showActionModal('Add action', (text) => store().appendAction(e._member, e.created_at, text, e._idx)); });
-    const mute = el('span', 'icon-btn', store().isMuted(e) ? '🔈' : '🔇'); mute.title = 'Mute / unmute'; stop(mute);
-    mute.addEventListener('click', (ev) => { ev.stopPropagation(); store().toggleMute(e._member, e.created_at, e._idx); });
-    meta.append(act, mute);
+    // (Mute removed — muting lives only on the task/followup rows in the
+    // discussion's right-hand panel; muted cards still render dimmed here.)
+    meta.append(act);
     card.append(meta);
     const txt = el('div', 'kanban-card-text clamp');
     ui().safeSetHtml(txt, ui().renderEntryText(e.body || ''));
@@ -597,9 +612,11 @@
 
   function ro3Card(e) {
     // No outer wrapper — the unified comment box is the whole card (avoids a double box).
-    // Ro3 is a focus view: just state/priority and the action/mute controls (right-aligned).
+    // Ro3 is a focus view: just state/priority and the action controls (right-aligned).
+    // Double-click jumps to the exact comment in its discussion.
     return ui().entryCard(e, { member: e._member, showMember: true, idx: e._idx,
-      hideEdit: true, hideMove: true, hideDelete: true, controlsRight: true });
+      hideEdit: true, hideMove: true, hideDelete: true, controlsRight: true,
+      onJump: () => jumpToEntry(e._member, e.created_at) });
   }
 
   const ro3Key = p => p._member + '|' + p.created_at;
@@ -767,7 +784,10 @@
       await store().saveSummaryConfig(url.value, model.value);
       gen.disabled = true; gen.textContent = 'Generating…'; out.textContent = '';
       try {
-        const entries = store().collectEntries().filter(e => inRange(e.created_at, range));
+        // Sensitive content never reaches the LLM: entries tagged 'sensitive'
+        // and every entry of a discussion flagged sensitive are dropped here.
+        const entries = store().excludeSensitive(store().collectEntries())
+          .filter(e => inRange(e.created_at, range));
         let promptText = buildPrompt(entries);
         // Strip names before they leave the machine when privacy mode is on.
         if (privacy.checked) {

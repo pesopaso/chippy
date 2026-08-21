@@ -733,3 +733,133 @@ reference the requirement (`R#`) / plan step.
 
 - **`pages.js`** — `makeSearchBar` accepts an initial value; `openKanban` mounts the bar above the board and applies `applyUnifiedFilter` to the task pool. Typing rebuilds only the board (input keeps focus); the query survives the full re-renders from drag-drop and the Focus toggle (`kanbanSearch` module state) and resets on fresh navigation (`DISC_FILTER_RESET`).
 - New e2e test in `search.spec.mjs`: board filters on a freetext query and restores when cleared.
+
+### v3.1.0-dev.103 — 2026-06-15 — Links always open in a new tab
+
+> Rendered links open in a new browser tab rather than replacing the app.
+
+- **`ui.js`** — rendered `<a>` links carry `target="_blank" rel="noopener noreferrer"`.
+- **`main.js`** — a document-level click handler opens bare `http(s)` links via `window.open(…, '_blank', 'noopener,noreferrer')`, leaving Ctrl/⌘/middle-clicks to the browser.
+
+### v3.1.0-dev.107 — 2026-06-16 — Print renders the `.md` as regular Markdown
+
+> The print button now prints the on-disk `.md` rendered as plain Markdown (images included), never the styled discussion UI.
+
+- **`main.js`** — `preparePrintArea()` serializes the active discussion with `format.serializeDiscussion` (byte-identical to the file), renders it through a discussion-free Markdown renderer, resolves image references to blob URLs, and toggles a `print-md` body flag. Runs on the print button (awaited so images are ready) and is pre-built on discussion open so Ctrl+P works too; print blob URLs are revoked between prints.
+- **`ui.js`** — `parseMd` accepts an optional inline renderer; new `mdInlinePlain` / `renderMarkdownPlain` render standard Markdown without the discussion-specific transforms (no `@[Name]` chips, no lazy image `data-src`). Added a reusable `hideTime` option to `entryCard`.
+- **`app.html` / `style.css`** — a `#printArea` surface plus `@media print` rules that show only the rendered Markdown and hide the app.
+- **Fix** — `beforeprint` no longer runs DOMPurify; its Trusted Types policy cannot execute during the print lifecycle and threw `createHTML … callback is no longer runnable` when a print dialog was cancelled. The surface is built before `window.print()` instead.
+
+### v3.1.0-dev.108 — 2026-06-16 — Startup reconciles navigation with the folder's files
+
+> On opening a folder the navigation list is reconciled against the actual discussion files — the folder is the source of truth (files may be added/removed by external or automated processes).
+
+- **`io.js`** — new `reconcileNavWithFiles(dirHandle, nav)` (+ `listArchived`): drops nav entries whose `.md` is gone, adds entries for files not yet listed, matches archived entries to `*.archive.md`, preserves each kept entry's metadata and order, and reports whether anything changed. Pure except for the directory read.
+- **`store.js`** — `openFolder` runs the reconcile after `loadIndexes` and persists `navigation.chippy.md` only when it changed (idempotent; errors are caught so startup never breaks).
+
+### v3.1.0-dev.110 — 2026-06-16 — AI Summary: name-privacy toggle
+
+> A "Remove names" toggle on the AI Summary page anonymizes names before any text is sent to the API — for use with public/non-local endpoints.
+
+- **`pages.js`** — `redactNames` (+ `initialsOf`): before the prompt is POSTed, `@[Full Name]` references and any registered name are replaced with the person's initials (`Philipp Sommer` → `PS`, `Maria Rodriguez Lopez` → `MRL`); names sharing initials get a numeric suffix (`PS`, `PS2`). Applied only when the toggle is on; the preference persists in `localStorage`. Only the outbound prompt is affected — nothing on disk changes.
+- **`style.css`** — `.summary-privacy` toggle styling.
+
+### v3.1.0-dev.112 — 2026-06-20 — Calendar page (day / focus / work-week / full-week / month)
+
+> A new Calendar cross-view places open tasks and followups that have a due date into five layouts.
+
+- **`app.html`** — `Calendar` nav button + `#calendarScreen`.
+- **`pages.js`** — `openCalendar` with five views: **Day** (due today), **Focus** (overdue / due today / next two days), **Work week** (Mon–Fri), **Full week** (Mon–Sun) and **Month** (this week + the next three). Shares the disc-tag filter and unified search, reuses the interactive task card (state / priority / action / mute), and re-renders through `pages.refresh()` on task/due changes. Today's column/cell is highlighted; closed and obsolete tasks are excluded, muted ones dimmed.
+- Calendar task cards drop the redundant timestamp (`hideTime`); month cells are ~60% taller and show a compact info box per task (state label, priority dot, two-line title, discussion name) that opens the discussion on click.
+- **`style.css`** — calendar board / columns / month grid / info-box styles.
+
+### v3.1.0-dev.113 — 2026-06-26 — Fix: `#tag` recognized anywhere in a comment and while editing
+
+> Tagging worked reliably only at the end of an empty comment and not at all while editing; it now works anywhere in the text and can promote an existing comment to a task.
+
+- **`discussion.js`** (composer) and **`ui.js`** (inline editor) — the `#tag ` extractor now matches the completed tag immediately **before the caret** instead of only at the very end of the whole value, and restores the cursor. This fixes mid-comment tagging and lets an existing comment be turned into a task by typing `#task ` while editing.
+
+### v3.1.0-dev.114 — 2026-07-02 — Fix: URLs with underscores no longer mangled
+
+> Underscores inside a URL were being turned into `<em>` by the Markdown emphasis pass, which broke the link.
+
+- **`ui.js`** — both the discussion renderer (`mdInline`) and the print renderer (`mdInlinePlain`) shield generated `<a>` / `<img>` / name-chip HTML behind placeholders before the bold/italic/strikethrough passes and restore them afterward (the same technique already used for code spans), so underscores and other special characters in links survive intact.
+
+### v3.2.0-dev.115 — 2026-07-07 — Ideas: new entry type with lifecycle, panel, search and dashboard integration
+
+> Ideas (💡) capture possibilities that aren't yet commitments — a middle ground between comments and tasks/goals. Tag a comment `#idea`; it carries a four-state lifecycle (Considered → Explored → Promoted / Shelved) with transitions logged as dated action bullets. Shipped across three phases (data model, interaction, cross-discussion integration).
+
+- **`datadefinition.md`** — `idea` reserved tag, idea state tags (`consideredidea`, `exploredidea`, `promoteditea`, `shelvedidea`) and the Idea Actions log format.
+- **`taxonomy.js`** — `idea` and the idea state tags join `RESERVED` (hidden from chip rows and tag suggestions); `idea` joins `PROMOTABLE` (typeable like `#task`); `entryType()` classifies ideas.
+- **`store.js`** — `isIdeaEntry` / `getIdeaState` / `isOpenIdea` helpers and the `getOpenIdeas` selector; `updateIdeaState(name, entryId, newState, idx)` strips the old state tag, adds the new one and logs `- YYYY-MM-DD : → <Label>`; unified search understands `#idea:<state>` / `#state:<state>` (considered / explored / promoted / shelved).
+- **`ui.js`** — `entryCard` renders ideas with a 💡 icon and a clickable state badge (opens `showIdeaStateDropdown`); shelved ideas collapse to one line.
+- **`discussion.js`** — "Open Ideas" right-panel section: state badge, priority dot, ⚡ action, double-click jump; re-rendered in place on single-entry mutations.
+- **`main.js`** — `ideaStateChanged` joins the single-entry refresh group; the help dialog documents the idea lifecycle, badges and search syntax.
+- **`pages.js` / `app.html`** — new "Ideas" cross-discussion page with state tabs (All / Considered / Explored / Promoted / Shelved) plus disc-tag filter and unified search; All Comments gains a "💡 Ideas only" toggle.
+- **`dashboard.js`** — inflow pies count ideas as their own slice; new "Idea states" pie (badge colors); the activity timeline plots an ideas series.
+- **`style.css`** — `--idea` accent variable, idea state badge palette, ideas-panel and dropdown styles.
+
+### v3.2.0-dev.116 — 2026-07-07 — Ideas: promotion, interest levels, Kanban columns
+
+> Phase 4 of the Ideas feature: one-click promotion to task/goal, an interest-level indicator, and optional idea lifecycle columns on the Kanban board.
+
+- **`store.js`** — `promoteIdea(name, entryId, kind, title, idx)` creates the task/goal in the same discussion, sets the idea to Promoted and cross-links both action logs (`Derived from idea: …` on the new entry, `Promoted to <kind>: … (created <ts>)` on the idea); emits `ideaPromoted`. New pure helper `ideaInterestOf(e)` = action bullets + links. **Fix**: `Idea Actions` joins `ACTION_HEADERS` and `actionLabelFor` — idea state transitions previously wrote a `Task Resolution Actions` header, and a spec-format `Idea Actions` section duplicated its header on round-trip.
+- **`ui.js`** — the idea state dropdown gains "→ Task…" / "→ Goal…" promote options; new `showPromoteIdeaModal` (title prompt prefilled with the idea's first line). Idea cards show a ▲n interest indicator when n > 0.
+- **`discussion.js`** — Open Ideas rows wire the promote options and show the interest indicator.
+- **`pages.js`** — Kanban "💡 Ideas" toggle (off by default) appends the four lifecycle columns (Considered / Explored / Promoted / Shelved); drag-and-drop transitions idea state; drops are kind-guarded so ideas never take task states and vice versa. Idea cards carry the purple accent.
+- **`main.js`** — `ideaPromoted` triggers a full refresh; help documents promotion, interest and the Kanban toggle.
+- **`style.css`** — `.idea-interest`, promote-option and divider styles, Kanban idea column accents.
+- **`tests/local/unit/ideas.test.mjs`** — new suite: taxonomy classification, `#idea:<state>` search, Idea Actions round-trip, interest levels, dashboard aggregations, and a performance budget over 5000 ideas (Phase 4 acceptance).
+
+### v3.2.0-dev.117 — 2026-08-18 — Task links: one task in many discussions (R65)
+
+> A task, followup, or idea can be **connected** (🔗) to other discussions and appears in each — origin + reference model with a single source of truth. The entry lives once in its origin discussion; each connected discussion stores a lightweight reference carrying the shared `<origin-stem>:link-<id>` tag, resolved to the live origin at render time. Design and phased plan: `task-linking-implementation.md`; format: `datadefinition.md` §2.4. Harness-relevant format change: **additive only** (one reserved tag family; references are ordinary entries), round-trip pinned byte-for-byte in the unit suite.
+
+- **`taxonomy.js`** — `<origin-stem>:link-<id>` joins `RESERVED` (hidden from chips, tag counts, and contribution exports); new `LINK_TAG_RE`, `linkTagOf(tags)`, `parseLinkTag(tag)`.
+- **`store.js`** — `mintLinkId` (id minted on first connect only — no backfill; existing files stay byte-identical until a task is connected); `isReference(e, memberName)` (link-tag stem vs own stem); `resolveOrigin(refEntry)` (targeted load of just the origin; `{ broken: true }` for a missing/archived/unreadable origin); `connectToDiscussion(name, entryId, target, idx)` (idempotent, refuses self-connect and goals, connects the ORIGIN when invoked from a reference, appends a kind+link-tag reference with the origin's first line as cached title, timestamped at connect time); `disconnectFromDiscussion(target, linkTag)` (removes only that discussion's reference); `collectEntries` skips reference stubs, so every cross-view (All Tasks, Kanban, Ro3, Calendar, dashboard, search, AI Summary) counts a linked task exactly once at its origin with no further changes; `renameDiscussion` rewrites link-tag stems on the origin and every reference (same pattern as the image-ref rewrite).
+- **`discussion.js`** — references resolve in the history (live origin card, controls act on the origin, placed at the CONNECT date/time) and in the Open Tasks / Open Ideas panels (via `resolvedPanelEntries`; broken links stay out of the panels but remain visible as read-only stubs in the history); async resolution cache with a single re-render when a resolution changes; task/idea panel rows now target `owner` coordinates, so linked rows mutate the origin.
+- **`ui.js`** — `entryCard` link states: `'link'` (🔗 badge, "linked from" tooltip, full controls writing to the origin), `'broken'` (⚠ badge, read-only stub), `'pending'` (resolving); Move/Delete hidden on link cards; new Connect (🔗) control on task/followup/idea cards (`connectDialog`, excludes the current discussion, idempotent) and Disconnect (✂) with confirm (`disconnectDialog`) on link cards; `opts.timeText` display override.
+- **`main.js`** — `entryConnected` / `entryDisconnected` refresh the active page and the sidebar counts; help documents Connect/Disconnect, the 🔗/⚠ badges, and where changes are saved.
+- **`style.css`** — `.link-badge` (+ `.broken`, `.pending`), dashed-border dimmed `.entry-card.link-broken`, `.link-pending`.
+- **`datadefinition.md`** — the link-tag row in §2.2 and new §2.4 (origin/reference format, connect-time placement, resolution and broken state, rename cascade, disconnect).
+- **`documentation.md`** — requirements R64 (discussion rename, backfilled) and R65 (task links).
+- **`tests/local/unit/task-linking.test.mjs`** — new suite (15 tests): tag parsing/reservation, connect (mint-on-first-connect, cached title, connect-time timestamp, both files saved), idempotency/self-connect/goal refusal, origin-vs-reference discrimination, resolution (live + broken via deleted/archived origin), disconnect (origin untouched; origin entry never removable as a "reference"), no-chain rule (connecting from a reference links the origin), rename cascade end-to-end, `collectEntries`/Ro3 single-count, byte-identical format round-trip of a reference entry. Full unit suite green (35/35).
+
+### v3.2.0-dev.118 — 2026-08-18 — Sensitive markers (R66) + discussion-stream button cleanup
+
+> Comments and whole discussions can be marked **sensitive** (lock toggle 🔓 ⇄ 🔒) and are then excluded from automatically created AI summaries — the filtered prompt never contains them. Plus stream ergonomics: mute leaves the cards (it lives only on the right-hand task rows now), and the delete button is set apart and ~20% larger. Format change: **additive only** — a reserved `sensitive` entry tag and a `| sensitive` navigation flag; unknown flags were already ignored by older parsers.
+
+- **`taxonomy.js`** — `sensitive` joins `RESERVED` (hidden from chips, tag counts, exports); not `PROMOTABLE` (app-managed, never typed).
+- **`format.js`** — `parseNav`/`serializeNav` carry the per-discussion `| sensitive` flag (round-trips byte-identically; absent when off).
+- **`store.js`** — `toggleSensitiveEntry(name, entryId, idx)` (adds/removes the tag, emits `sensitiveToggled`), `toggleDiscussionSensitive(name)` (nav flag, emits `discussionSensitiveChanged`), `isSensitiveEntry(e)`, and `excludeSensitive(entries)` — the summary filter dropping tagged entries and every entry of a sensitive discussion.
+- **`pages.js`** — AI Summary pipes `collectEntries()` through `excludeSensitive` before `buildPrompt`, so sensitive content never reaches the LLM (independent of the names-redaction toggle). Kanban cards drop their mute button.
+- **`ui.js`** — `entryCard`: lock toggle (🔓 open ⇄ 🔒 marked) shown only in the discussion stream; marked cards carry a red left border and a "sensitive" chip (`opts.sensitiveControl`; on resolved link cards the mark lands on the origin); the mute button is removed from cards entirely; the delete button gains `del-btn` (gap + size).
+- **`discussion.js`** — history cards and `refreshEntry` pass `sensitiveControl`; the discussion header gains the same lock toggle (next to ★) plus a "sensitive" chip beside the title when flagged for the discussion-level flag; the right-hand task rows keep their mute button — now the only place mute appears.
+- **`main.js`** — `sensitiveToggled` joins the single-entry refresh group; `discussionSensitiveChanged` refreshes the screen; help documents the lock and the mute relocation.
+- **`style.css`** — `.icon-btn.del-btn` (14px left gap, `.82rem` → `1rem` ≈ +20%); `.sens` toggles grey when unlocked, full color when locked (card and header variants); `.sens-chip` and the red `.entry-card.sens-marked` border.
+- **`datadefinition.md`** — `sensitive` entry tag (§2.2) and `| sensitive` navigation flag (§3.1).
+- **`tests/local/unit/sensitive.test.mjs`** — new suite (6 tests): reservation, nav-flag byte-identical round-trip, both toggles, exclusion filter (tagged entry + whole discussion; no-op when nothing marked). Full unit suite green (41/41).
+
+### v3.2.0-dev.119 — 2026-08-18 — Double-click navigation on the cross pages
+
+> Double-clicking a comment card on Comments, Tasks, Goals, Ideas, or Ro3 (and, since they share the same card, Calendar) opens the card's discussion and scrolls to the exact comment, flashing it — the same jump the right-panel rows already offered inside a discussion, now available from every cross view.
+
+- **`discussion.js`** — `scrollToEntry` joins the module's exports for cross-page use.
+- **`pages.js`** — new `jumpToEntry(member, entryId)` (selects the discussion — which renders the member screen — then scrolls); `entryRow` and `ro3Card` pass `onJump` into the shared card.
+- **`ui.js`** — `entryCard` wires `opts.onJump` on double-click, guarded so links, images, inputs, and every control (state/priority squares, idea badge, icon buttons, member label, inline editor) keep their own behavior.
+- **`main.js`** — help's Page overview documents the double-click jump.
+- For linked tasks the cross views show the origin card, so the jump lands on the origin comment in its own discussion.
+
+### v3.2.0-dev.120 — 2026-08-18 — Help dialog refreshed for task links, sensitive markers and navigation
+
+> The help dialog now matches the shipped v3.2 behavior end to end.
+
+- **`main.js`** — Discussion header documents the 🔓/🔒 sensitive toggle and title chip; the stream Actions line drops mute, adds 🔓/🔒 · 🔗 connect · ✂ disconnect and the set-apart 🗑; Open Tasks/Ideas panels note the 🔗 linked rows and that muting lives only there; reserved-tag list gains consideredidea, sensitive and <discussion>:link-<id>; Page overview gains the missing Calendar entry and notes the summary exclusion; the AI Summary section documents the sensitive filter and the Remove-names toggle.
+
+### v3.2.0-dev.121 — 2026-08-18 — Ro3: truly random selection (recorded late; landed before dev.117)
+
+> Reloading Ro3 kept surfacing the same small set of tasks. The old picker filled its three slots as one-per-priority (high/medium/low) and only fell back to the shared pool when fewer than three prioritized tasks existed — so once each priority bucket had at least one task, every task *without* a priority tag could never appear, and single-task buckets repeated on every refresh.
+
+- **`store.js`** — `pickRo3(cands, rng)` drops the priority buckets: it now draws up to 3 **distinct** tasks uniformly at random from all open, non-muted candidates (verified over 60k draws: always distinct, per-task selection within ~1% of uniform; empty/small/null pools handled).
+- **`main.js`** — help's Ro3 line: "three open tasks picked at random; Refresh re-rolls" (was "one task per priority").
+- R47's behavior changes accordingly: no per-priority guarantee; every open task is equally likely.

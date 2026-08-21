@@ -128,12 +128,13 @@
     for (const line of sliceSection(md, '## Discussions')) {
       if (!line.startsWith('- ')) continue;
       const parts = line.slice(2).split(' | ');
-      const d = { name: parts[0], tag: null, favorite: false, archived: false };
+      const d = { name: parts[0], tag: null, favorite: false, archived: false, sensitive: false };
       for (let i = 1; i < parts.length; i++) {
         const p = parts[i];
         if (p.startsWith('tag: ')) d.tag = p.slice('tag: '.length);
         else if (p === 'favorite') d.favorite = true;
         else if (p === 'archived') d.archived = true;
+        else if (p === 'sensitive') d.sensitive = true;
       }
       discussions.push(d);
     }
@@ -149,6 +150,7 @@
       if (d.tag) line += ' | tag: ' + d.tag;
       if (d.favorite) line += ' | favorite';
       if (d.archived) line += ' | archived';
+      if (d.sensitive) line += ' | sensitive';
       out += line + '\n';
     }
     return out;

@@ -27,6 +27,94 @@
   }
   function draftKey(name) { return 'nb_draft_' + name; }
 
+  /* --------------------------- link resolution -------------------------- */
+  // Reference entries (task links, "<origin-stem>:link-<id>") resolve to their
+  // live origin at render time. Resolution may load the origin's file, so it is
+  // async; render stays sync by reading this cache and kicking one async pass
+  // (resolveMemberRefs) that re-renders once when anything actually changed.
+  // Cached values are the store's resolveOrigin results — live entry objects —
+  // so ordinary in-place mutations render correctly without invalidation; a
+  // reload of the origin swaps the entry object and is caught by the compare.
+  // (documentation/task-linking-implementation.md)
+  const linkCache = new Map(); // linkTag -> { name, member, entry, idx } | { broken: true }
+
+  // The cached resolution for a reference entry, or null when not yet resolved.
+  function refResolution(e) {
+    const lt = Chippy.tags.linkTagOf(e.tags);
+    return (lt && linkCache.get(lt)) || null;
+  }
+
+  // Re-resolve every reference in this member async; re-render once if any
+  // resolution changed (fresh open, origin reloaded/renamed/removed).
+  function resolveMemberRefs(member) {
+    const refs = (member.entries || []).filter(e => store().isReference(e, member.name));
+    if (!refs.length) return;
+    Promise.all(refs.map(async (e) => {
+      const lt = Chippy.tags.linkTagOf(e.tags);
+      const r = await store().resolveOrigin(e);
+      const prev = linkCache.get(lt);
+      const changed = !prev || prev.broken !== r.broken || prev.entry !== r.entry || prev.idx !== r.idx;
+      linkCache.set(lt, r);
+      return changed;
+    })).then(changes => {
+      if (changes.some(Boolean) &&
+          store().getActiveMemberName() === member.name &&
+          store().getActiveScreen() === 'member') {
+        render(member, {});
+      }
+    }).catch(() => {});
+  }
+
+  // The history card for one entry: references render their resolved origin
+  // (controls act on the origin; placement/time stay at the connect date),
+  // pending/broken references render a minimal stub card from the cached title.
+  function historyCard(member, e, i) {
+    if (store().isReference && store().isReference(e, member.name)) {
+      const lt = Chippy.tags.linkTagOf(e.tags);
+      const r = refResolution(e);
+      if (r && !r.broken) {
+        return ui().entryCard(r.entry, {
+          member: r.name, idx: r.idx, timeOnly: true, sensitiveControl: true,
+          timeText: ((e.created_at || '').split(' ').slice(1).join(' ') || e.created_at),
+          linkState: 'link', linkFrom: r.name,
+          refMember: member.name, linkTag: lt
+        });
+      }
+      return ui().entryCard(e, {
+        member: member.name, idx: i, timeOnly: true,
+        linkState: r ? 'broken' : 'pending',
+        linkFrom: (Chippy.tags.parseLinkTag(lt) || { stem: '' }).stem,
+        refMember: member.name, linkTag: lt
+      });
+    }
+    return ui().entryCard(e, { member: member.name, timeOnly: true, idx: i, sensitiveControl: true });
+  }
+
+  // Panel entries with references resolved: each item carries the entry to
+  // show plus the coordinates mutations must target (origin for links). Broken
+  // or not-yet-resolved links are omitted — the panels are working lists, and a
+  // task whose origin is unavailable shouldn't occupy a working slot (it stays
+  // visible as a stub in the history).
+  function resolvedPanelEntries(member, pick) {
+    const out = [];
+    const entries = member.entries || [];
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      if (store().isReference && store().isReference(e, member.name)) {
+        const r = refResolution(e);
+        if (!r || r.broken) continue;
+        if (pick(r.entry)) out.push({ t: r.entry, owner: r.name, idx: r.idx, linked: true });
+      } else if (pick(e)) {
+        out.push({ t: e, owner: member.name, idx: i, linked: false });
+      }
+    }
+    return out;
+  }
+  // Kind predicates via the store's own selectors on a one-entry probe, so the
+  // open/closed rules can never drift from the store.
+  const pickOpenTask = e => store().getOpenTasks({ entries: [e] }).length > 0;
+  const pickOpenIdea = e => store().getOpenIdeas({ entries: [e] }).length > 0;
+
   // Scroll to a history entry by created_at; optionally open its inline edit.
   function scrollToEntry(entryId, openEdit) {
     const id = (window.CSS && CSS.escape) ? CSS.escape(entryId) : entryId;
@@ -309,7 +397,7 @@
         dayGroup.append(el('div', 'day-label', day === today ? 'Today' : day));
         wrap.append(dayGroup); lastDay = day;
       }
-      dayGroup.append(ui().entryCard(e, { member: member.name, timeOnly: true, idx: i }));
+      dayGroup.append(historyCard(member, e, i));
     }
     if (!wrap.children.length) {
       wrap.append(el('div', 'history-empty', match ? 'No matching comments.' : 'No entries yet.'));
@@ -351,22 +439,24 @@
   }
   const firstLine = body => String(body || '').split('\n')[0];
 
-  function renderTaskRow(member, t) {
+  // item: { t, owner, idx, linked } — owner/idx are the coordinates mutations
+  // target: the entry's own discussion, or the ORIGIN for a resolved link.
+  function renderTaskRow(item) {
+    const t = item.t, owner = item.owner, idx = item.idx;
     const muted = store().isMuted(t);
-    const idx = (member.entries || []).indexOf(t); // disambiguates same-timestamp entries
     const row = el('div', 'task-item' + (t.tags.includes('followup') ? ' followup' : '') + (muted ? ' muted' : ''));
 
     const prio = priorityOf(t.tags) || 'low';
     const ps = el('span', 'prio-square prio-' + prio, PRIO_LABEL[prio]);
     ps.title = 'Change priority';
-    ps.addEventListener('click', () => store().cyclePriority(member.name, t.created_at, idx));
+    ps.addEventListener('click', () => store().cyclePriority(owner, t.created_at, idx));
 
     const sk = stateKeyOf(t.tags);
     const [slabel, scls] = STATE_SQUARE[sk];
     const ss = el('span', 'state-square ' + scls, slabel);
     ss.title = 'Change state';
     ss.addEventListener('click', () =>
-      ui().showStateDropdown(ss, sk, (key) => store().setTaskState(member.name, t.created_at, key, idx)));
+      ui().showStateDropdown(ss, sk, (key) => store().setTaskState(owner, t.created_at, key, idx)));
 
     // Show the full body clamped to one line; click expands when there's more.
     const txt = el('div', 'task-text clamp');
@@ -387,22 +477,27 @@
     // All controls live on the bottom row, so the text up top gets the full width.
     const meta = el('div', 'task-meta');
     meta.append(ps, ss);
+    if (item.linked) {
+      const lk = el('span', 'link-badge', '🔗');
+      lk.title = 'Linked task — saved in "' + owner + '"';
+      meta.append(lk);
+    }
     // Spacer pushes the remaining controls (age, due, action, mute) to the right.
     meta.append(el('span', 'meta-spacer'));
     const age = ageDays(t.created_at);
     if (age != null) meta.append(el('span', 'task-age', age + 'd'));
     const due = el('input', 'task-due'); due.type = 'date'; if (t.due) due.value = t.due;
     due.title = 'Due date';
-    due.addEventListener('change', () => store().setDue(member.name, t.created_at, due.value || null, idx));
+    due.addEventListener('change', () => store().setDue(owner, t.created_at, due.value || null, idx));
     // No due date → collapse the field to just its calendar icon (CSS); a set
     // date shows the full field.
     if (!t.due) due.classList.add('collapsed');
     meta.append(due);
     const act = el('span', 'icon-btn act', '⚡'); act.title = 'Add action';
     act.addEventListener('click', () =>
-      ui().showActionModal('Add action', (text) => store().appendAction(member.name, t.created_at, text, idx)));
+      ui().showActionModal('Add action', (text) => store().appendAction(owner, t.created_at, text, idx)));
     const mute = el('span', 'icon-btn', muted ? '🔈' : '🔇'); mute.title = muted ? 'Unmute' : 'Mute 5 days';
-    mute.addEventListener('click', () => store().toggleMute(member.name, t.created_at, idx));
+    mute.addEventListener('click', () => store().toggleMute(owner, t.created_at, idx));
     meta.append(act, mute);
 
     row.append(top, meta);
@@ -412,15 +507,17 @@
   function renderTasksPanel(member) {
     const wrap = el('div', 'tasks-section');
     wrap.append(el('div', 'section-label', 'Open Tasks'));
-    const tasks = store().getOpenTasks(member).slice().sort((a, b) => {
+    // Own open tasks plus resolved task links (broken links stay out).
+    const items = resolvedPanelEntries(member, pickOpenTask).sort((x, y) => {
+      const a = x.t, b = y.t;
       const ma = store().isMuted(a) ? 1 : 0, mb = store().isMuted(b) ? 1 : 0;
       if (ma !== mb) return ma - mb;
       const pa = PRIO_RANK[priorityOf(a.tags)] ?? 3, pb = PRIO_RANK[priorityOf(b.tags)] ?? 3;
       if (pa !== pb) return pa - pb;
       return (a.created_at || '').localeCompare(b.created_at || '');
     });
-    if (!tasks.length) { wrap.append(el('div', 'panel-empty', 'No open tasks.')); return wrap; }
-    for (const t of tasks) wrap.append(renderTaskRow(member, t));
+    if (!items.length) { wrap.append(el('div', 'panel-empty', 'No open tasks.')); return wrap; }
+    for (const item of items) wrap.append(renderTaskRow(item));
     return wrap;
   }
 
@@ -456,6 +553,75 @@
     const goals = store().getGoals(member);
     if (!goals.length) { wrap.append(el('div', 'panel-empty', 'No open goals.')); return wrap; }
     for (const g of goals) wrap.append(renderGoalRow(member, g));
+    return wrap;
+  }
+
+  /* --------------------------- ideas panel ------------------------------ */
+
+  // item: { t, owner, idx, linked } — owner/idx target the origin for links.
+  function renderIdeaRow(item) {
+    const idea = item.t, owner = item.owner, idx = item.idx;
+    const row = el('div', 'idea-item');
+
+    // Idea state badge
+    let ideaState = 'Considered';
+    let ideaClass = 'state-considered';
+    if ((idea.tags || []).includes('exploredidea')) { ideaState = 'Explored'; ideaClass = 'state-explored'; }
+    else if ((idea.tags || []).includes('promoteditea')) { ideaState = 'Promoted'; ideaClass = 'state-promoted'; }
+    else if ((idea.tags || []).includes('shelvedidea')) { ideaState = 'Shelved'; ideaClass = 'state-shelved'; }
+    const ideaBadge = el('span', 'idea-state-badge ' + ideaClass, ideaState); ideaBadge.title = 'Change idea state';
+    ideaBadge.addEventListener('click', () =>
+      ui().showIdeaStateDropdown(ideaBadge, ideaState.toLowerCase(), (newState) =>
+        store().updateIdeaState(owner, idea.created_at, newState, idx),
+        (kind) => ui().showPromoteIdeaModal(kind, firstLine(idea.body),
+          (title) => store().promoteIdea(owner, idea.created_at, kind, title, idx))));
+
+    // Priority dot (if present)
+    const prio = priorityOf(idea.tags) || 'low';
+    const ps = el('span', 'prio-square prio-' + prio, PRIO_LABEL[prio]);
+    ps.title = 'Change priority';
+    ps.addEventListener('click', () => store().cyclePriority(owner, idea.created_at, idx));
+
+    // Idea text (first line)
+    const txt = el('div', 'idea-text');
+    ui().safeSetHtml(txt, ui().renderEntryText(firstLine(idea.body)));
+    txt.addEventListener('dblclick', () => scrollToEntry(idea.created_at));
+
+    // Top row: text with controls
+    const top = el('div', 'idea-top');
+    top.append(txt);
+
+    // Meta row: badge, priority, interest, spacer, action button
+    const meta = el('div', 'idea-meta');
+    meta.append(ideaBadge, ps);
+    if (item.linked) {
+      const lk = el('span', 'link-badge', '🔗');
+      lk.title = 'Linked idea — saved in "' + owner + '"';
+      meta.append(lk);
+    }
+    const interest = store().ideaInterestOf ? store().ideaInterestOf(idea) : 0;
+    if (interest) {
+      const ii = el('span', 'idea-interest', '▲' + interest);
+      ii.title = interest + ' action(s) / link(s) on this idea';
+      meta.append(ii);
+    }
+    meta.append(el('span', 'meta-spacer'));
+    const act = el('span', 'icon-btn act', '⚡'); act.title = 'Add action';
+    act.addEventListener('click', () =>
+      ui().showActionModal('Add action', (text) => store().appendAction(owner, idea.created_at, text, idx)));
+    meta.append(act);
+
+    row.append(top, meta);
+    return row;
+  }
+
+  function renderIdeasPanel(member) {
+    const wrap = el('div', 'ideas-section');
+    wrap.append(el('div', 'section-label', 'Open Ideas'));
+    // Own open ideas plus resolved idea links (broken links stay out).
+    const items = resolvedPanelEntries(member, pickOpenIdea);
+    if (!items.length) { wrap.append(el('div', 'panel-empty', 'No open ideas.')); return wrap; }
+    for (const item of items) wrap.append(renderIdeaRow(item));
     return wrap;
   }
 
@@ -584,7 +750,7 @@
       const cards = list.querySelectorAll('.entry-card');
       for (const old of cards) {
         if (old.dataset.entryId === entryId) {
-          old.replaceWith(ui().entryCard(e, { member: member.name, timeOnly: true, idx }));
+          old.replaceWith(ui().entryCard(e, { member: member.name, timeOnly: true, idx, sensitiveControl: true }));
           replaced = true;
           break;
         }
@@ -597,7 +763,7 @@
     if (right) {
       const sc = right.scrollTop;
       right.replaceChildren(
-        renderTasksPanel(member), renderGoalsPanel(member),
+        renderTasksPanel(member), renderGoalsPanel(member), renderIdeasPanel(member),
         renderLinksPanel(member), renderGallery(member));
       right.scrollTop = sc;
     }
@@ -657,6 +823,12 @@
       });
     });
     header.append(renameBtn);
+    // Whole-discussion sensitive marker next to the title (mirrors the card chip).
+    if ((() => { const d = store().getDiscussions().find(x => x.name === member.name); return !!(d && d.sensitive); })()) {
+      const sc = el('span', 'sens-chip', 'sensitive');
+      sc.title = 'Sensitive discussion — excluded from AI summaries';
+      header.append(sc);
+    }
     const entryCount = (member.entries || []).length;
     const countEl = el('span', 'member-count', entryCount + (entryCount === 1 ? ' comment' : ' comments'));
     header.append(countEl);
@@ -665,6 +837,14 @@
       isFavorite(member.name) ? '★' : '☆');
     star.title = 'Toggle favorite';
     star.addEventListener('click', () => store().toggleFavorite(member.name));
+    // Discussion-level sensitive flag: the whole discussion is excluded from
+    // AI summaries (navigation.chippy.md "| sensitive").
+    const dSens = store().getDiscussions().find(x => x.name === member.name);
+    const sensOn = !!(dSens && dSens.sensitive);
+    const shield = el('span', 'reload-btn sens' + (sensOn ? ' on' : ''), sensOn ? '🔒' : '🔓');
+    shield.title = sensOn ? 'Sensitive discussion — excluded from AI summaries (click to unlock)'
+                          : 'Mark discussion sensitive — exclude it from AI summaries';
+    shield.addEventListener('click', () => store().toggleDiscussionSensitive(member.name));
     const reload = el('span', 'reload-btn', '↻');
     reload.title = 'Reload from disk';
     reload.addEventListener('click', () => store().reloadMember(member.name));
@@ -687,7 +867,7 @@
         row.append(cancel, ok); modal.append(row);
       });
     });
-    actions.append(star, reload, exp, arc);
+    actions.append(star, shield, reload, exp, arc);
     header.append(actions);
 
     const split = el('div', 'split-view');
@@ -709,6 +889,7 @@
     left.append(histHost);
     right.append(renderTasksPanel(member));
     right.append(renderGoalsPanel(member));
+    right.append(renderIdeasPanel(member));
     right.append(renderLinksPanel(member));
     right.append(renderGallery(member));
 
@@ -721,7 +902,14 @@
     screen.scrollTop = sScreen;
     const input = document.getElementById('entryInput');
     if (input) setTimeout(() => { try { input.focus({ preventScroll: true }); } catch (_) { input.focus(); } }, 0);
+
+    // Resolve task links async (may load origin files); re-renders once when a
+    // resolution changed, so pending stubs become live cards.
+    resolveMemberRefs(member);
   }
 
-  Chippy.discussion = { render, refreshEntry };
+  // scrollToEntry is exported for cross-page double-click navigation: pages.js
+  // selects the discussion (which renders this screen) and then jumps to the
+  // exact comment by its created_at.
+  Chippy.discussion = { render, refreshEntry, scrollToEntry };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

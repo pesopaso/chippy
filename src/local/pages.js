@@ -23,6 +23,9 @@
   let allLinksTagFilter = null;
   let allNamesTagFilter = null;
   let allTagsTagFilter = null;
+  let allIdeasTagFilter = null;
+  let allIdeasStateTab = 'all';       // All Ideas page: state tab filter
+  let allCommentsIdeasOnly = false;   // All Comments: 💡 ideas-only toggle
   let ro3TagFilter = null;
   const recent = []; // discussion names, insertion order, max 10
 
@@ -241,9 +244,24 @@
     }
   }
 
+  // Open the entry's discussion and scroll to the exact comment — the
+  // double-click navigation used by the cross pages (Comments, Tasks, Goals,
+  // Ideas, Ro3, Calendar). selectMember renders the discussion screen via the
+  // memberSelected subscriber before resolving, so the card exists to scroll to.
+  async function jumpToEntry(memberName, entryId) {
+    await store().selectMember(memberName);
+    if (Chippy.discussion && Chippy.discussion.scrollToEntry) {
+      Chippy.discussion.scrollToEntry(entryId);
+    }
+  }
+
   // Every cross-view row is the shared, fully-interactive comment card.
+  // Double-click jumps to the exact comment in its discussion.
   function entryRow(e, extra) {
-    return ui().entryCard(e, Object.assign({ member: e._member, showMember: true, idx: e._idx }, extra || {}));
+    return ui().entryCard(e, Object.assign(
+      { member: e._member, showMember: true, idx: e._idx,
+        onJump: () => jumpToEntry(e._member, e.created_at) },
+      extra || {}));
   }
 
   // All Comments / All Tasks are overview pages: drop edit/move/delete and keep
@@ -257,11 +275,19 @@
     const total = store().collectEntries().length;
     crossScreen('allCommentsScreen', 'All Comments', (c, q) => {
       const items = store().applyUnifiedFilter(store().collectEntries({ discTag: allCommentsTagFilter }), q)
+        .filter(e => !allCommentsIdeasOnly || (e.tags || []).includes('idea'))
         .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
       if (!items.length) { c.append(el('div', 'panel-empty', 'No comments.')); return; }
       for (const e of items) c.append(entryRow(e, OVERVIEW_OPTS));
-    }, total, (screen) => addCrossDiscFilter(screen, 'allCommentsFilters',
-      () => allCommentsTagFilter, v => { allCommentsTagFilter = v; }, openComments));
+    }, total, (screen) => {
+      addCrossDiscFilter(screen, 'allCommentsFilters',
+        () => allCommentsTagFilter, v => { allCommentsTagFilter = v; }, openComments);
+      const row = el('div', 'cross-disc-tag-filters');
+      const btn = el('button', 'disc-tag-filter-btn' + (allCommentsIdeasOnly ? ' active' : ''), '💡 Ideas only');
+      btn.addEventListener('click', () => { allCommentsIdeasOnly = !allCommentsIdeasOnly; openComments(); });
+      row.append(btn);
+      screen.append(row);
+    });
   }
   function openTasks() {
     crossScreen('allTasksScreen', 'All Tasks', (c, q) => {
@@ -286,6 +312,31 @@
       for (const e of items) c.append(entryRow(e, GOAL_OVERVIEW_OPTS));
     }, undefined, (screen) => addCrossDiscFilter(screen, 'allGoalsFilters',
       () => allGoalsTagFilter, v => { allGoalsTagFilter = v; }, openGoals));
+  }
+  // All Ideas: every #idea entry across discussions, filterable by lifecycle
+  // state (Considered / Explored / Promoted / Shelved) via a tab row.
+  const IDEA_STATE_TABS = [['all', 'All'], ['considered', 'Considered'], ['explored', 'Explored'], ['promoted', 'Promoted'], ['shelved', 'Shelved']];
+  const ideaStateOf = tags => tags.includes('exploredidea') ? 'explored' :
+    tags.includes('promoteditea') ? 'promoted' : tags.includes('shelvedidea') ? 'shelved' : 'considered';
+  function openIdeas() {
+    crossScreen('allIdeasScreen', 'All Ideas', (c, q) => {
+      const items = store().applyUnifiedFilter(store().collectEntries({ discTag: allIdeasTagFilter }), q)
+        .filter(e => (e.tags || []).includes('idea'))
+        .filter(e => allIdeasStateTab === 'all' || ideaStateOf(e.tags || []) === allIdeasStateTab)
+        .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')); // newest first
+      if (!items.length) { c.append(el('div', 'panel-empty', 'No ideas.')); return; }
+      for (const e of items) c.append(entryRow(e, OVERVIEW_OPTS));
+    }, undefined, (screen) => {
+      addCrossDiscFilter(screen, 'allIdeasFilters',
+        () => allIdeasTagFilter, v => { allIdeasTagFilter = v; }, openIdeas);
+      const tabs = el('div', 'cross-disc-tag-filters idea-state-tabs');
+      for (const [key, label] of IDEA_STATE_TABS) {
+        const btn = el('button', 'disc-tag-filter-btn' + (allIdeasStateTab === key ? ' active' : ''), label);
+        btn.addEventListener('click', () => { allIdeasStateTab = key; openIdeas(); });
+        tabs.append(btn);
+      }
+      screen.append(tabs);
+    });
   }
   function openLinks() {
     crossScreen('allLinksScreen', 'All Links', (c, q) => {
@@ -393,6 +444,8 @@
                        ['onhold', 'HOLD'], ['purgatory', 'PRGT'], ['resolved', 'DONE']];
   const PRIO_LABEL = Chippy.tags.PRIO_LABEL; // taxonomy.js
   let kanbanFocus = false; // when on, hide the HOLD and PRGT columns
+  let kanbanShowIdeas = false; // when on, append the idea lifecycle columns (off by default)
+  const KANBAN_IDEA_COLS = [['considered', 'Considered'], ['explored', 'Explored'], ['promoted', 'Promoted'], ['shelved', 'Shelved']];
   let kanbanSearch = '';   // unified search query; survives board re-renders
 
   // Tag taxonomy lives in taxonomy.js (Chippy.tags); aliased here for brevity.
@@ -405,9 +458,11 @@
   let kanbanDrag = null;
 
   function kanbanCard(e) {
-    const card = el('div', 'kanban-card' + (e.tags.includes('followup') ? ' followup' : '') + (store().isMuted(e) ? ' muted' : ''));
+    const isIdea = e.tags.includes('idea');
+    const card = el('div', 'kanban-card' + (e.tags.includes('followup') ? ' followup' : '') + (isIdea ? ' idea' : '') + (store().isMuted(e) ? ' muted' : ''));
     card.draggable = true;
-    const ref = { m: e._member, id: e.created_at, idx: e._idx };
+    // kind guards the drop targets: ideas only land in idea columns, tasks in task columns.
+    const ref = { m: e._member, id: e.created_at, idx: e._idx, kind: isIdea ? 'idea' : 'task' };
     card.addEventListener('dragstart', ev => {
       kanbanDrag = ref;
       ev.dataTransfer.effectAllowed = 'move';
@@ -428,9 +483,9 @@
     const act = el('span', 'icon-btn act', '⚡'); act.title = 'Add action'; stop(act);
     act.addEventListener('click', (ev) => { ev.stopPropagation();
       ui().showActionModal('Add action', (text) => store().appendAction(e._member, e.created_at, text, e._idx)); });
-    const mute = el('span', 'icon-btn', store().isMuted(e) ? '🔈' : '🔇'); mute.title = 'Mute / unmute'; stop(mute);
-    mute.addEventListener('click', (ev) => { ev.stopPropagation(); store().toggleMute(e._member, e.created_at, e._idx); });
-    meta.append(act, mute);
+    // (Mute removed — muting lives only on the task/followup rows in the
+    // discussion's right-hand panel; muted cards still render dimmed here.)
+    meta.append(act);
     card.append(meta);
     const txt = el('div', 'kanban-card-text clamp');
     ui().safeSetHtml(txt, ui().renderEntryText(e.body || ''));
@@ -457,6 +512,10 @@
     focusBtn.title = 'Focus: hide the HOLD and PRGT columns';
     focusBtn.addEventListener('click', () => { kanbanFocus = !kanbanFocus; openKanban(); });
     header.append(focusBtn);
+    const ideasBtn = el('button', 'btn-sm kanban-focus-btn' + (kanbanShowIdeas ? ' active' : ''), '💡 Ideas');
+    ideasBtn.title = 'Show the idea lifecycle columns (Considered / Explored / Promoted / Shelved)';
+    ideasBtn.addEventListener('click', () => { kanbanShowIdeas = !kanbanShowIdeas; openKanban(); });
+    header.append(ideasBtn);
     screen.append(header);
     addCrossDiscFilter(screen, 'kanbanFilters',
       () => allTasksTagFilter, v => { allTasksTagFilter = v; }, openKanban);
@@ -495,13 +554,40 @@
           let ref = kanbanDrag;
           if (!ref) { try { ref = JSON.parse(ev.dataTransfer.getData('text/plain')); } catch (_) {} }
           kanbanDrag = null;
-          if (!ref || !ref.id) return;
+          if (!ref || !ref.id || ref.kind === 'idea') return; // ideas don't take task states
           try {
             await store().setTaskState(ref.m, ref.id, key, ref.idx);
             openKanban();
           } catch (_) {}
         });
         board.append(col);
+      }
+      // Idea lifecycle columns (💡 toggle, off by default): drag to transition state.
+      if (kanbanShowIdeas) {
+        const ideas = store().applyUnifiedFilter(
+          store().collectEntries({ discTag: allTasksTagFilter }), kanbanSearch
+        ).filter(e => (e.tags || []).includes('idea'));
+        for (const [key, label] of KANBAN_IDEA_COLS) {
+          const col = el('div', 'kanban-col idea-col');
+          col.append(el('div', 'kanban-col-header idea', '💡 ' + label));
+          const colIdeas = ideas.filter(e => ideaStateOf(e.tags || []) === key);
+          colIdeas.sort((a, b) => rank(a) - rank(b) || (b.created_at || '').localeCompare(a.created_at || ''));
+          for (const e of colIdeas) col.append(kanbanCard(e));
+          col.addEventListener('dragover', ev => { ev.preventDefault(); ev.dataTransfer.dropEffect = 'move'; col.classList.add('drag-over'); });
+          col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
+          col.addEventListener('drop', async ev => {
+            ev.preventDefault(); col.classList.remove('drag-over');
+            let ref = kanbanDrag;
+            if (!ref) { try { ref = JSON.parse(ev.dataTransfer.getData('text/plain')); } catch (_) {} }
+            kanbanDrag = null;
+            if (!ref || !ref.id || ref.kind !== 'idea') return; // tasks don't take idea states
+            try {
+              await store().updateIdeaState(ref.m, ref.id, key, ref.idx);
+              openKanban();
+            } catch (_) {}
+          });
+          board.append(col);
+        }
       }
       boardWrap.append(board);
     }
@@ -526,9 +612,11 @@
 
   function ro3Card(e) {
     // No outer wrapper — the unified comment box is the whole card (avoids a double box).
-    // Ro3 is a focus view: just state/priority and the action/mute controls (right-aligned).
+    // Ro3 is a focus view: just state/priority and the action controls (right-aligned).
+    // Double-click jumps to the exact comment in its discussion.
     return ui().entryCard(e, { member: e._member, showMember: true, idx: e._idx,
-      hideEdit: true, hideMove: true, hideDelete: true, controlsRight: true });
+      hideEdit: true, hideMove: true, hideDelete: true, controlsRight: true,
+      onJump: () => jumpToEntry(e._member, e.created_at) });
   }
 
   const ro3Key = p => p._member + '|' + p.created_at;
@@ -696,7 +784,10 @@
       await store().saveSummaryConfig(url.value, model.value);
       gen.disabled = true; gen.textContent = 'Generating…'; out.textContent = '';
       try {
-        const entries = store().collectEntries().filter(e => inRange(e.created_at, range));
+        // Sensitive content never reaches the LLM: entries tagged 'sensitive'
+        // and every entry of a discussion flagged sensitive are dropped here.
+        const entries = store().excludeSensitive(store().collectEntries())
+          .filter(e => inRange(e.created_at, range));
         let promptText = buildPrompt(entries);
         // Strip names before they leave the machine when privacy mode is on.
         if (privacy.checked) {
@@ -867,16 +958,17 @@
   const CAL_MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   const CROSS = {
-    allComments: openComments, allTasks: openTasks, allGoals: openGoals,
+    allComments: openComments, allTasks: openTasks, allGoals: openGoals, allIdeas: openIdeas,
     allLinks: openLinks, allImages: openImages, allNames: openNames, allTags: openTags,
     kanban: openKanban, calendar: openCalendar, ro3: openRo3, activity: openActivity, summary: openSummary
   };
 
   // Reset maps for disc tag filters so each page starts at "All" on fresh navigation.
   const DISC_FILTER_RESET = {
-    allComments: () => { allCommentsTagFilter = null; },
+    allComments: () => { allCommentsTagFilter = null; allCommentsIdeasOnly = false; },
     allTasks:    () => { allTasksTagFilter = null; },
     allGoals:    () => { allGoalsTagFilter = null; },
+    allIdeas:    () => { allIdeasTagFilter = null; allIdeasStateTab = 'all'; },
     allImages:   () => { allImagesTagFilter = null; },
     allLinks:    () => { allLinksTagFilter = null; },
     allNames:    () => { allNamesTagFilter = null; },

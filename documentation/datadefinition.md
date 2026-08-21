@@ -127,13 +127,13 @@ and the body is consolidated to a single line on the next write.)
 
 **Resolution-action log** — a single section at the end of the body recording dated actions.
 The header depends on entry type: `Task Resolution Actions` (task), `Followup Actions`
-(followup), or `Goal Actions` (goal). Each action is a bullet `- YYYY-MM-DD : <text>` — date
+(followup), `Goal Actions` (goal), or `Idea Actions` (idea). Each action is a bullet `- YYYY-MM-DD : <text>` — date
 only, one space on each side of the colon.
 
-**State changes are logged here.** Every task, followup, or goal state transition appends an
+**State changes are logged here.** Every task, followup, goal, or idea state transition appends an
 action bullet `- YYYY-MM-DD : → <LABEL>`, where `<LABEL>` is the state's display label (task
 states `OPEN`, `WIP`, `CHK`, `HOLD`, `PRGT`, `DONE`, `OBSL`; goal states `Achieved`,
-`Canceled`, `Open`). The bullet does **not** carry the entry's state — the state is always the
+`Canceled`, `Open`; idea states `Considered`, `Explored`, `Promoted`, `Shelved`). The bullet does **not** carry the entry's state — the state is always the
 state tag in the header (section 2.2); the bullet is only a human-readable record of *when*
 the transition happened.
 
@@ -178,8 +178,11 @@ state markers are ever written**. The only marker still written is the move mark
 | `task`, `followup` | Classifies the entry as a task or a followup. Open by default. |
 | `goal` | Classifies the entry as a goal. |
 | `goal-<5 chars>` | A goal's unique identity tag (a 5-character base-36 suffix). Copied onto every comment linked to that goal, forming the historical trail. |
+| `idea` | Classifies the entry as an idea — an exploratory thought or possibility not yet committed as a task or goal. |
 | `high`, `medium`, `low` | Priority. |
 | `muted:<YYYY-MM-DD>` | Parking-lot mute marker; the encoded date is the auto-unmute expiry. |
+| `sensitive` | Marks the entry as sensitive: it is excluded from automatically created AI summaries. App-managed (toggled from the discussion stream), never typed. A whole discussion is marked sensitive via the `| sensitive` navigation flag (section 3.1). |
+| `<origin-stem>:link-<5 chars>` | A task link's identity (section 2.4): the origin discussion's sanitized filename stem, a colon, and a 5-character base-36 id. Carried identically by the origin entry and by every reference to it in other discussions. Minted only when an entry is first connected — never on creation. |
 
 **Task states.** A task's state is its state tag. There are seven states; the absence of any
 state tag is read as OPEN (so `opentask` is rarely written explicitly).
@@ -211,13 +214,24 @@ Naming note: the "Archived" state is stored as the `achievedgoal` tag and its bo
 `Achieved:` — the human-facing label ("Archived") and the stored token (`achieved…`) differ;
 the data uses the `achieved` form. The older `resolvedgoal` tag is still accepted on read.
 
+**Idea states.** An idea's state is carried by its state tag. There are four states:
+
+| State | Label | Tag |
+|---|---|---|
+| Considered | Entry is captured and under consideration | `consideredidea` (or no state tag) |
+| Explored | Idea has been discussed or researched | `exploredidea` |
+| Promoted | Idea has graduated to a task or goal | `promoteditea` |
+| Shelved | Idea is deprioritized or deemed not viable | `shelvedidea` |
+
+The absence of any state tag is read as Considered (so `consideredidea` is rarely written explicitly). A shelved idea may transition back to Considered if circumstances change (unshelving).
+
 Value rules:
 
 - A `task`, `followup`, or `goal` entry with no priority tag is stored as `low`.
-- The absence of any state tag is read as OPEN (tasks) or as an open goal.
+- The absence of any state tag is read as OPEN (tasks), as an open goal, or as Considered (ideas).
 - Every `goal` entry carries one unique `goal-<5 chars>` identity tag.
 
-State, priority, `task`/`followup`, and `muted:*` tags remain in the file but are hidden from
+State, priority, `task`/`followup`, `idea`, and `muted:*` tags remain in the file but are hidden from
 the on-screen tag chips.
 
 ### 2.3 Legacy `## Goals` section (read-only)
@@ -235,6 +249,49 @@ Files predating the 2026-03-03 goal-as-entry change may carry a `## Goals` secti
 Each bullet represents a goal; a checked `[x]` box means resolved, and an optional `| Due:
 <date>` supplies the due date. When such a file is loaded these become goal entries. The
 section is never written back, so any re-saved file is normalized to the entries-only layout.
+
+### 2.4 Linked entries (task links)
+
+A task, followup, or idea can be **connected** to other discussions and appears in each of
+them. The entry itself — content, state, priority, due date, actions, images — lives once, in
+its **origin** discussion; every other connected discussion holds a lightweight **reference**
+entry. Both carry the same identity tag `<origin-stem>:link-<id>` (section 2.2). Within a
+discussion, a link tag whose stem equals the discussion's own sanitized filename stem marks
+the **origin**; any other stem marks a **reference**. Because the stem alphabet
+(`[A-Za-z0-9_ -]`) contains no comma and no colon, the tag is safe in the comma-separated
+`tags:` field and splits unambiguously on its first colon.
+
+**The origin entry** is an ordinary entry with the link tag added on first connect:
+
+```markdown
+### 2026-08-18 10:30:00 | tags: task, high, Maria Lopez:link-k7f2a | due: 2026-08-25
+Coordinate the vendor security review with legal.
+```
+
+**The reference entry** is appended to the connected discussion at connect time. Its
+`created_at` is the **connect timestamp** — the entry's position in that discussion's history
+is the moment the task became relevant there. It carries exactly the kind tag and the link
+tag, and its body is a cached copy of the origin's first line (used as a read-only fallback
+when the origin cannot be loaded). References never carry state, priority, due, actions, or
+images — those live only at the origin.
+
+```markdown
+### 2026-08-18 14:05:00 | tags: task, Maria Lopez:link-k7f2a
+Coordinate the vendor security review with legal.
+```
+
+**Resolution.** When a discussion is rendered, each reference is resolved to its live origin
+entry (a targeted load of the origin's file via the tag's stem). A reference whose origin is
+missing, archived, renamed outside the app, or unreadable is **broken**: it renders as a
+read-only stub (kind + cached title) in the history and is omitted from the working panels.
+Deleting an origin deliberately leaves its references to break — no cascade.
+
+**Rename cascade.** Renaming a discussion rewrites the `<stem>:` prefix of its link tags on
+the origin entries and on every reference in other discussions (alongside the existing
+image-reference rewrite).
+
+**Disconnect.** Removing a task from a connected discussion deletes only that discussion's
+reference entry; the origin — and every other reference — is untouched.
 
 ---
 
@@ -275,6 +332,8 @@ followed by optional pipe-separated flags:
 - `| tag: <value>` — the sidebar group the discussion belongs to (omitted when empty).
 - `| favorite` — the discussion is marked a favorite.
 - `| archived` — the discussion is archived.
+- `| sensitive` — the discussion is marked sensitive: all of its entries are excluded from
+  automatically created AI summaries (see the `sensitive` entry tag in section 2.2).
 
 Per-discussion tag, archived, and favorite state are owned here (the single source of truth),
 not in the discussion files.

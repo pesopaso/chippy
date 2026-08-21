@@ -38,13 +38,24 @@
 
   const CLOSED_TASK = new Set(['resolvedtask', 'obsoletetask', 'resolvedfollowup']);
   const CLOSED_GOAL = new Set(['achievedgoal', 'canceledgoal', 'resolvedgoal']);
+  const IDEA_STATES = new Set(['consideredidea', 'exploredidea', 'promoteditea', 'shelvedidea']);
   const PRIORITY = ['high', 'medium', 'low'];
-  const KINDS = ['task', 'followup', 'goal'];
+  const KINDS = ['task', 'followup', 'goal', 'idea'];
 
   const isTaskEntry = e => e.tags && (e.tags.includes('task') || e.tags.includes('followup'));
   const isOpenTask = e => isTaskEntry(e) && !e.tags.some(t => CLOSED_TASK.has(t));
   const isGoalEntry = e => e.tags && e.tags.includes('goal');
   const isOpenGoal = e => isGoalEntry(e) && !e.tags.some(t => CLOSED_GOAL.has(t));
+  const isIdeaEntry = e => e.tags && e.tags.includes('idea');
+  const getIdeaState = e => {
+    // Returns 'considered', 'explored', 'promoted', or 'shelved'
+    if (!isIdeaEntry(e)) return null;
+    if (e.tags.includes('exploredidea')) return 'explored';
+    if (e.tags.includes('promoteditea')) return 'promoted';
+    if (e.tags.includes('shelvedidea')) return 'shelved';
+    return 'considered'; // default if no state tag
+  };
+  const isOpenIdea = e => isIdeaEntry(e) && !e.tags.includes('shelvedidea');
 
   function io() {
     if (!Chippy.io) throw new Error('Chippy.io not loaded — io.js must load before store.js');
@@ -69,6 +80,16 @@
     let s = '';
     for (let i = 0; i < 5; i++) s += Math.floor(rng() * 36).toString(36);
     return 'goal-' + s;
+  }
+
+  // A link identity's 5-char base-36 suffix. The full tag is
+  // "<origin-stem>:link-<id>" (taxonomy.js LINK_TAG_RE); minted only when an
+  // entry is first connected to another discussion — never on creation.
+  function mintLinkId(rng) {
+    rng = rng || (root.__chippyTest && root.__chippyTest.rng) || Math.random;
+    let s = '';
+    for (let i = 0; i < 5; i++) s += Math.floor(rng() * 36).toString(36);
+    return s;
   }
 
   // Inline #tag extraction (the # trigger): returns { text, tags } with the
@@ -145,6 +166,10 @@
     getGoals: (member) => {
       const m = member || selectors.getActiveMember();
       return m && m.entries ? m.entries.filter(isOpenGoal) : [];
+    },
+    getOpenIdeas: (member) => {
+      const m = member || selectors.getActiveMember();
+      return m && m.entries ? m.entries.filter(isOpenIdea) : [];
     },
     getDiscussionTags: () => {
       const seen = new Set();
@@ -238,6 +263,16 @@
     emit({ type: 'discussionTagChanged', name, tag: d.tag });
   }
 
+  // Discussion-level sensitive flag (navigation.chippy.md "| sensitive"):
+  // every entry of a sensitive discussion is excluded from AI summaries.
+  async function toggleDiscussionSensitive(name) {
+    const d = state.nav.discussions.find(x => x.name === name);
+    if (!d) return;
+    d.sensitive = !d.sensitive;
+    await io().saveNav(state.dirHandle, state.nav);
+    emit({ type: 'discussionSensitiveChanged', name, sensitive: d.sensitive });
+  }
+
   async function reloadMember(name) {
     const member = await io().loadDiscussion(state.dirHandle, name);
     state.members.set(name, member);
@@ -273,6 +308,32 @@
     if (!wasLoaded) state.members.set(trimmed, null); // preserve lazy-load slot
     if (state.activeMemberName === oldName) state.activeMemberName = trimmed;
     await io().saveNav(state.dirHandle, state.nav);
+    // Task links carry the origin's stem inside their "<stem>:link-<id>" tag.
+    // Renaming a discussion therefore rewrites that prefix on its own origin
+    // entries AND on every reference to them in other discussions — the same
+    // find-and-rewrite pattern io.renameDiscussion applies to image refs.
+    // Skipped when the sanitized stem didn't change (the tag carries the stem,
+    // not the display name).
+    const oldStem = io().sanitizeName(oldName);
+    const newStem = io().sanitizeName(trimmed);
+    if (oldStem !== newStem) {
+      try {
+        if (!state.members.has(trimmed)) state.members.set(trimmed, null);
+        await ensureAllLoaded();
+        for (const [, mm] of state.members) {
+          if (!mm || !mm.entries) continue;
+          let changed = false;
+          for (const e of mm.entries) {
+            const t = e.tags || [];
+            for (let k = 0; k < t.length; k++) {
+              const p = Chippy.tags.parseLinkTag(t[k]);
+              if (p && p.stem === oldStem) { t[k] = newStem + ':link-' + p.id; changed = true; }
+            }
+          }
+          if (changed) await io().saveDiscussion(state.dirHandle, mm);
+        }
+      } catch (err) { console.warn('[chippy] link-tag rename cascade failed:', err); }
+    }
     // Reload the renamed discussion from disk so that image refs in the in-memory
     // cache point to the new folder name. reloadMember emits 'memberReloaded'
     // which triggers pages.refresh() and re-renders the discussion view with
@@ -359,12 +420,13 @@
     open: null, inprogress: 'inprogresstask', check: 'checktask', onhold: 'onholdtask',
     purgatory: 'purgatorytask', resolved: 'resolvedtask', obsolete: 'obsoletetask'
   };
-  const ACTION_HEADERS = new Set(['Task Resolution Actions', 'Followup Actions', 'Goal Actions']);
+  const ACTION_HEADERS = new Set(['Task Resolution Actions', 'Followup Actions', 'Goal Actions', 'Idea Actions']);
   const BULLET_RE = /^- \d{4}-\d{2}-\d{2} : /;
 
   function actionLabelFor(e) {
     if (e.tags.includes('goal')) return 'Goal Actions';
     if (e.tags.includes('followup')) return 'Followup Actions';
+    if (e.tags.includes('idea')) return 'Idea Actions';
     return 'Task Resolution Actions';
   }
 
@@ -536,6 +598,98 @@
     emit({ type: 'muteToggled', name, entryId });
   }
 
+  /* ---------------------------- sensitive ------------------------------- */
+  // Entry-level sensitive marker: the reserved 'sensitive' tag. Sensitive
+  // entries — and every entry of a discussion flagged sensitive in the nav —
+  // are excluded from automatically created AI summaries. The tag is hidden
+  // from chips (taxonomy RESERVED) and toggled only from the discussion stream.
+
+  const isSensitiveEntry = e => ((e && e.tags) || []).includes('sensitive');
+
+  async function toggleSensitiveEntry(name, entryId, idx) {
+    const [m, e] = findEntry(name, entryId, idx);
+    if (!e) return;
+    if (isSensitiveEntry(e)) e.tags = e.tags.filter(t => t !== 'sensitive');
+    else e.tags.push('sensitive');
+    await ensureTagsInUnion(e.tags);
+    await io().saveDiscussion(state.dirHandle, m);
+    emit({ type: 'sensitiveToggled', name, entryId, sensitive: isSensitiveEntry(e) });
+  }
+
+  // Filter for summary building: drop entries tagged 'sensitive' and every
+  // entry belonging to a discussion flagged sensitive. Expects collectEntries
+  // output (entries carrying _member).
+  function excludeSensitive(entries) {
+    const sens = new Set(state.nav.discussions.filter(d => d.sensitive).map(d => d.name));
+    return (entries || []).filter(e => !isSensitiveEntry(e) && !sens.has(e._member));
+  }
+
+  /* ----------------------------- ideas --------------------------------- */
+
+  const IDEA_STATE_TAGS = ['consideredidea', 'exploredidea', 'promoteditea', 'shelvedidea'];
+  const IDEA_STATE_LABEL = { considered: 'Considered', explored: 'Explored', promoted: 'Promoted', shelved: 'Shelved' };
+
+  // Idea state transition: change from one state to another (considered / explored / promoted / shelved).
+  // Logs the transition as an Idea Actions bullet.
+  async function updateIdeaState(name, entryId, newState, idx) {
+    const [m, e] = findEntry(name, entryId, idx);
+    if (!e || !isIdeaEntry(e)) return;
+    const currentState = getIdeaState(e);
+    if (currentState === newState) return; // no change
+
+    // Strip all idea state tags and add the new one
+    e.tags = e.tags.filter(t => !IDEA_STATE_TAGS.includes(t));
+    const stateTag = newState === 'considered' ? null :
+                     newState === 'explored' ? 'exploredidea' :
+                     newState === 'promoted' ? 'promoteditea' :
+                     newState === 'shelved' ? 'shelvedidea' : null;
+    if (stateTag) e.tags.push(stateTag);
+
+    // Log the state transition as an action bullet
+    const label = IDEA_STATE_LABEL[newState] || newState;
+    logStateAction(e, label);
+
+    await ensureTagsInUnion(e.tags);
+    await io().saveDiscussion(state.dirHandle, m);
+    emit({ type: 'ideaStateChanged', name, entryId, state: newState });
+  }
+
+  // Promote an idea to a task or goal: create the new entry in the same
+  // discussion, set the idea to Promoted, and cross-link both action logs
+  // ("Derived from idea: …" on the new entry, "Promoted to <kind>: … (created …)"
+  // on the idea). Returns the created entry.
+  async function promoteIdea(name, entryId, kind, title, idx) {
+    if (kind !== 'task' && kind !== 'goal') return null;
+    const [m, e] = findEntry(name, entryId, idx);
+    if (!e || !isIdeaEntry(e)) return null;
+    const text = String(title || '').trim() || (e.body || '').split('\n')[0];
+    const created = await addEntry(name, { text, tags: [kind] });
+    if (!created) return null;
+    const day = nowISO().slice(0, 10);
+    // Origin note on the new task/goal.
+    const cp = splitBodyParts(created.body);
+    cp.bullets.push('- ' + day + ' : Derived from idea: ' + (e.body || '').split('\n')[0].slice(0, 80));
+    created.body = joinBodyParts(cp, created);
+    // The idea: state → Promoted, with a link to what it became.
+    e.tags = e.tags.filter(t => !IDEA_STATE_TAGS.includes(t));
+    e.tags.push('promoteditea');
+    const ip = splitBodyParts(e.body);
+    ip.bullets.push('- ' + day + ' : Promoted to ' + kind + ': ' + text.split('\n')[0].slice(0, 80) + ' (created ' + created.created_at + ')');
+    e.body = joinBodyParts(ip, e);
+    await ensureTagsInUnion(e.tags);
+    await io().saveDiscussion(state.dirHandle, m);
+    emit({ type: 'ideaPromoted', name, entryId, kind, targetCreatedAt: created.created_at });
+    return created;
+  }
+
+  // Interest level of an idea: how much activity it has attracted — logged
+  // action bullets plus links in the body. Pure; used for the ▲n indicator.
+  function ideaInterestOf(e) {
+    const parts = splitBodyParts(e.body || '');
+    const links = (String(e.body || '').match(/\[[^\]]+\]\(([^)]+)\)/g) || []).length;
+    return parts.bullets.length + links;
+  }
+
   /* ----------------------------- goals --------------------------------- */
 
   const GOAL_STATE_TAGS = ['achievedgoal', 'canceledgoal', 'resolvedgoal'];
@@ -689,6 +843,121 @@
     emit({ type: 'entryDeleted', name, entryId });
   }
 
+  /* --------------------------- task linking ---------------------------- */
+  // Origin + reference model (documentation/task-linking-implementation.md):
+  // a task/followup/idea lives once in its ORIGIN discussion; every other
+  // connected discussion holds a lightweight REFERENCE entry that carries the
+  // same "<origin-stem>:link-<id>" tag, the kind tag, and a cached one-line
+  // title as its body (the broken-link fallback). Content, state, actions, due
+  // and images live only at the origin; references resolve to it at read time.
+
+  // True when, within `memberName`, this entry is a reference to an origin
+  // that lives elsewhere (its link-tag stem names a different discussion).
+  function isReference(e, memberName) {
+    const lt = Chippy.tags.linkTagOf(e && e.tags);
+    if (!lt) return false;
+    return Chippy.tags.parseLinkTag(lt).stem !== io().sanitizeName(memberName);
+  }
+
+  // The nav discussion whose sanitized filename stem matches, or null.
+  function discussionByStem(stem) {
+    return state.nav.discussions.find(d => io().sanitizeName(d.name) === stem) || null;
+  }
+
+  // Resolve a reference to its live origin entry with a targeted load of just
+  // the origin discussion. Returns { name, member, entry, idx } on success or
+  // { broken: true } when the origin is gone, archived, unreadable (e.g. an
+  // unmaterialized cloud placeholder), or no longer carries the link tag.
+  async function resolveOrigin(refEntry) {
+    const lt = Chippy.tags.linkTagOf(refEntry && refEntry.tags);
+    if (!lt) return { broken: true };
+    const stem = Chippy.tags.parseLinkTag(lt).stem;
+    const d = discussionByStem(stem);
+    if (!d || d.archived) return { broken: true };
+    let m = state.members.get(d.name);
+    if (!m) {
+      try {
+        m = await io().loadDiscussion(state.dirHandle, d.name);
+        state.members.set(d.name, m);
+        await registerMemberRefs(m);
+      } catch (err) {
+        console.warn('[chippy] link origin not loadable: ' + d.name, err);
+        return { broken: true };
+      }
+    }
+    const idx = (m.entries || []).findIndex(e =>
+      Chippy.tags.linkTagOf(e.tags) === lt && !isReference(e, d.name));
+    if (idx < 0) return { broken: true };
+    return { name: d.name, member: m, entry: m.entries[idx], idx };
+  }
+
+  // Connect an entry to another discussion. Mints the "<stem>:link-<id>" tag
+  // on the origin on first connect (identity on demand — no backfill), then
+  // appends a reference entry to the target, timestamped now so it sits in the
+  // target's history at the moment it became relevant there. Idempotent:
+  // connecting to the origin itself or to an already-connected discussion is a
+  // no-op. Connecting from a reference links the origin, never the reference.
+  // Tasks, followups and ideas only — goals keep their goal-<id> trail.
+  async function connectToDiscussion(name, entryId, targetName, idx) {
+    let [m, e] = findEntry(name, entryId, idx);
+    if (!e) return null;
+    let originName = name;
+    if (isReference(e, name)) {
+      const r = await resolveOrigin(e);
+      if (r.broken) return null;
+      m = r.member; e = r.entry; originName = r.name;
+    }
+    const kind = KINDS.find(k => e.tags.includes(k));
+    if (!kind || kind === 'goal') return null;
+    const originStem = io().sanitizeName(originName);
+    if (io().sanitizeName(targetName) === originStem) return null; // self-connect
+
+    let lt = Chippy.tags.linkTagOf(e.tags);
+    if (!lt) {
+      lt = originStem + ':link-' + mintLinkId();
+      e.tags.push(lt);
+      await ensureTagsInUnion(e.tags);
+      await io().saveDiscussion(state.dirHandle, m);
+    }
+
+    let tgt = state.members.get(targetName);
+    if (!tgt) {
+      try {
+        tgt = await io().loadDiscussion(state.dirHandle, targetName);
+        state.members.set(targetName, tgt);
+      } catch (err) {
+        console.warn('[chippy] connect target not loadable: ' + targetName, err);
+        return null;
+      }
+    }
+    if ((tgt.entries || []).some(x => Chippy.tags.linkTagOf(x.tags) === lt)) return lt;
+
+    const title = (e.body || '').split('\n')[0];
+    tgt.entries.push({ created_at: nowISO(), tags: [kind, lt], goal: null, due: null, body: title });
+    await io().saveDiscussion(state.dirHandle, tgt);
+    emit({ type: 'entryConnected', origin: originName, target: targetName, linkTag: lt });
+    return lt;
+  }
+
+  // Remove a discussion's reference to a linked entry ("delete the link").
+  // The origin — and every other discussion's reference — is untouched.
+  async function disconnectFromDiscussion(targetName, linkTag) {
+    let tgt = state.members.get(targetName);
+    if (!tgt) {
+      try {
+        tgt = await io().loadDiscussion(state.dirHandle, targetName);
+        state.members.set(targetName, tgt);
+      } catch (_) { return false; }
+    }
+    const idx = (tgt.entries || []).findIndex(e =>
+      Chippy.tags.linkTagOf(e.tags) === linkTag && isReference(e, targetName));
+    if (idx < 0) return false;
+    tgt.entries.splice(idx, 1);
+    await io().saveDiscussion(state.dirHandle, tgt);
+    emit({ type: 'entryDisconnected', target: targetName, linkTag });
+    return true;
+  }
+
   /* ------------------------------ images ------------------------------- */
 
   async function saveImage(name, blob) { return io().ImageStore.saveImage(state.dirHandle, name, blob); }
@@ -730,7 +999,13 @@
         const nav = state.nav.discussions.find(d => d.name === name);
         if (!nav || nav.tag !== discTag) continue;
       }
-      (m.entries || []).forEach((e, i) => out.push(Object.assign({ _member: name, _idx: i }, e)));
+      (m.entries || []).forEach((e, i) => {
+        // Reference stubs are skipped: a linked entry surfaces once, at its
+        // origin, so cross-views (kanban, Ro3, calendar, dashboard, search,
+        // summary) never double-count it.
+        if (isReference(e, name)) return;
+        out.push(Object.assign({ _member: name, _idx: i }, e));
+      });
     }
     return out;
   }
@@ -750,9 +1025,18 @@
   }
 
   // Does an entry satisfy a parsed query? Tags AND names AND freetext.
+  // `#idea:<state>` / `#state:<state>` filter ideas by their lifecycle state
+  // (considered / explored / promoted / shelved).
   function entryMatches(e, parsed) {
     const tags = (e.tags || []).map(t => t.toLowerCase());
-    for (const t of parsed.tags) if (!tags.some(x => x.includes(t))) return false;
+    for (const t of parsed.tags) {
+      const im = /^(?:idea|state):(considered|explored|promoted|shelved)$/.exec(t);
+      if (im) {
+        if (!isIdeaEntry(e) || getIdeaState(e) !== im[1]) return false;
+        continue;
+      }
+      if (!tags.some(x => x.includes(t))) return false;
+    }
     if (parsed.names.length) {
       const en = extractNameTokens(e.body || '').map(x => x.toLowerCase());
       for (const n of parsed.names) if (!en.some(x => x.includes(n))) return false;
@@ -857,19 +1141,16 @@
     });
   }
 
-  // Pick up to 3: one high, one medium, one low; fill from any bucket if empty.
+  // Pick up to 3 distinct tasks uniformly at random from all candidates.
+  // (No priority slots: every open/non-muted task is equally likely, so Refresh
+  // gives genuine variety and untagged tasks surface like any other.)
   function pickRo3(cands, rng) {
     rng = rng || Math.random;
-    const by = { high: [], medium: [], low: [], none: [] };
-    for (const c of cands) {
-      const p = (c.tags || []).find(t => t === 'high' || t === 'medium' || t === 'low') || 'none';
-      by[p].push(c);
-    }
-    const take = arr => arr.length ? arr.splice(Math.floor(rng() * arr.length), 1)[0] : null;
+    const pool = (cands || []).slice();
     const out = [];
-    for (const p of ['high', 'medium', 'low']) { const x = take(by[p]); if (x) out.push(x); }
-    const rest = [].concat(by.high, by.medium, by.low, by.none);
-    while (out.length < 3 && rest.length) { const x = take(rest); if (x) out.push(x); }
+    while (out.length < 3 && pool.length) {
+      out.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
+    }
     return out;
   }
 
@@ -946,13 +1227,15 @@
       subscribe, openFolder, selectMember, setActiveScreen, setTheme,
       toggleFavorite, setDiscussionTag, reloadMember, archiveDiscussion, renameDiscussion, createDiscussion, setPrep, addEntry,
       setTaskState, cyclePriority, setDue, appendAction, toggleMute, isMuted,
-      setGoalState, editEntry, getLinks, renameLink, moveEntry, deleteEntry,
+      toggleSensitiveEntry, toggleDiscussionSensitive, isSensitiveEntry, excludeSensitive,
+      setGoalState, updateIdeaState, promoteIdea, ideaInterestOf, editEntry, getLinks, renameLink, moveEntry, deleteEntry,
+      isReference, resolveOrigin, connectToDiscussion, disconnectFromDiscussion,
       saveImage, getImageUrl,
       ensureAllLoaded, collectEntries, applyUnifiedFilter, getAllNames, getAllTags,
       getRo3Candidates, pickRo3, doneRecent, resolvedDate,
       loadSummary, saveSummaryConfig, appendSummary, deleteSummary, updateSummary, moveSummaryToDiscussion, exportContribution, shortId,
       // pure helpers exposed for the UI and for tests
-      nowISO, mintGoalId, extractInlineTags, autoLinkUrls, extractNameTokens, applyEditTagRules,
+      nowISO, mintGoalId, mintLinkId, extractInlineTags, autoLinkUrls, extractNameTokens, applyEditTagRules,
       splitTrailingActions, splitBodyParts, joinBodyParts, actionLabelFor, extractLinks, parseSearchQuery,
       _state: state
     },

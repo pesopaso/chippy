@@ -14,15 +14,16 @@
 
   /* ----------------------------- reserved tags ------------------------- */
   // Tags that the app manages internally (state, priority, goal/followup
-  // markers, mutes, goal ids). These are never shown as free-form chips.
-  const RESERVED = /^(task|followup|goal|opentask|inprogresstask|checktask|onholdtask|purgatorytask|resolvedtask|obsoletetask|resolvedfollowup|achievedgoal|canceledgoal|resolvedgoal|high|medium|low|goal-[a-z0-9]{5}|muted:.*)$/;
+  // markers, mutes, goal ids, link ids, the sensitive marker). These are never
+  // shown as free-form chips.
+  const RESERVED = /^(task|followup|goal|idea|opentask|inprogresstask|checktask|onholdtask|purgatorytask|resolvedtask|obsoletetask|resolvedfollowup|achievedgoal|canceledgoal|resolvedgoal|consideredidea|exploredidea|promoteditea|shelvedidea|high|medium|low|sensitive|goal-[a-z0-9]{5}|[A-Za-z0-9_ -]+:link-[a-z0-9]{5}|muted:.*)$/;
   const isReserved = (tag) => RESERVED.test(tag);
 
   // The reserved tags a user may legitimately type by hand (in the new-comment
   // box or the inline editor) to classify or prioritize an entry: the three
   // kind tags and the three priorities. State tags, goal ids, and mutes stay
   // app-managed and are never accepted as typed input.
-  const PROMOTABLE = /^(task|followup|goal|high|medium|low)$/;
+  const PROMOTABLE = /^(task|followup|goal|idea|high|medium|low)$/;
 
   /* ------------------------------ task state --------------------------- */
   // Ordered: first state whose tags match wins; the fallback is 'open'.
@@ -54,7 +55,26 @@
     if (t.includes('goal')) return 'goal';
     if (t.includes('followup')) return 'followup';
     if (t.includes('task')) return 'task';
+    if (t.includes('idea')) return 'idea';
     return 'comment';
+  }
+
+  /* ------------------------------ task links --------------------------- */
+  // A linked (multi-discussion) entry carries "<origin-stem>:link-<id>": the
+  // origin discussion's sanitized filename stem, a colon, and a 5-char base-36
+  // link id. The identical tag sits on the origin entry and on every reference
+  // to it in other discussions — within a discussion, prefix === own stem means
+  // origin, any other prefix means reference. The stem alphabet [A-Za-z0-9_ -]
+  // contains no comma and no colon, so the tag is safe in the comma-separated
+  // tags field and splits unambiguously on its first colon.
+  // (documentation/task-linking-implementation.md)
+  const LINK_TAG_RE = /^([A-Za-z0-9_ -]+):link-([a-z0-9]{5})$/;
+  // The link tag present, or null when the entry is not linked.
+  const linkTagOf = (tags) => (tags || []).find((t) => LINK_TAG_RE.test(t)) || null;
+  // "<stem>:link-<id>" -> { stem, id }, or null for a non-link tag.
+  function parseLinkTag(tag) {
+    const m = LINK_TAG_RE.exec(tag || '');
+    return m ? { stem: m[1], id: m[2] } : null;
   }
 
   /* ------------------------------ priority ----------------------------- */
@@ -68,6 +88,7 @@
     RESERVED, isReserved, PROMOTABLE,
     STATES, stateKeyOf, STATE_SQUARE,
     entryType,
+    LINK_TAG_RE, linkTagOf, parseLinkTag,
     PRIO_RANK, PRIO_LABEL, priorityOf
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

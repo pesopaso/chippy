@@ -28,6 +28,7 @@
   --followup: #d9a3bc;
   --goal: #225a7a;
   --goal-bg: #203043; /* surface with a hint of goal teal (dark) */
+  --idea: #9c27b0;
 
   /* Task-state fills (WIP/CHK are dedicated; others reuse accents) */
   --state-open: var(--orange);
@@ -429,6 +430,7 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .history-entry.entry-task { border-left: 3px solid var(--orange); }
 .history-entry.entry-followup { border-left: 3px solid var(--followup); }
 .history-entry.entry-goal { border-left: 3px solid var(--goal); }
+.history-entry.entry-idea { border-left: 3px solid var(--idea, #9c27b0); }
 .history-entry.collapsed .entry-text {
   display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
 }
@@ -444,7 +446,20 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .state-resolvedtask { background: var(--state-done); }
 .state-obsoletetask { background: var(--state-obsl); }
 .state-open { background: var(--state-open); }
+
+/* ---- Idea state badges -------------------------------------------------- */
+.idea-state-badge {
+  font-size: .6rem; font-weight: 700; color: #000;
+  padding: 1px 5px; border-radius: 3px; flex: 0 0 auto; cursor: pointer;
+}
+.idea-state-badge.state-considered { background: #b3e5fc; }
+.idea-state-badge.state-explored { background: #fff9c4; }
+.idea-state-badge.state-promoted { background: #c8e6c9; }
+.idea-state-badge.state-shelved { background: #e0e0e0; }
+.idea-icon { font-size: .9rem; flex: 0 0 auto; }
+
 .history-entry.closed { opacity: .6; }
+.history-entry.shelved { opacity: .7; }
 
 /* ---- Right-panel tasks ------------------------------------------------- */
 .tasks-section { margin-bottom: 0; }
@@ -475,6 +490,17 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .task-due.collapsed::-webkit-calendar-picker-indicator { margin: 0; opacity: .85; cursor: pointer; }
 .icon-btn { cursor: pointer; font-size: .82rem; opacity: .8; }
 .icon-btn:hover { opacity: 1; }
+/* Delete: set apart from the other card controls and ~20% larger. */
+.icon-btn.del-btn { margin-left: 14px; font-size: 1rem; }
+/* Sensitive toggle (🔓 open ⇄ 🔒 locked): dimmed grey when unlocked, full
+   color when marked. Marked cards get a red left border + a "sensitive" chip. */
+.icon-btn.sens { opacity: .35; filter: grayscale(1); }
+.icon-btn.sens:hover { opacity: .7; }
+.icon-btn.sens.on { opacity: 1; filter: none; }
+.reload-btn.sens { opacity: .45; filter: grayscale(1); }
+.reload-btn.sens.on { opacity: 1; filter: none; }
+.sens-chip { background: rgba(224, 82, 82, .18); color: var(--danger, #e05252);
+  border-radius: 8px; padding: 1px 7px; font-size: .66rem; flex: 0 0 auto; }
 
 /* ---- State dropdown --------------------------------------------------- */
 .state-dropdown {
@@ -484,6 +510,17 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .state-option { padding: 5px 14px; cursor: pointer; font-size: .76rem; }
 .state-option:hover { background: var(--card); }
 .state-option.current { font-weight: 700; color: var(--accent); }
+
+/* ---- Idea state dropdown ---------------------------------------------- */
+.idea-state-dropdown {
+  z-index: 1100; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,.4); overflow: hidden;
+}
+.idea-state-option { padding: 5px 14px; cursor: pointer; font-size: .76rem; }
+.idea-state-option:hover { background: var(--card); }
+.idea-state-option.current { font-weight: 700; color: var(--accent); }
+.idea-state-option.promote { color: var(--idea, #9c27b0); font-weight: 600; }
+.idea-state-divider { border-top: 1px solid var(--border); margin: 2px 0; }
 
 /* ---- Modal ------------------------------------------------------------ */
 .modal-overlay {
@@ -504,6 +541,19 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
   padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border);
   background: var(--card); color: var(--text); font-size: .76rem; cursor: pointer;
 }
+
+/* ---- Ideas panel ------------------------------------------------------ */
+.ideas-section { margin-bottom: 0; }
+.idea-item { padding: 6px 8px; border-left: 3px solid var(--idea, #9c27b0); background: var(--surface); margin-bottom: 5px; }
+.idea-top { display: flex; align-items: flex-start; gap: 6px; }
+.idea-text { flex: 1; min-width: 0; font-size: .82rem; }
+.idea-meta { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; margin-top: 6px; padding-left: 2px; }
+.idea-interest { font-size: .68rem; font-weight: 700; color: var(--idea, #9c27b0); flex: 0 0 auto; }
+
+/* Kanban idea columns (💡 toggle) */
+.kanban-card.idea { border-left: 3px solid var(--idea, #9c27b0); }
+.kanban-col-header.idea { color: var(--idea, #9c27b0); }
+.kanban-col.idea-col { border-top: 2px solid var(--idea, #9c27b0); }
 
 /* ---- Goals panel ------------------------------------------------------ */
 .goals-section { margin-bottom: 0; }
@@ -786,6 +836,15 @@ body.slim.slim-right #memberScreen .split-left { display: none; }
 .entry-card.entry-goal { border-left: 3px solid var(--goal); background: var(--goal-bg); }
 .entry-card.closed { opacity: .6; }
 .entry-card.dimmed { opacity: .55; }
+/* Task links: 🔗 marks a resolved link card, ⚠ a link whose origin is gone.
+   Stub cards (broken/pending) are read-only and rendered dimmed. */
+.link-badge { font-size: .8rem; flex: 0 0 auto; cursor: default; }
+.link-badge.broken { color: var(--danger, #e05252); }
+.link-badge.pending { opacity: .5; }
+.entry-card.link-broken { opacity: .55; border-left: 3px dashed var(--muted); }
+.entry-card.link-pending { opacity: .7; }
+/* Sensitive-marked card: red left border (after the kind rules, so it wins). */
+.entry-card.sens-marked { border-left: 3px solid var(--danger, #e05252); }
 .entry-card.collapsed .entry-text { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 .entry-card .entry-meta { flex-wrap: wrap; }
 .summary-meta { font-size: .72rem; color: var(--muted); margin-bottom: 4px; }

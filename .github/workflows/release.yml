@@ -115,9 +115,23 @@ jobs:
           if git merge-base --is-ancestor "origin/$STAGING_BRANCH" HEAD; then
             echo "::warning::$STAGING_BRANCH has no new commits relative to $RELEASE_BRANCH; releasing current $RELEASE_BRANCH."
           else
-            git merge --no-ff --no-edit "origin/$STAGING_BRANCH" \
-              -m "Merge $STAGING_BRANCH into $RELEASE_BRANCH for release ${{ steps.ver.outputs.tag }}" \
-              || { echo "::error::Merge conflict between $STAGING_BRANCH and $RELEASE_BRANCH. Resolve locally and re-run."; exit 1; }
+            if ! git merge --no-ff --no-edit "origin/$STAGING_BRANCH" \
+                 -m "Merge $STAGING_BRANCH into $RELEASE_BRANCH for release ${{ steps.ver.outputs.tag }}"; then
+              # The version-stamped files (main.js, app.html) conflict on every release,
+              # because main holds the last release stamp and staging the -dev stamp.
+              # They are re-stamped in the next step, so take staging's side for those.
+              # Any other conflicting file is a real conflict and aborts the run.
+              CONFLICTS="$(git diff --name-only --diff-filter=U)"
+              OTHER="$(echo "$CONFLICTS" | grep -vE '^src/local/(main\.js|app\.html)$' || true)"
+              if [ -n "$OTHER" ]; then
+                echo "::error::Merge conflict between $STAGING_BRANCH and $RELEASE_BRANCH in: $(echo $OTHER). Resolve locally and re-run."
+                exit 1
+              fi
+              echo "Resolving version-stamp conflicts using $STAGING_BRANCH: $(echo $CONFLICTS)"
+              echo "$CONFLICTS" | xargs git checkout --theirs --
+              echo "$CONFLICTS" | xargs git add --
+              git commit --no-edit
+            fi
           fi
 
       - name: Stamp release version into main

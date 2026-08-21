@@ -126,7 +126,7 @@ Topics where a technical solution can make a difference.
 | 44 | Inline link title editing         | Pencil icon on link list items opens an inline input to rename the link's display title in the source entry |
 | 45 | Kanban image icon                 | Camera icon shown on kanban cards when the task entry contains a pasted image                         |
 | 46 | List rendering consistency        | Bullet and numbered lists render correctly across all views (tasks, kanban, history) with inside positioning and hanging indent |
-| 47 | Rule of Three (Ro3)               | Cross-discussion page that randomly selects 3 distinct open tasks uniformly from all open, non-muted tasks (originally one per priority; changed v3.3), with refresh and discussion tag filtering |
+| 47 | Rule of Three (Ro3)               | Cross-discussion page that randomly selects 3 distinct open tasks uniformly from all open, non-muted tasks (originally one per priority; changed v3.2.0-dev.121), with refresh and discussion tag filtering |
 | 48 | Cache-busting version params      | Query string version parameters on CSS and JS links to force browser cache refresh after updates      |
 | 49 | Help dialog page descriptions     | Help dialog lists all cross-discussion pages with individual descriptions, plus documentation for image icon, double-click navigation, and edit timestamp behavior |
 | 50 | Light/dark theme toggle           | Sun/moon button in the top chrome; persists in `navigation.md` and `localStorage` for first-paint; all colors driven through CSS variables (added v2.13) |

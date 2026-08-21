@@ -811,7 +811,7 @@ reference the requirement (`R#`) / plan step.
 - **`style.css`** — `.idea-interest`, promote-option and divider styles, Kanban idea column accents.
 - **`tests/local/unit/ideas.test.mjs`** — new suite: taxonomy classification, `#idea:<state>` search, Idea Actions round-trip, interest levels, dashboard aggregations, and a performance budget over 5000 ideas (Phase 4 acceptance).
 
-### v3.3.0-dev.117 — 2026-08-18 — Task links: one task in many discussions (R65)
+### v3.2.0-dev.117 — 2026-08-18 — Task links: one task in many discussions (R65)
 
 > A task, followup, or idea can be **connected** (🔗) to other discussions and appears in each — origin + reference model with a single source of truth. The entry lives once in its origin discussion; each connected discussion stores a lightweight reference carrying the shared `<origin-stem>:link-<id>` tag, resolved to the live origin at render time. Design and phased plan: `task-linking-implementation.md`; format: `datadefinition.md` §2.4. Harness-relevant format change: **additive only** (one reserved tag family; references are ordinary entries), round-trip pinned byte-for-byte in the unit suite.
 
@@ -825,7 +825,7 @@ reference the requirement (`R#`) / plan step.
 - **`documentation.md`** — requirements R64 (discussion rename, backfilled) and R65 (task links).
 - **`tests/local/unit/task-linking.test.mjs`** — new suite (15 tests): tag parsing/reservation, connect (mint-on-first-connect, cached title, connect-time timestamp, both files saved), idempotency/self-connect/goal refusal, origin-vs-reference discrimination, resolution (live + broken via deleted/archived origin), disconnect (origin untouched; origin entry never removable as a "reference"), no-chain rule (connecting from a reference links the origin), rename cascade end-to-end, `collectEntries`/Ro3 single-count, byte-identical format round-trip of a reference entry. Full unit suite green (35/35).
 
-### v3.3.0-dev.118 — 2026-08-18 — Sensitive markers (R66) + discussion-stream button cleanup
+### v3.2.0-dev.118 — 2026-08-18 — Sensitive markers (R66) + discussion-stream button cleanup
 
 > Comments and whole discussions can be marked **sensitive** (lock toggle 🔓 ⇄ 🔒) and are then excluded from automatically created AI summaries — the filtered prompt never contains them. Plus stream ergonomics: mute leaves the cards (it lives only on the right-hand task rows now), and the delete button is set apart and ~20% larger. Format change: **additive only** — a reserved `sensitive` entry tag and a `| sensitive` navigation flag; unknown flags were already ignored by older parsers.
 
@@ -840,7 +840,7 @@ reference the requirement (`R#`) / plan step.
 - **`datadefinition.md`** — `sensitive` entry tag (§2.2) and `| sensitive` navigation flag (§3.1).
 - **`tests/local/unit/sensitive.test.mjs`** — new suite (6 tests): reservation, nav-flag byte-identical round-trip, both toggles, exclusion filter (tagged entry + whole discussion; no-op when nothing marked). Full unit suite green (41/41).
 
-### v3.3.0-dev.119 — 2026-08-18 — Double-click navigation on the cross pages
+### v3.2.0-dev.119 — 2026-08-18 — Double-click navigation on the cross pages
 
 > Double-clicking a comment card on Comments, Tasks, Goals, Ideas, or Ro3 (and, since they share the same card, Calendar) opens the card's discussion and scrolls to the exact comment, flashing it — the same jump the right-panel rows already offered inside a discussion, now available from every cross view.
 
@@ -850,13 +850,13 @@ reference the requirement (`R#`) / plan step.
 - **`main.js`** — help's Page overview documents the double-click jump.
 - For linked tasks the cross views show the origin card, so the jump lands on the origin comment in its own discussion.
 
-### v3.3.0-dev.120 — 2026-08-18 — Help dialog refreshed for task links, sensitive markers and navigation
+### v3.2.0-dev.120 — 2026-08-18 — Help dialog refreshed for task links, sensitive markers and navigation
 
-> The help dialog now matches the shipped v3.3 behavior end to end.
+> The help dialog now matches the shipped v3.2 behavior end to end.
 
 - **`main.js`** — Discussion header documents the 🔓/🔒 sensitive toggle and title chip; the stream Actions line drops mute, adds 🔓/🔒 · 🔗 connect · ✂ disconnect and the set-apart 🗑; Open Tasks/Ideas panels note the 🔗 linked rows and that muting lives only there; reserved-tag list gains consideredidea, sensitive and <discussion>:link-<id>; Page overview gains the missing Calendar entry and notes the summary exclusion; the AI Summary section documents the sensitive filter and the Remove-names toggle.
 
-### v3.3.0-dev.121 — 2026-08-18 — Ro3: truly random selection (recorded late; landed before dev.117)
+### v3.2.0-dev.121 — 2026-08-18 — Ro3: truly random selection (recorded late; landed before dev.117)
 
 > Reloading Ro3 kept surfacing the same small set of tasks. The old picker filled its three slots as one-per-priority (high/medium/low) and only fell back to the shared pool when fewer than three prioritized tasks existed — so once each priority bucket had at least one task, every task *without* a priority tag could never appear, and single-task buckets repeated on every refresh.
 

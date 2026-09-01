@@ -190,7 +190,7 @@
         ['History', 'comments grouped by day, newest first; today reads "Today".']
       ]);
 
-      section('Right column', 'A live summary of the discussion, each section scrolls on its own.', [
+      section('Right column', 'A live summary of the discussion — a section only appears once it has content (no open tasks, no Open Tasks section, and so on).', [
         ['Open Tasks', 'your open tasks — priority and state squares on the left; age, due date, ⚡ action and 🔇 mute on the right (muting lives only here: it hides a task for 5 days). Tasks linked from other discussions appear here too, marked 🔗.'],
         ['Goals', 'highlighted with a goal tint; ⚡ action, ✎ edit, ✓ achieved, ✕ canceled at the bottom-right.'],
         ['Open Ideas', 'non-shelved ideas (💡) — click the state badge to change the lifecycle state, ⚡ adds an action; double-click jumps to the entry. Linked ideas from other discussions appear here too, marked 🔗.'],

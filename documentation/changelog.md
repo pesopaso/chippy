@@ -894,3 +894,10 @@ reference the requirement (`R#`) / plan step.
 - **`ui.js`** — `entryCard` renders a `.task-due` input for tasks/followups when `opts.dueControl` is set (stream only; hidden on broken/pending link stubs); reuses the existing `.task-due`/`.collapsed` styling.
 - **`discussion.js`** — history cards, resolved link cards and `refreshEntry` pass `dueControl: true`.
 - **`main.js`** — the help's Actions line documents the 📅 field.
+
+### v3.3.0-dev.3 — 2026-09-01 — Right column: empty sections are hidden
+
+> The discussion's right column only shows sections that actually have content: no open tasks — no Open Tasks section; likewise Goals, Open Ideas, Links and Images. A brand-new discussion starts with a clean, empty right column instead of five "No …" placeholders.
+
+- **`discussion.js`** — `renderTasksPanel` / `renderGoalsPanel` / `renderIdeasPanel` / `renderLinksPanel` / `renderGallery` return an empty fragment when they have nothing to show (the "No …" placeholders are gone); both render paths (full render and `refreshEntry`) pick this up unchanged, so sections appear and disappear live as content is added, resolved, muted or removed.
+- **`main.js`** — the help's Right column section documents the behavior.

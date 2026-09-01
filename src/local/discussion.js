@@ -516,7 +516,7 @@
       if (pa !== pb) return pa - pb;
       return (a.created_at || '').localeCompare(b.created_at || '');
     });
-    if (!items.length) { wrap.append(el('div', 'panel-empty', 'No open tasks.')); return wrap; }
+    if (!items.length) return document.createDocumentFragment(); // no tasks -> no section
     for (const item of items) wrap.append(renderTaskRow(item));
     return wrap;
   }
@@ -551,7 +551,7 @@
     const wrap = el('div', 'goals-section');
     wrap.append(el('div', 'section-label', 'Goals'));
     const goals = store().getGoals(member);
-    if (!goals.length) { wrap.append(el('div', 'panel-empty', 'No open goals.')); return wrap; }
+    if (!goals.length) return document.createDocumentFragment(); // no goals -> no section
     for (const g of goals) wrap.append(renderGoalRow(member, g));
     return wrap;
   }
@@ -620,7 +620,7 @@
     wrap.append(el('div', 'section-label', 'Open Ideas'));
     // Own open ideas plus resolved idea links (broken links stay out).
     const items = resolvedPanelEntries(member, pickOpenIdea);
-    if (!items.length) { wrap.append(el('div', 'panel-empty', 'No open ideas.')); return wrap; }
+    if (!items.length) return document.createDocumentFragment(); // no ideas -> no section
     for (const item of items) wrap.append(renderIdeaRow(item));
     return wrap;
   }
@@ -631,7 +631,7 @@
     const wrap = el('div', 'links-section');
     wrap.append(el('div', 'section-label', 'Links'));
     const links = store().getLinks(member);
-    if (!links.length) { wrap.append(el('div', 'panel-empty', 'No links.')); return wrap; }
+    if (!links.length) return document.createDocumentFragment(); // no links -> no section
     const box = el('div', 'link-list');
     for (const l of links) {
       const row = el('div', 'link-item');
@@ -651,7 +651,7 @@
     const items = collectImages(member).reverse(); // newest first
     const wrap = el('div', 'gallery-section');
     wrap.append(el('div', 'section-label', 'Images'));
-    if (!items.length) { wrap.append(el('div', 'panel-empty', 'No images.')); return wrap; }
+    if (!items.length) return document.createDocumentFragment(); // no images -> no section
     const grid = el('div', 'gallery-grid');
     items.forEach((it, idx) => {
       const thumb = el('img', 'gallery-thumb');

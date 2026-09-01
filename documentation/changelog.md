@@ -886,3 +886,11 @@ reference the requirement (`R#`) / plan step.
 > The introduction template grew from the initial 27 bundled tasks into 46 granular ones — one functionality per task — reordered so task 01 sits at the TOP of the history (timestamps run in reverse), with screenshots recaptured at 1120×630 (30% smaller) on the current UI. New task 03 walks through renaming a new discussion and setting its tag: the tour creates "Chippy Learning" (tag: training) through the real app during capture, and every following screenshot shows it in the sidebar as the reader's practice discussion.
 
 - **`documentation/introduction-template/`** — `Introduction.md` (46 open tasks: 10 HI / 20 MI / 16 LO, canonical serializer output, per-task image refs verified) + `Introduction/` (46 spotlight screenshots, incl. open state/idea menus, the inline editor, and a slim-mode finale) + updated `README.md`. Generated from a single build script (task table -> markdown + capture plan), so text and screenshots cannot drift.
+
+### v3.3.0-dev.2 — 2026-09-01 — Due date back on task/followup cards in the discussion stream
+
+> Setting or seeing a due date was only possible on the task rows in the right column. Task and followup cards in the discussion history now carry the same collapsed-to-calendar date field again: a 📅 icon when no date is set, the date once there is one; picking a date writes through store.setDue (on a linked card, to the origin).
+
+- **`ui.js`** — `entryCard` renders a `.task-due` input for tasks/followups when `opts.dueControl` is set (stream only; hidden on broken/pending link stubs); reuses the existing `.task-due`/`.collapsed` styling.
+- **`discussion.js`** — history cards, resolved link cards and `refreshEntry` pass `dueControl: true`.
+- **`main.js`** — the help's Actions line documents the 📅 field.

@@ -200,7 +200,7 @@
 
       section('Comments — functions & special tags',
         'Comments support Markdown (headings, bold/italic, lists, code, quotes), auto-linked URLs, @[Name] mentions and inline images.', [
-        ['Actions', '✎ edit inline (tags are editable here — type #tag or use "+ tag"; × removes one; #task / #followup / #goal and priorities promote the comment; Ctrl+V pastes an image), ⚡ add a dated action, 🔓/🔒 mark sensitive, ➜ move to another discussion, 🔗 connect to another discussion, and — set slightly apart — 🗑 delete. On a linked comment ✂ disconnects instead (removes only the link). Muting moved to the task rows in the right column.'],
+        ['Actions', '✎ edit inline (tags are editable here — type #tag or use "+ tag"; × removes one; #task / #followup / #goal and priorities promote the comment; Ctrl+V pastes an image), ⚡ add a dated action, 📅 due date (calendar icon when unset; shows the date once set), 🔓/🔒 mark sensitive, ➜ move to another discussion, 🔗 connect to another discussion, and — set slightly apart — 🗑 delete. On a linked comment ✂ disconnects instead (removes only the link). Muting moved to the task rows in the right column.'],
         ['"Updated:"', 'a single line recording the latest edit on a later day than creation; refreshed in place on every further edit. Editing only touches the comment text — actions and the Updated line are preserved.'],
         ['Classify', '#task, #followup, #goal or #idea turn a comment into that item type.'],
         ['Priority', '#high / #medium / #low (the priority square cycles them).'],

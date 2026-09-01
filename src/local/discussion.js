@@ -74,7 +74,7 @@
       const r = refResolution(e);
       if (r && !r.broken) {
         return ui().entryCard(r.entry, {
-          member: r.name, idx: r.idx, timeOnly: true, sensitiveControl: true,
+          member: r.name, idx: r.idx, timeOnly: true, sensitiveControl: true, dueControl: true,
           timeText: ((e.created_at || '').split(' ').slice(1).join(' ') || e.created_at),
           linkState: 'link', linkFrom: r.name,
           refMember: member.name, linkTag: lt
@@ -87,7 +87,7 @@
         refMember: member.name, linkTag: lt
       });
     }
-    return ui().entryCard(e, { member: member.name, timeOnly: true, idx: i, sensitiveControl: true });
+    return ui().entryCard(e, { member: member.name, timeOnly: true, idx: i, sensitiveControl: true, dueControl: true });
   }
 
   // Panel entries with references resolved: each item carries the entry to
@@ -750,7 +750,7 @@
       const cards = list.querySelectorAll('.entry-card');
       for (const old of cards) {
         if (old.dataset.entryId === entryId) {
-          old.replaceWith(ui().entryCard(e, { member: member.name, timeOnly: true, idx, sensitiveControl: true }));
+          old.replaceWith(ui().entryCard(e, { member: member.name, timeOnly: true, idx, sensitiveControl: true, dueControl: true }));
           replaced = true;
           break;
         }

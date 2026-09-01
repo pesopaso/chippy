@@ -863,3 +863,26 @@ reference the requirement (`R#`) / plan step.
 - **`store.js`** — `pickRo3(cands, rng)` drops the priority buckets: it now draws up to 3 **distinct** tasks uniformly at random from all open, non-muted candidates (verified over 60k draws: always distinct, per-task selection within ~1% of uniform; empty/small/null pools handled).
 - **`main.js`** — help's Ro3 line: "three open tasks picked at random; Refresh re-rolls" (was "one task per priority").
 - R47's behavior changes accordingly: no per-priority guarantee; every open task is equally likely.
+
+### v3.2.0-dev.122 — 2026-08-27 — Introduction template (guided tour) + CRLF-tolerant parsers
+
+> New `documentation/introduction-template/`: a drop-in "Introduction" discussion — 27 open tasks, one per feature, each with an annotated screenshot — covering the full functionality (key features HI, important MI, the rest LO). Copy `Introduction.md` + the `Introduction/` image folder into any data folder and reload. Alongside it, the parsers became line-ending tolerant, which the template surfaced: with `.gitattributes` `eol=crlf`, a checked-out `.md` arrives as CRLF and previously parsed to **zero entries**.
+
+- **`format.js`** — new `normEol` (CRLF/CR → LF) applied in `parseDiscussion`, `sliceSection`, `parseNav`, `parseBulletList`, `parseSummary`; parsing CRLF input now yields exactly the LF result. Serialization is untouched — always LF — so any re-saved file is normalized to the canonical form. Harness: byte-pinned LF reference data is unaffected (no `\r` present).
+- **`documentation/introduction-template/`** — `Introduction.md` (27 tasks, canonical serializer output, priorities 7 HI / 13 MI / 7 LO, all OPEN, byte-identical round-trip) + `Introduction/` (27 annotated 1600×900 screenshots, captured from the real app running headless on seeded demo data — including a connected task, a sensitive-locked comment, ideas, due dates) + `README.md` (install: copy both into the data folder).
+- **`tests/local/unit/format-eol.test.mjs`** — new suite (3 tests): CRLF ≡ LF parse for discussions (tags/due intact), canonical-LF re-serialization, CRLF tolerance in nav/tags/summary parsers. Full unit suite green (44/44).
+
+### v3.2.0-dev.123 — 2026-08-27 — Reload-folder button (external writers, e.g. an AI)
+
+> A ↻ button next to + in the sidebar header re-reads the whole data folder from disk without reopening it — for notebooks that another tool writes to while Chippy is open (an AI creating new discussions or updating existing ones): new discussions appear, outside edits show up, deleted files drop out.
+
+- **`store.js`** — new `reloadFolder()`: fresh `loadIndexes`, nav reconciled against the files (`reconcileNavWithFiles`, persisted when changed), member cache cleared and eagerly re-loaded (`ensureAllLoaded`) so cross views are immediately correct; clears the active member when its file vanished; emits `folderReloaded`. No-op before a folder is open.
+- **`main.js`** — button wiring (disabled while running, error toast on failure); `folderReloaded` updates the status line, re-renders the sidebar and the open screen (open discussion re-selected, welcome fallback when it vanished, cross pages refreshed) and confirms with a toast; button unhidden on `folderOpened`; help documents it under Navigation.
+- **`app.html` / `style.css`** — ↻ button beside + in a `.sidebar-header-btns` group.
+- **`tests/local/unit/reload-folder.test.mjs`** — new suite (4 tests): outside-created discussion appears, outside edits refresh the cache, vanished active member is cleared, no-op before open. Full unit suite green (48/48).
+
+### v3.2.0-dev.124 — 2026-08-27 — Introduction template: granular 46-task tour with a practice discussion
+
+> The introduction template grew from the initial 27 bundled tasks into 46 granular ones — one functionality per task — reordered so task 01 sits at the TOP of the history (timestamps run in reverse), with screenshots recaptured at 1120×630 (30% smaller) on the current UI. New task 03 walks through renaming a new discussion and setting its tag: the tour creates "Chippy Learning" (tag: training) through the real app during capture, and every following screenshot shows it in the sidebar as the reader's practice discussion.
+
+- **`documentation/introduction-template/`** — `Introduction.md` (46 open tasks: 10 HI / 20 MI / 16 LO, canonical serializer output, per-task image refs verified) + `Introduction/` (46 spotlight screenshots, incl. open state/idea menus, the inline editor, and a slim-mode finale) + updated `README.md`. Generated from a single build script (task table -> markdown + capture plan), so text and screenshots cannot drift.

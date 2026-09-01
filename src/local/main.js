@@ -277,7 +277,7 @@
         ['Names', '@[Name] references — counts, last-seen and a drill-down.'],
         ['Tags', 'every tag with its total uses and the date last used.'],
         ['Kanban', 'drag tasks between state columns; the DONE column shows ~2 months. The 💡 Ideas toggle adds the idea lifecycle columns.'],
-        ['Calendar', 'a due-date calendar over open tasks/followups — day, focus, work, full and month views.'],
+        ['Calendar', 'a due-date calendar over open tasks/followups — day, focus, work, full and month views. In the work week, full week and month views, drag a task onto another day to change its due date (nothing else changes). The ⏰ Overdue toggle adds a column on the left with everything overdue — drag a task out of it onto a day to reschedule it. On Focus the toggle is on by default and controls the Overdue column there.'],
         ['Ro3', 'Rule of Three — three open tasks picked at random; Refresh re-rolls.'],
         ['Activity', 'charts: comment inflow (incl. ideas), task/goal/idea states, monthly timeline, an open-task burndown, and tasks-created-per-day by state.'],
         ['AI Summary', 'generate a summary of your comments via a local LLM — 🔒 sensitive comments and discussions are never included.']

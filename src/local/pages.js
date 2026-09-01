@@ -816,6 +816,44 @@
   // due tasks are bucketed; all share the disc-tag filter and unified search.
 
   let calendarView = 'focus';     // day | focus | work | full | month
+  let calendarOverdue = false;      // ⏰ toggle: overdue column on the left (day/work/full/month)
+  let calendarOverdueFocus = true;  // same toggle on Focus — enabled by default, can be switched off
+  // The card being dragged to another day (work week / full week / month).
+  // Same module-scoped pattern as the Kanban drag: reliable on file:// where
+  // dataTransfer.getData can come back empty.
+  let calDrag = null;
+
+  // Make a day bucket accept a dragged calendar card: dropping changes ONLY
+  // the task's due date to this bucket's date (state, priority, discussion —
+  // everything else stays). setDue emits 'dueChanged', which re-renders the
+  // calendar with the card in its new day.
+  function calDropTarget(elm, ds) {
+    elm.addEventListener('dragover', ev => {
+      if (!calDrag) return;
+      ev.preventDefault();
+      ev.dataTransfer.dropEffect = 'move';
+      elm.classList.add('cal-drop');
+    });
+    elm.addEventListener('dragleave', () => elm.classList.remove('cal-drop'));
+    elm.addEventListener('drop', ev => {
+      ev.preventDefault();
+      elm.classList.remove('cal-drop');
+      if (!calDrag) return;
+      store().setDue(calDrag.m, calDrag.id, ds, calDrag.idx);
+      calDrag = null;
+    });
+  }
+
+  // Wire a card as a calendar drag source.
+  function calDragSource(card, e) {
+    card.draggable = true;
+    card.addEventListener('dragstart', ev => {
+      calDrag = { m: e._member, id: e.created_at, idx: e._idx };
+      ev.dataTransfer.effectAllowed = 'move';
+      try { ev.dataTransfer.setData('text/plain', JSON.stringify(calDrag)); } catch (_) {}
+    });
+    card.addEventListener('dragend', () => { calDrag = null; });
+  }
   let calendarSearch = '';
   let calendarTagFilter = null;
 
@@ -851,16 +889,18 @@
       (a.created_at || '').localeCompare(b.created_at || '');
   }
 
-  function calCard(e) {
+  function calCard(e, draggable) {
     // The column/cell already states the day, so the per-card timestamp is dropped.
-    return entryRow(e, Object.assign({ dim: store().isMuted(e), hideTime: true }, OVERVIEW_OPTS));
+    const card = entryRow(e, Object.assign({ dim: store().isMuted(e), hideTime: true }, OVERVIEW_OPTS));
+    if (draggable) calDragSource(card, e);
+    return card;
   }
 
   const CAL_STATE_LABEL = { open: 'OPEN', inprogress: 'WIP', check: 'CHK', onhold: 'HOLD', purgatory: 'PRGT', resolved: 'DONE', obsolete: 'OBSL' };
 
   // Compact info box for the month grid: state label, priority dot, a two-line
   // title and the discussion name. Click opens its discussion.
-  function calMini(e) {
+  function calMini(e, draggable) {
     const sk = stateKeyOf(e.tags), prio = prioOf(e.tags) || 'low';
     const box = el('div', 'cal-mbox cal-mbox-' + sk + ' cal-prio-' + prio + (store().isMuted(e) ? ' dimmed' : ''));
     const top = el('div', 'cal-mbox-top');
@@ -869,10 +909,11 @@
     if (e._member) box.append(el('div', 'cal-mbox-member', e._member));
     box.title = (e._member ? e._member + ' · ' : '') + ((e.body || '').split('\n')[0]);
     box.addEventListener('click', () => store().selectMember(e._member));
+    if (draggable) calDragSource(box, e);
     return box;
   }
 
-  function calColumn(day, date, entries, isToday) {
+  function calColumn(day, date, entries, isToday, dropDate, dragOnly) {
     const col = el('div', 'cal-col' + (isToday ? ' cal-today' : ''));
     const h = el('div', 'cal-col-header');
     h.append(el('div', 'cal-col-day', day));
@@ -880,8 +921,23 @@
     col.append(h);
     const body = el('div', 'cal-col-body');
     if (!entries.length) body.append(el('div', 'cal-empty', 'No tasks'));
-    else for (const e of entries) body.append(calCard(e));
+    else for (const e of entries) body.append(calCard(e, !!dropDate || !!dragOnly));
     col.append(body);
+    // A concrete-day column (work/full week) accepts drops: the drop re-dues
+    // the task to this day. Day/Focus buckets are aggregates and stay static.
+    if (dropDate) calDropTarget(col, dropDate);
+    return col;
+  }
+
+  // The ⏰ Overdue column: every open due task with a date before today. It is a
+  // drag SOURCE where drag & drop is enabled (work/full week) — drag an
+  // overdue task onto a day to reschedule it — but never a drop target (it has
+  // no concrete date of its own). On Focus it replaces the old built-in
+  // Overdue column and is on by default.
+  function calOverdueColumn(entries, todayStr, dragCards) {
+    const overdue = entries.filter(e => e.due < todayStr).sort(calSort);
+    const col = calColumn('⏰ Overdue', 'before ' + todayStr, overdue, false, null, dragCards);
+    col.classList.add('cal-overdue');
     return col;
   }
 
@@ -899,6 +955,18 @@
       b.addEventListener('click', () => { calendarView = k; openCalendar(); });
       ctrl.append(b);
     }
+    // ⏰ Overdue toggle: shows the overdue column on the left in every view.
+    // On Focus it drives that view's built-in Overdue column and defaults to
+    // ON; everywhere else it defaults to OFF. The two flags are independent.
+    const odOn = calendarView === 'focus' ? calendarOverdueFocus : calendarOverdue;
+    const ob = el('button', 'btn-sm cal-overdue-toggle' + (odOn ? ' active' : ''), '⏰ Overdue');
+    ob.title = 'Show overdue tasks in a column on the left';
+    ob.addEventListener('click', () => {
+      if (calendarView === 'focus') calendarOverdueFocus = !calendarOverdueFocus;
+      else calendarOverdue = !calendarOverdue;
+      openCalendar();
+    });
+    ctrl.append(ob);
     screen.append(ctrl);
     addCrossDiscFilter(screen, 'calendarFilters',
       () => calendarTagFilter, v => { calendarTagFilter = v; }, openCalendar);
@@ -919,37 +987,52 @@
 
       if (calendarView === 'day') {
         const board = el('div', 'cal-board');
+        if (calendarOverdue) board.append(calOverdueColumn(entries, todayStr, false));
         board.append(calColumn('Today', todayStr, on(todayStr), true));
         bodyWrap.append(board);
       } else if (calendarView === 'focus') {
         const t1 = ymd(addDays(today, 1)), t2 = ymd(addDays(today, 2));
-        const overdue = entries.filter(e => e.due < todayStr).sort(calSort);
         const next = entries.filter(e => e.due === t1 || e.due === t2).sort(calSort);
         const board = el('div', 'cal-board');
-        board.append(calColumn('Overdue', 'before ' + todayStr, overdue, false));
+        if (calendarOverdueFocus) board.append(calOverdueColumn(entries, todayStr, false));
         board.append(calColumn('Due today', todayStr, on(todayStr), true));
         board.append(calColumn('Next 2 days', t1 + ' – ' + t2, next, false));
         bodyWrap.append(board);
       } else if (calendarView === 'work' || calendarView === 'full') {
         const mon = mondayOf(today), n = calendarView === 'work' ? 5 : 7;
         const board = el('div', 'cal-board');
+        if (calendarOverdue) board.append(calOverdueColumn(entries, todayStr, true));
         for (let i = 0; i < n; i++) {
           const d = addDays(mon, i), ds = ymd(d);
-          board.append(calColumn(CAL_WD[i], ds.slice(5), on(ds), ds === todayStr));
+          board.append(calColumn(CAL_WD[i], ds.slice(5), on(ds), ds === todayStr, ds));
         }
         bodyWrap.append(board);
       } else { // month: this week + next 3 (4 rows x 7 days)
         const mon = mondayOf(today);
-        const grid = el('div', 'cal-month');
+        const board = el('div', 'cal-board');
+        // Month: the ⏰ Overdue column lives INSIDE the grid — one grid column
+        // wide (same as a day cell) but spanning the full height of all four
+        // week rows, so it costs no more width than any other day.
+        const grid = el('div', 'cal-month' + (calendarOverdue ? ' with-overdue' : ''));
+        if (calendarOverdue) grid.append(el('div', 'cal-month-dow cal-month-dow-overdue', '⏰ Overdue'));
         for (let i = 0; i < 7; i++) grid.append(el('div', 'cal-month-dow', CAL_WD[i]));
+        if (calendarOverdue) {
+          const oc = el('div', 'cal-cell cal-month-overdue');
+          const late = entries.filter(e => e.due < todayStr).sort(calSort);
+          if (!late.length) oc.append(el('div', 'cal-empty', 'Nothing overdue'));
+          for (const e of late) oc.append(calMini(e, true));
+          grid.append(oc);
+        }
         for (let w = 0; w < 4; w++) for (let i = 0; i < 7; i++) {
           const d = addDays(mon, w * 7 + i), ds = ymd(d);
           const cell = el('div', 'cal-cell' + (ds === todayStr ? ' cal-today' : ''));
           cell.append(el('div', 'cal-cell-date', (d.getDate() === 1 ? CAL_MONTH[d.getMonth()] + ' ' : '') + d.getDate()));
-          for (const e of on(ds)) cell.append(calMini(e));
+          for (const e of on(ds)) cell.append(calMini(e, true));
+          calDropTarget(cell, ds);
           grid.append(cell);
         }
-        bodyWrap.append(grid);
+        board.append(grid);
+        bodyWrap.append(board);
       }
     }
     renderCal();

@@ -649,7 +649,9 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .cal-ctrl { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 8px 0 10px; }
 .cal-ctrl .btn-sm.active { border-color: var(--accent); color: var(--accent); }
 .cal-board { display: flex; gap: 10px; align-items: flex-start; overflow-x: auto; padding-bottom: 10px; }
-.cal-col { flex: 1 1 210px; min-width: 210px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px; min-height: 120px; }
+/* Tall default columns (4x): a day box is on average much taller than its
+   cards, so free space below the tasks is visible and easy to drop onto. */
+.cal-col { flex: 1 1 210px; min-width: 210px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px; min-height: 480px; }
 .cal-col.cal-today { border-color: var(--accent); box-shadow: inset 0 2px 0 var(--accent); }
 .cal-col-header { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; padding-bottom: 6px; margin-bottom: 8px; border-bottom: 1px solid var(--border); }
 .cal-col-day { font-size: .8rem; font-weight: 700; color: var(--text); }
@@ -666,6 +668,21 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .cal-mbox { background: var(--card); border-left: 3px solid var(--muted); border-radius: 3px; padding: 3px 5px; cursor: pointer; }
 .cal-mbox:hover { outline: 1px solid var(--accent); }
 .cal-mbox.dimmed { opacity: .5; }
+/* Calendar drag & drop: the hovered day bucket while dragging a card. */
+.cal-col.cal-drop, .cal-cell.cal-drop { outline: 2px dashed var(--accent); outline-offset: -2px; background: var(--hover); }
+/* Overdue column (⏰ toggle): red-tinted column on the left; the month grid sits
+   beside it and takes the remaining width. */
+.cal-col.cal-overdue { border-color: var(--danger, #e05252); }
+.cal-col.cal-overdue .cal-col-day { color: var(--danger, #e05252); }
+.cal-overdue-toggle { margin-left: auto; }
+.cal-board .cal-month { flex: 1; min-width: 0; }
+/* Month + ⏰ Overdue: the grid grows to 8 tracks; the overdue cell sits in the
+   first column and spans all four week rows, so it is exactly one day wide but
+   runs the full height of the month. */
+.cal-month.with-overdue { grid-template-columns: repeat(8, 1fr); }
+.cal-month-dow-overdue { color: var(--danger, #e05252); }
+.cal-month-overdue { grid-column: 1; grid-row: 2 / span 4; border-color: var(--danger, #e05252); min-height: 0; overflow-y: auto; }
+.cal-mbox { cursor: grab; }
 .cal-mbox-top { display: flex; align-items: center; gap: 4px; }
 .cal-mbox-state { font-size: .58rem; font-weight: 700; letter-spacing: .5px; color: var(--muted); }
 .cal-mbox-prio { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); margin-left: auto; flex: none; }

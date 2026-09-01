@@ -901,3 +901,37 @@ reference the requirement (`R#`) / plan step.
 
 - **`discussion.js`** — `renderTasksPanel` / `renderGoalsPanel` / `renderIdeasPanel` / `renderLinksPanel` / `renderGallery` return an empty fragment when they have nothing to show (the "No …" placeholders are gone); both render paths (full render and `refreshEntry`) pick this up unchanged, so sections appear and disappear live as content is added, resolved, muted or removed.
 - **`main.js`** — the help's Right column section documents the behavior.
+
+### v3.3.0-dev.4 — 2026-09-01 — Calendar: drag & drop rescheduling (work week / full week / month)
+
+> Dragging a task card onto another day in the work-week, full-week or month view changes its due date to that day — and nothing else (state, priority and discussion stay untouched; for a linked task the origin's due date is updated). The hovered day highlights while dragging; the calendar re-renders with the card in its new day via the existing dueChanged refresh.
+
+- **`pages.js`** — `calDrag` module state + `calDragSource`/`calDropTarget` helpers (same reliable module-scoped pattern as the Kanban drag); `calCard`/`calMini` become drag sources in the droppable views; `calColumn` takes a `dropDate` (set for work/full week days), month cells accept drops; Day and Focus buckets stay static (they are aggregates, not concrete days).
+- **`style.css`** — `.cal-drop` highlight (dashed accent outline) on the hovered column/cell; grab cursor on month minis.
+- **`main.js`** — help's Calendar entry documents the gesture.
+
+### v3.3.0-dev.5 — 2026-09-01 — Calendar: 4x taller day columns
+
+> The day boxes in the Day, Focus, Work week and Full week views are four times taller by default (`.cal-col` min-height 120px → 480px), so a task card is on average much smaller than its surrounding box — and the free space below the cards doubles as a comfortable drag-&-drop target. The month grid is unchanged.
+
+### v3.3.0-dev.6 — 2026-09-01 — Calendar: ⏰ Overdue column toggle
+
+> A ⏰ Overdue toggle in the calendar controls shows a red-tinted column on the LEFT of the Day, Work week, Full week and Month views listing every open due task dated before today (Focus keeps its built-in Overdue column; the toggle hides there). Where drag & drop is enabled (work/full week, month), overdue cards are drag sources — drag one onto a day to reschedule it — but the column itself is never a drop target (it has no date).
+
+- **`pages.js`** — `calendarOverdue` state + ⏰ toggle button (hidden on Focus); `calOverdueColumn` built on `calColumn`, which gained a `dragOnly` mode (drag sources without being a drop target); month view wraps the Overdue column + grid in one board row.
+- **`style.css`** — `.cal-col.cal-overdue` (danger accent border/label), toggle pushed right, month grid flexes beside the column.
+- **`main.js`** — help's Calendar entry documents the toggle.
+
+### v3.3.0-dev.7 — 2026-09-01 — Calendar: month Overdue joins the grid
+
+> In the Month view the ⏰ Overdue column no longer sits beside the grid taking board width — it is now a cell inside the grid itself: exactly one day-column wide, spanning the full height of all four week rows. Overdue cards there stay drag sources, so a task can still be dragged onto any day to reschedule it. Day, Work week and Full week keep the stand-alone Overdue column.
+
+- **`pages.js`** — month branch renders the Overdue list as an in-grid cell (`.cal-month-overdue`) with a `⏰ Overdue` header slot; the grid gets `with-overdue` and 8 tracks when the toggle is on.
+- **`style.css`** — `.cal-month.with-overdue { repeat(8, 1fr) }`; the overdue cell spans `grid-row: 2 / span 4` with the danger accent and scrolls if crowded.
+
+### v3.3.0-dev.8 — 2026-09-01 — Calendar: ⏰ Overdue toggle on Focus too
+
+> The ⏰ Overdue toggle now appears in every calendar view, including Focus. On Focus it controls that view's Overdue column — which is ON by default and now carries the same red accent as the other views' Overdue columns — and can be switched off to leave just "Due today" and "Next 2 days". The Focus setting is remembered separately from the other views, so turning it off there does not hide the column you enabled in, say, the month view (and vice versa).
+
+- **`pages.js`** — `calendarOverdueFocus` flag (default `true`) beside `calendarOverdue`; the toggle renders in all views and flips whichever flag matches the current view; the Focus branch swaps its hand-built Overdue column for `calOverdueColumn`.
+- **`main.js`** — help dialog Calendar line mentions the Focus default.

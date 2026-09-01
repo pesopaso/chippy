@@ -935,3 +935,11 @@ reference the requirement (`R#`) / plan step.
 
 - **`pages.js`** — `calendarOverdueFocus` flag (default `true`) beside `calendarOverdue`; the toggle renders in all views and flips whichever flag matches the current view; the Focus branch swaps its hand-built Overdue column for `calOverdueColumn`.
 - **`main.js`** — help dialog Calendar line mentions the Focus default.
+
+### v3.3.0-dev.9 — 2026-09-01 — Paste a URL over selected text to make a link
+
+> Selecting text in the comment box, the inline ✎ editor or the Preparation editor and pasting a copied URL with Ctrl+V now turns the selection into the TITLE of a markdown link — `[selection](url)` — instead of replacing it. The rule is deliberately narrow so nothing existing changes: it fires only for a single bare http(s) URL pasted over a non-empty single-line selection without brackets, and never for URLs containing `)`. Every other paste — plain text, ready-made markdown links, multiline clipboards, no selection — behaves exactly as before, and bare URLs still auto-linkify at render. Undo (Ctrl+Z) works normally.
+
+- **`ui.js`** — `linkifyPaste` (pure decision, unit-tested) + `handleLinkPaste` (uses `setRangeText` to keep the undo stack); wired into the inline ✎ editor on all paths and exported on `Chippy.ui`.
+- **`discussion.js`** — composer paste handler tries the link transform before the image branch (and saves the draft); the Preparation editor gets the same listener.
+- **`main.js`** — help dialog: New-comment line and the `[label](url)` cheat-sheet row mention the shortcut.

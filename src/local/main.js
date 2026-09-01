@@ -185,7 +185,7 @@
       section('Discussion', 'The middle column is where you read and write a discussion.', [
         ['Title & actions', 'the discussion name with its comment count; on the right: ★ favourite, 🔓/🔒 sensitive (locks the whole discussion out of AI summaries — a red "sensitive" chip appears next to the title), ↻ reload from disk, ⬇ export a contribution summary, 🗄 archive (renames the file to *.archive.md — nothing is deleted).'],
         ['Description', 'editable notes for the discussion (✎ at the top-right); the "Description" label hides once it has text.'],
-        ['New comment', 'type a note — #tag to classify, @ to mention a name, Ctrl+V to paste an image. Below the box: tag chips on the left; goal link, due date and Save on the right. The box clears after saving.'],
+        ['New comment', 'type a note — #tag to classify, @ to mention a name, Ctrl+V to paste an image; select some text and Ctrl+V a copied URL to turn the selection into the title of a link. Below the box: tag chips on the left; goal link, due date and Save on the right. The box clears after saving.'],
         ['Search this discussion', 'filters the comments below by #tag / @name / free text.'],
         ['History', 'comments grouped by day, newest first; today reads "Today".']
       ]);
@@ -224,7 +224,7 @@
         ['- item   * item', 'bullet list'],
         ['1. item', 'numbered list'],
         ['---', 'horizontal rule'],
-        ['[label](https://…)', 'link'],
+        ['[label](https://…)', 'link — or select text and Ctrl+V a copied URL'],
         ['![alt](path.jpg)', 'image — or just paste with Ctrl+V'],
         ['https://…', 'bare URLs link automatically'],
         ['@[Full Name]', 'name mention (becomes a chip) — type @ and pick from the dropdown (↑/↓ + Enter, or click), or create a new name right there'],

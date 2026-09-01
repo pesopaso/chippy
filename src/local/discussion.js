@@ -199,6 +199,8 @@
       editing = true;
       const ta = el('textarea', 'prep-edit');
       ta.value = member.prep || '';
+      // Paste a URL over selected text -> markdown link (same as the composer).
+      ta.addEventListener('paste', (ev) => { if (ui().handleLinkPaste) ui().handleLinkPaste(ta, ev); });
       wrap.replaceChild(ta, view);
       ta.focus();
       let finished = false;
@@ -318,8 +320,12 @@
       if (lines !== prevLineCount) { prevLineCount = lines; if (ui().autosizeTextarea) ui().autosizeTextarea(ta); }
     });
 
-    // Clipboard image paste -> JPEG in the discussion subfolder + inline ref.
+    // Clipboard paste: a URL pasted over selected text becomes a markdown link
+    // with the selection as its title (ui.handleLinkPaste — default paste for
+    // everything else); a clipboard image -> JPEG in the discussion subfolder
+    // + inline ref.
     ta.addEventListener('paste', async (ev) => {
+      if (ui().handleLinkPaste && ui().handleLinkPaste(ta, ev)) { saveDraft(); return; }
       const items = (ev.clipboardData && ev.clipboardData.items) || [];
       for (const it of items) {
         if (it.type && it.type.indexOf('image/') === 0) {

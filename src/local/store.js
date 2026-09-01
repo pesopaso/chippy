@@ -208,6 +208,37 @@
     return state;
   }
 
+  // Re-read the whole folder from disk without the picker: fresh indexes, nav
+  // reconciled against the files (new discussions appear, deleted ones drop),
+  // and the member cache cleared so every discussion reloads. For data folders
+  // that other tools write to while Chippy is open — e.g. an AI creating new
+  // discussions or updating existing ones. Everything is reloaded eagerly so
+  // the cross views are immediately correct; the caller decides what to
+  // re-render via the 'folderReloaded' event.
+  async function reloadFolder() {
+    if (!state.folderReady || !state.dirHandle) return;
+    const { nav, tags, names } = await io().loadIndexes(state.dirHandle);
+    let activeNav = nav;
+    try {
+      const r = await io().reconcileNavWithFiles(state.dirHandle, nav);
+      activeNav = r.nav;
+      if (r.changed) await io().saveNav(state.dirHandle, activeNav);
+    } catch (err) {
+      console.error('[chippy] nav reconcile failed:', err);
+    }
+    state.nav = activeNav;
+    state.tags = tags;
+    state.names = names;
+    state.members = new Map(activeNav.discussions.map(d => [d.name, null]));
+    // The previously open discussion may have been deleted or archived outside.
+    if (state.activeMemberName &&
+        !activeNav.discussions.some(d => d.name === state.activeMemberName && !d.archived)) {
+      state.activeMemberName = null;
+    }
+    await ensureAllLoaded(); // fresh content for the open screen and all cross views
+    emit({ type: 'folderReloaded', discussions: activeNav.discussions.length });
+  }
+
   // Self-healing registries: whenever a discussion's entries are (re)loaded,
   // re-register any tag or @[Name] reference that is missing from the
   // persisted unions. Recovers a lost or blanked tags/names index (e.g. after
@@ -1224,7 +1255,7 @@
 
   Chippy.store = Object.assign(
     {
-      subscribe, openFolder, selectMember, setActiveScreen, setTheme,
+      subscribe, openFolder, reloadFolder, selectMember, setActiveScreen, setTheme,
       toggleFavorite, setDiscussionTag, reloadMember, archiveDiscussion, renameDiscussion, createDiscussion, setPrep, addEntry,
       setTaskState, cyclePriority, setDue, appendAction, toggleMute, isMuted,
       toggleSensitiveEntry, toggleDiscussionSensitive, isSensitiveEntry, excludeSensitive,

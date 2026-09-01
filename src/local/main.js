@@ -178,6 +178,7 @@
         ['Search discussions', 'filters the sidebar list by name (× clears).'],
         ['Page buttons', 'open the overview pages — see "Page overview" below.'],
         ['Open Folder', 'connect your local data folder; the status line then shows discussion / tag / name counts.'],
+        ['Reload folder (↻ next to +)', 're-reads the whole folder from disk: new discussions appear, outside edits show up, deleted files drop out. Use it when another tool — e.g. an AI — writes into your data folder while Chippy is open.'],
         ['Narrow screens (<800px)', 'three tabs under the top bar — Navigation, Discussion, Tasks & Goals — switch which panel is shown.']
       ]);
 
@@ -443,6 +444,8 @@
             if (cs.type === 'folderOpened') {
               const newBtn = document.getElementById('btnNewDiscussion');
               if (newBtn) newBtn.classList.remove('hidden');
+              const rlBtn = document.getElementById('btnReloadFolder');
+              if (rlBtn) rlBtn.classList.remove('hidden');
             }
             if (pages) { pages.renderSidebar(); if (cs.type === 'folderOpened') pages.showScreen('welcome'); }
             if (cs.type === 'folderOpened') cleanupOrphanDrafts();
@@ -452,6 +455,30 @@
               store.ensureAllLoaded().then(() => { if (pages) pages.renderSidebar(); }).catch(() => {});
             }
             break;
+          case 'folderReloaded': {
+            if (status) {
+              status.textContent =
+                `Connected: ${store.getDiscussions().length} discussions · ` +
+                `${store.getTagUnion().length} tags · ${store.getNames().length} names · ` +
+                `theme ${store.getTheme()}`;
+              status.className = 'folder-status connected';
+            }
+            if (pages) pages.renderSidebar();
+            // Re-render whatever screen is open from the fresh data. If the
+            // open discussion vanished outside Chippy, fall back to welcome.
+            const onMember2 = pages && pages.getCurrentScreen && pages.getCurrentScreen() === 'member';
+            if (onMember2) {
+              const active = store.getActiveMemberName && store.getActiveMemberName();
+              if (active) store.selectMember(active);
+              else if (pages) pages.showScreen('welcome');
+            } else if (pages) {
+              pages.refresh();
+            }
+            if (Chippy.ui && Chippy.ui.showToast) {
+              Chippy.ui.showToast('Folder reloaded — ' + store.getDiscussions().length + ' discussions.');
+            }
+            break;
+          }
           case 'memberSelected':
             if (pages) { pages.noteRecent(cs.name); pages.renderSidebar(); pages.renderRecent(); }
             if (Chippy.discussion) Chippy.discussion.render(store.getActiveMember(), { fresh: true });
@@ -533,6 +560,23 @@
           }
           console.error('[chippy] openFolder failed:', err);
         }
+      });
+    }
+
+    // Reload Folder button -> store.reloadFolder(): re-reads indexes and every
+    // discussion from disk, picking up files an outside tool (e.g. an AI)
+    // created or changed while Chippy was open.
+    const reloadFolderBtn = document.getElementById('btnReloadFolder');
+    if (reloadFolderBtn && store) {
+      reloadFolderBtn.addEventListener('click', async () => {
+        if (reloadFolderBtn.disabled) return;
+        reloadFolderBtn.disabled = true;
+        try { await store.reloadFolder(); }
+        catch (err) {
+          console.error('[chippy] reloadFolder failed:', err);
+          if (Chippy.ui && Chippy.ui.showToast) Chippy.ui.showToast('Reload failed: ' + (err && err.message || err), 'error');
+        }
+        finally { reloadFolderBtn.disabled = false; }
       });
     }
 

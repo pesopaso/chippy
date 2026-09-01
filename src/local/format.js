@@ -17,6 +17,16 @@
     return s.replace(/^\n+/, '').replace(/\n+$/, '');
   }
 
+  // Normalize line endings before parsing. Files written by the app are always
+  // LF, but a file can arrive as CRLF — a git checkout with eol=crlf (e.g. the
+  // introduction template), an editor on Windows, a mail attachment. Without
+  // this, '## Entries' never matches ('## Entries\r') and a CRLF discussion
+  // parses to ZERO entries. Serialization is untouched, so any re-saved file is
+  // normalized to LF — the canonical on-disk form.
+  function normEol(md) {
+    return String(md).replace(/\r\n?/g, '\n');
+  }
+
   /* --------------------------- discussion ------------------------------ */
 
   function parseEntryHeader(headerText, body) {
@@ -48,7 +58,7 @@
   }
 
   function parseDiscussion(md, filename) {
-    const lines = md.split('\n');
+    const lines = normEol(md).split('\n');
 
     let name = '';
     for (const l of lines) {
@@ -108,7 +118,7 @@
   /* ---------------------------- navigation ----------------------------- */
 
   function sliceSection(md, heading) {
-    const lines = md.split('\n');
+    const lines = normEol(md).split('\n');
     const start = lines.findIndex(l => l === heading);
     if (start === -1) return [];
     const out = [];
@@ -120,6 +130,7 @@
   }
 
   function parseNav(md) {
+    md = normEol(md);
     let theme = 'dark';
     const tm = md.match(/^> theme: (.+)$/m);
     if (tm) theme = tm[1].trim();
@@ -160,7 +171,7 @@
 
   function parseBulletList(md) {
     const out = [];
-    for (const line of md.split('\n')) {
+    for (const line of normEol(md).split('\n')) {
       if (line.startsWith('- ')) out.push(line.slice(2));
     }
     return out;
@@ -189,6 +200,7 @@
   /* ------------------------------ summary ------------------------------ */
 
   function parseSummary(md) {
+    md = normEol(md);
     const result = { api_url: null, api_model: null, summaries: [] };
     const urlM = md.match(/^> api_url:\s*(.+)$/m);
     const modelM = md.match(/^> api_model:\s*(.+)$/m);

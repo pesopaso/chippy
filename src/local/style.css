@@ -151,6 +151,7 @@ body {
   justify-content: center;
 }
 .btn-new-discussion:hover { background: var(--hover); }
+.sidebar-header-btns { display: flex; gap: 4px; }
 .sidebar-body { flex: 1; overflow-y: auto; }
 
 .sidebar-footer {

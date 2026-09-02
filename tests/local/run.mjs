@@ -110,6 +110,17 @@ console.log(`test run folder: ${SEED}`);
 
 const results = []; // { phase, name, status }
 
+// 0 — version gate. The stamp in main.js/app.html must agree with itself AND
+// must not be behind the newest changelog entry (every changelog entry is a
+// version update — see documentation/changelog.md "Format"). Cheap, and a
+// failure here means a change shipped without moving the cache-bust.
+{
+  console.log('\n=== Phase 0 — version gate ===');
+  const v = spawnSync('node', ['scripts/stamp-version.mjs', '--check'], { stdio: 'inherit', cwd: ROOT, shell: process.platform === 'win32' });
+  results.push({ phase: 'unit', name: 'version stamp agrees with changelog', status: v.status === 0 ? 'passed' : 'failed' });
+  if (v.status !== 0) { console.error('\nVersion gate failed — run "npm run version:sync" and re-run.'); process.exit(1); }
+}
+
 // 1 — unit. Cheap and foundational; a failure here stops the run immediately.
 const r1 = runNodeTest('Phase 1 — unit', '"tests/local/unit/**/*.test.mjs"', 'unit');
 results.push(...r1.tests);

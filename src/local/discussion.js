@@ -118,7 +118,9 @@
   // Scroll to a history entry by created_at; optionally open its inline edit.
   function scrollToEntry(entryId, openEdit) {
     const id = (window.CSS && CSS.escape) ? CSS.escape(entryId) : entryId;
-    const div = document.querySelector('.history-entry[data-entry-id="' + id + '"]');
+    // Cards are ui.entryCard output (.entry-card) since dev.18; the old
+    // .history-entry selector matched nothing, so every jump silently no-op'd.
+    const div = document.querySelector('.history-list .entry-card[data-entry-id="' + id + '"]');
     if (!div) return;
     div.scrollIntoView({ behavior: 'smooth', block: 'center' });
     div.classList.add('flash');

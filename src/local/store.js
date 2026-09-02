@@ -324,6 +324,20 @@
     emit({ type: 'discussionArchived', name });
   }
 
+  // Discussion files are named by the SANITIZED stem (io.sanitizeName strips
+  // everything outside [A-Za-z0-9_ -]), so distinct display names can map to
+  // the same file: "R&D" and "RD" both live in RD.md. Uniqueness therefore has
+  // to be checked on stems, not display names — otherwise create/rename would
+  // silently overwrite another discussion's file. `except` is a display name
+  // to leave out of the check (the discussion being renamed).
+  function stemTaken(stem, except) {
+    return state.nav.discussions.some(d => d.name !== except && io().sanitizeName(d.name) === stem);
+  }
+  // A name must leave at least one filename character after sanitizing.
+  function assertValidStem(name, stem) {
+    if (!stem) throw new Error('"' + name + '" contains no usable filename characters (A-Z, a-z, 0-9, _, -, space).');
+  }
+
   // Rename a discussion: renames the .md file, moves the image folder, updates
   // the nav entry and member cache, and emits 'discussionRenamed'. (R64)
   async function renameDiscussion(oldName, newName) {
@@ -331,7 +345,22 @@
     if (!trimmed || trimmed === oldName) return;
     const existing = new Set(state.nav.discussions.map(d => d.name));
     if (existing.has(trimmed)) throw new Error('A discussion named "' + trimmed + '" already exists.');
-    await io().renameDiscussion(state.dirHandle, oldName, trimmed);
+    const oldStem = io().sanitizeName(oldName);
+    const newStem = io().sanitizeName(trimmed);
+    assertValidStem(trimmed, newStem);
+    if (newStem !== oldStem && stemTaken(newStem, oldName)) {
+      throw new Error('"' + trimmed + '" would use the same file (' + newStem + '.md) as an existing discussion.');
+    }
+    if (newStem === oldStem) {
+      // Display-only rename (e.g. "R&D" -> "R & D"): same file, so io.renameDiscussion
+      // has nothing to move — but the file's title line must still change.
+      const m = state.members.get(oldName) || await io().loadDiscussion(state.dirHandle, oldName);
+      m.name = trimmed;
+      await io().saveDiscussion(state.dirHandle, m);
+      state.members.set(oldName, m);
+    } else {
+      await io().renameDiscussion(state.dirHandle, oldName, trimmed);
+    }
     const nav = state.nav.discussions.find(d => d.name === oldName);
     if (nav) nav.name = trimmed;
     const wasLoaded = !!state.members.get(oldName); // truthy = member was in cache
@@ -345,8 +374,6 @@
     // find-and-rewrite pattern io.renameDiscussion applies to image refs.
     // Skipped when the sanitized stem didn't change (the tag carries the stem,
     // not the display name).
-    const oldStem = io().sanitizeName(oldName);
-    const newStem = io().sanitizeName(trimmed);
     if (oldStem !== newStem) {
       try {
         if (!state.members.has(trimmed)) state.members.set(trimmed, null);
@@ -380,9 +407,11 @@
   async function createDiscussion(name) {
     if (!state.folderReady) return;
     const existing = new Set(state.nav.discussions.map(d => d.name));
+    assertValidStem(name, io().sanitizeName(name));
     let uniqueName = name;
     let suffix = 2;
-    while (existing.has(uniqueName)) uniqueName = name + '_' + suffix++;
+    // Unique on the display name AND on the file stem (see stemTaken).
+    while (existing.has(uniqueName) || stemTaken(io().sanitizeName(uniqueName))) uniqueName = name + '_' + suffix++;
     const member = { name: uniqueName, group: null, archived: false, prep: '', entries: [] };
     await io().saveDiscussion(state.dirHandle, member);
     state.nav.discussions.push({ name: uniqueName, favorite: false, archived: false, tag: null });

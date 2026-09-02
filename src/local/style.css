@@ -577,7 +577,7 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
   flex: 1; min-width: 80px; background: var(--card); color: var(--text);
   border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px; font: inherit; font-size: .76rem;
 }
-.history-entry.flash { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.entry-card.flash { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ---- Links panel ------------------------------------------------------ */
 .links-section { margin-bottom: 0; }

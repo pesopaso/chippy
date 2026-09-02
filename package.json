@@ -14,6 +14,7 @@
     "test:local:data": "node --test \"tests/local/data/**/*.test.mjs\"",
     "version:check": "node scripts/stamp-version.mjs --check",
     "version:stamp": "node scripts/stamp-version.mjs",
+    "version:sync": "node scripts/stamp-version.mjs --sync",
     "release:notes": "node scripts/release-notes.mjs",
     "package": "node scripts/build-package.mjs --versioned"
   },

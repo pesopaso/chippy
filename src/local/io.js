@@ -197,6 +197,11 @@
     const oldStem = sanitizeName(oldName);
     const newStem = sanitizeName(newName);
     if (oldStem === newStem) return;
+    // Never overwrite another discussion's file (store checks stems too; this
+    // guards direct callers and files that exist on disk but not in the nav).
+    if (await fileExists(dirHandle, newStem + '.md')) {
+      throw new Error('Cannot rename: ' + newStem + '.md already exists.');
+    }
 
     const member = await loadDiscussion(dirHandle, oldName);
     member.name = newName;

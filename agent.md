@@ -10,7 +10,7 @@ Project documentation lives under `documentation\`:
 - `documentation\target-architecture.md` — target module architecture for the rewrite.
 - `documentation\implementation-plan.md` — the sequential 15-step build plan.
 - `documentation\datadefinition.md` — authoritative on-disk data format; the spec the `dev-task-runner` skill operates against.
-- `documentation\changelog.md` — version history of implementation changes; the reference for the current and future version history.
+- `documentation\changelog.md` — version history of implementation changes; the reference for the current and future version history. **Every entry is a version update**: after appending one, run `npm run version:sync` so `main.js`/`app.html` carry that version (`npm run version:check` / Phase 0 of `npm test` fail otherwise).
 - `documentation\chippy-color-reference.html` — canonical color palette (dark and light).
 
 ## Tasks

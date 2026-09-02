@@ -14,6 +14,13 @@ One entry per change, **oldest at the top, newest at the bottom — append new e
 shipped change; major bumps for milestones. Note harness status when `format.js`/`io.js` change;
 reference the requirement (`R#`) / plan step.
 
+**Every changelog entry is a version update.** The version in the heading is the version the app
+must carry: after appending an entry, run `npm run version:sync` (or `node scripts/stamp-version.mjs
+<version>`) so `src/local/main.js` and the `?v=` cache-busts in `src/local/app.html` move with it —
+otherwise browsers keep serving the previous build's assets. `npm run version:check` (also Phase 0 of
+`npm test`) fails whenever the newest `### v…` heading here is ahead of the stamp. The stamp may be
+ahead of this log (the release workflow bumps `main`/`staging` before an entry exists), never behind.
+
 ## Released
 
 ### v3.0.0 — 2026-06-07 — Production release
@@ -943,3 +950,32 @@ reference the requirement (`R#`) / plan step.
 - **`ui.js`** — `linkifyPaste` (pure decision, unit-tested) + `handleLinkPaste` (uses `setRangeText` to keep the undo stack); wired into the inline ✎ editor on all paths and exported on `Chippy.ui`.
 - **`discussion.js`** — composer paste handler tries the link transform before the image branch (and saves the draft); the Preparation editor gets the same listener.
 - **`main.js`** — help dialog: New-comment line and the `[label](url)` cheat-sheet row mention the shortcut.
+
+### v3.3.0-dev.10 — 2026-09-02 — Fix: jump-to-comment landed nowhere
+
+> Double-clicking a task/goal/idea row in the right column, the goal ✎ button and the cross-page double-click (dev.119) opened the discussion but never scrolled to or flashed the comment. `scrollToEntry` still queried `.history-entry[data-entry-id]`, a class no card has carried since the unified comment box (dev.18) replaced the bespoke history row with `.entry-card` — the selector matched nothing and the function returned silently.
+
+- **`discussion.js`** — `scrollToEntry` targets `.history-list .entry-card[data-entry-id]`; smooth scroll, flash and the optional open-edit work again from every entry point.
+- **`style.css`** — the `.flash` outline rule moves from the dead `.history-entry` selector to `.entry-card`.
+- **`tests/local/e2e/operate/jump.spec.mjs`** — new suite (3 tests): right-column task double-click, goal ✎ opens the inline editor on the entry, and All Tasks double-click opens the discussion and flashes the exact card. Unit suite unchanged (65/65).
+- **Version stamp** — `main.js` / `app.html` bumped from `3.3.0-dev.1` to `3.3.0-dev.10` (`scripts/stamp-version.mjs`), so the `?v=` cache-bust finally moves for dev.2–dev.10; the stamp had not been advanced since the dev.1 bump.
+
+### v3.3.0-dev.11 — 2026-09-02 — Fix: discussion-name collisions could overwrite another discussion's file
+
+> Discussion files are named by the sanitized stem (`[A-Za-z0-9_ -]`), so distinct display names can share one file: "R&D" and "RD" both live in `RD.md`. Create and rename only checked uniqueness on the display name, so creating "R&D" next to an existing "RD" — or renaming to it — silently overwrote `RD.md`. Uniqueness is now enforced on the stem as well, and a name that sanitizes to nothing is rejected.
+
+- **`store.js`** — new `stemTaken(stem, except)` / `assertValidStem(name, stem)` helpers. `createDiscussion` appends `_2`, `_3`, … until both the display name and the stem are free. `renameDiscussion` throws (`… would use the same file (RD.md) as an existing discussion`) when the target stem belongs to another discussion — the rename input already surfaces this as a toast. A display-only rename that keeps the stem ("R&D" → "R & D") no longer skips the file: the `# title` line is rewritten in place.
+- **`io.js`** — `renameDiscussion` refuses to write over an existing `<stem>.md` (defence for direct callers and for files on disk that the nav doesn't know about).
+- **`tests/local/unit/discussion-names.test.mjs`** — new suite (5 tests): create with a colliding stem gets a suffix and leaves the original untouched, unusable names are rejected, rename onto a taken stem throws and changes nothing, same-stem rename rewrites the title without a new file, plain rename still works. Full unit suite green (70/70).
+- **Version stamp** — `3.3.0-dev.11`.
+
+### v3.3.0-dev.12 — 2026-09-02 — Version rule: every changelog entry is a version update
+
+> The stamp had sat at `3.3.0-dev.1` while dev.2–dev.9 shipped, so the `?v=` cache-bust never moved and browsers kept old assets. `stamp-version.mjs --check` couldn't notice: it only verified `main.js` and `app.html` agree with each other. The rule is now written down and enforced.
+
+- **`documentation/changelog.md`** — Format section states the rule: after appending an entry, stamp its version; the newest heading here may never be ahead of the stamp (the stamp may be ahead — release bumps).
+- **`scripts/stamp-version.mjs`** — `--check` additionally parses every `### vX.Y.Z[-dev.N]` heading, takes the newest (dev.N < release), and exits 2 with a pointed message when it is ahead of the stamp. New `--sync` stamps the newest changelog version (no-op when the stamp is already ahead) and then checks.
+- **`package.json`** — `npm run version:sync`.
+- **`tests/local/run.mjs`** — new Phase 0 "version gate" runs `--check` before the unit phase and stops the run on failure, so `npm test` catches a forgotten stamp locally (and in CI once a test workflow exists).
+- **`agent.md`** — documentation index mentions the rule.
+- **Version stamp** — `3.3.0-dev.12` via `npm run version:sync`.

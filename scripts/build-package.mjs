@@ -3,12 +3,15 @@
 // build-package.mjs — assemble the distributable chippy.zip.
 //
 // Contents (everything an end user needs to run the app with sample data):
-//   chippy/                       app folder — open app.html from here
-//     app.html, *.js, style.css, chippy-icon.svg, dompurify.min.js, serve.cmd,
-//     README.md, THIRD-PARTY-NOTICES.md
+//   chippy/                       top-level folder inside the zip
+//     START-HERE.txt              one-page quickstart (generated)
+//     README.md                   project readme
+//     THIRD-PARTY-NOTICES.md      vendored DOMPurify notice
 //     LICENSE, NOTICE             Apache-2.0 license + attribution
-//     START-HERE.txt              one-page quickstart
-//     demo/                       ready-to-open sample data folder
+//     app/                        the application — serve this folder and open app.html
+//       app.html, *.js, style.css, chippy-icon.svg, dompurify.min.js, serve.cmd
+//     demo-notebook/              ready-to-open sample data folder
+//     introduction-notebook/      guided introduction notebook (open as your first folder)
 //
 // Excluded from the app folder: editor backups (*.bak) and the in-page test
 // harness (__wtest.js) — dev-only, never shipped.
@@ -33,6 +36,7 @@ import { dirname, join, relative, sep } from 'node:path';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const APP_DIR = join(ROOT, 'src', 'local');
 const DEMO_DIR = join(ROOT, 'regressionharness', 'referencedata');
+const INTRO_DIR = join(ROOT, 'documentation', 'introduction-template');
 const TOP = 'chippy'; // top-level folder inside the zip
 
 // ---- args ----
@@ -54,6 +58,8 @@ function appVersion() {
 
 // ---- collect files: [{ archivePath, absPath }] ----
 const EXCLUDE_APP = (name) => name.endsWith('.bak') || name === '__wtest.js';
+// Shipped at the package root instead of inside app/:
+const ROOT_DOCS = new Set(['README.md', 'THIRD-PARTY-NOTICES.md']);
 
 function walk(absRoot, archiveBase, filterName = () => true) {
   const out = [];
@@ -81,19 +87,28 @@ function startHere(version) {
     '-----------',
     '1. Use a Chromium browser (Chrome or Edge) — the app needs the File System',
     '   Access API.',
-    '2. Start a local server (the app uses ES modules, which do not run from a',
-    '   file:// double-click):',
-    '     - Windows: double-click  serve.cmd',
-    '     - macOS/Linux:  run  `python3 -m http.server 8000`  in this folder,',
-    '       then open  http://localhost:8000/app.html',
-    '3. When the app asks for a folder, pick the included  demo/  folder to',
-    '   explore sample discussions, tasks, and goals. To start your own notebook,',
-    '   pick any empty folder instead.',
+    '2. Open the app — either way works:',
+    '     - Directly: double-click  app/app.html  (or drag it into the browser).',
+    '     - Via a local server:',
+    '         - Windows: double-click  app/serve.cmd',
+    '         - macOS/Linux:  run  `python3 -m http.server 8000`  in the app/',
+    '           folder, then open  http://localhost:8000/app.html',
+    '3. When the app asks for a folder, pick the included  introduction-notebook/',
+    '   folder for a guided tour, or  demo-notebook/  to explore sample',
+    '   discussions, tasks, and goals. To start your own notebook, pick any',
+    '   empty folder instead.',
+    '4. Optional: connect your notebook folder to your local AI capabilities',
+    '   (e.g. Claude, or another agent with file access) to interact agentically',
+    '   with your personal notes, tasks, ideas, and goals — everything is plain',
+    '   Markdown, so agents can read and write it directly.',
     '',
     'WHAT IS IN THIS PACKAGE',
     '-----------------------',
-    '  app.html + *.js + style.css   the application',
-    '  demo/                         ready-to-open sample data',
+    '  app/                          the application (open app.html)',
+    '  demo-notebook/                ready-to-open sample data',
+    '  introduction-notebook/        guided introduction to Chippy — a good starting',
+    '                                point for your own notebook',
+    '  README.md                     project readme',
     '  LICENSE, NOTICE               Apache-2.0 license and attribution',
     '  THIRD-PARTY-NOTICES.md        vendored DOMPurify notice',
     '',
@@ -191,8 +206,11 @@ function zipSync(entries) {
 const version = appVersion();
 
 const fileEntries = [
-  ...walk(APP_DIR, `${TOP}`, (name) => !EXCLUDE_APP(name)),
-  ...walk(DEMO_DIR, `${TOP}/demo`),
+  ...walk(APP_DIR, `${TOP}/app`, (name) => !EXCLUDE_APP(name) && !ROOT_DOCS.has(name)),
+  ...walk(DEMO_DIR, `${TOP}/demo-notebook`),
+  ...walk(INTRO_DIR, `${TOP}/introduction-notebook`),
+  { archivePath: `${TOP}/README.md`, absPath: join(APP_DIR, 'README.md') },
+  { archivePath: `${TOP}/THIRD-PARTY-NOTICES.md`, absPath: join(APP_DIR, 'THIRD-PARTY-NOTICES.md') },
   { archivePath: `${TOP}/LICENSE`, absPath: join(ROOT, 'LICENSE') },
   { archivePath: `${TOP}/NOTICE`, absPath: join(ROOT, 'NOTICE') }
 ];

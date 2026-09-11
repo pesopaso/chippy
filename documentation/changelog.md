@@ -979,3 +979,40 @@ ahead of this log (the release workflow bumps `main`/`staging` before an entry e
 - **`tests/local/run.mjs`** — new Phase 0 "version gate" runs `--check` before the unit phase and stops the run on failure, so `npm test` catches a forgotten stamp locally (and in CI once a test workflow exists).
 - **`agent.md`** — documentation index mentions the rule.
 - **Version stamp** — `3.3.0-dev.12` via `npm run version:sync`.
+
+### v3.3.0-dev.13 — 2026-09-11 — Names: delete button for unused names
+
+> A name with 0 mentions — added once, but every @-mention since edited or deleted away — now shows a 🗑 button on its row in All Names. Deleting removes it from names.chippy.md behind the usual confirm modal; the click never toggles the row open. Names that are still mentioned anywhere show no button, and the store re-checks across all discussions before writing (refusing with a toast if a mention exists after all), so a wrong delete cannot lose anything — typing @name again re-adds it regardless.
+
+- **`store.js`** — new `removeName(name)`: loads all discussions, refuses if the name is still mentioned in any entry body, otherwise removes it from `state.names`, saves names.chippy.md and emits `nameRemoved`.
+- **`pages.js`** — All Names rows with `count === 0` get the 🗑 (same `del-btn` styling as comment delete) with a confirm modal; success/refusal surfaces as a toast.
+- **`main.js`** — `nameRemoved` joins the refresh events, so the Names page re-renders after a delete.
+- **`tests/local/unit/names.test.mjs`** — new suite (4 tests): unused name is removed and saved, mentioned name is refused, unknown name returns false, removal emits `nameRemoved`. Full unit suite green (74/74).
+- **Version stamp** — `3.3.0-dev.13` via `npm run version:sync`.
+
+### v3.3.0-dev.14 — 2026-09-11 — Names: delete button pinned right
+
+> Finetune of dev.13: the 🗑 on 0-mention name rows now sits at the far right edge of its row instead of directly after the mention count.
+
+- **`style.css`** — `.all-names-summary .del-btn { margin-left: auto; }` (the summary row is already flex).
+- **Version stamp** — `3.3.0-dev.14` via `npm run version:sync`.
+
+### v3.3.0-dev.15 — 2026-09-11 — Activity: tasks over time by state (replaces the burndown)
+
+> The "Open tasks over time (burndown)" chart becomes "Tasks over time (by state)": stacked monthly areas of OPEN, WIP, CHK, HOLD and PRGT (DONE and OBSL excluded by design). Each task's history is rebuilt from its dated state-change action bullets ("- YYYY-MM-DD : → WIP") plus the legacy Resolved:/Obsolete: markers, and the whole population is sampled at the end of every month from the first task's creation to today.
+>
+> Robust to incomplete history — state actions were introduced later than the data: a task WITH recorded transitions is assumed OPEN from creation until its first one; a task with NO recorded history is assumed to have held its current state since creation (a long-closed task without records never fabricates an open period); and when the reconstructed history disagrees with the current tag state, a synthetic transition today snaps the final sample to the truth, so the chart's last month always matches the "Task states" pie.
+
+- **`dashboard.js`** — new pure aggregations `taskTransitions` / `taskStatesOverTime` and the `stateAreas` stacked-area SVG renderer replace `closedMonthOf` / `taskBurndown` / `burndown` (nothing else referenced them); legend and colors match the per-day execution chart.
+- **`main.js`** — help dialog Activity line describes the new chart.
+- **`tests/local/unit/tasks-over-time.test.mjs`** — new suite (7 tests): action-driven timeline, → DONE and legacy Resolved: closing, current-state-since-creation for record-less tasks, no fabricated open period for record-less closed tasks, mismatch snap-to-today, followup inclusion and month span. Full unit suite green (81/81).
+- **Version stamp** — `3.3.0-dev.15` via `npm run version:sync`.
+
+### v3.3.0-dev.16 — 2026-09-11 — datadefinition.md completeness pass
+
+> Audit of the data definition against the shipping parser and store (format.js, taxonomy.js, store.js, io.js). Two wrong statements corrected, two stale filenames fixed, five gaps filled. No data-format change — documentation only.
+
+- **Corrected** — §3.1 claimed the discussion list is "sorted alphabetically"; it is stored order with new discussions appended (the sidebar groups at render time). §2.2's hidden-tags rule listed only state/priority/kind/muted — in truth every reserved tag is hidden from chips, including `goal-<id>`, link tags and `sensitive`.
+- **Stale names** — two leftover pre-migration references (`names.md`, `navigation.md`) now read `names.chippy.md` / `navigation.chippy.md`.
+- **Added** — §1: the stem-uniqueness rule from dev.11 (suffixing on create, refusal on rename, empty stems rejected) and the LF-canonical / CRLF-tolerant line-ending rule from dev.2 (3.2-dev line); §2.1: the idea-promotion cross-link bullets ("Promoted to …" / "Derived from idea: …"); §2.2: the mute's +5-day expiry; §3.3: names.chippy.md can shrink via the Names-page delete (dev.13); §5: the rename cascade also rewrites `<stem>:link-` tags.
+- **Version stamp** — `3.3.0-dev.16` via `npm run version:sync`.

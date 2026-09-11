@@ -636,6 +636,8 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .all-names-item { padding: 6px 0; border-bottom: 1px solid var(--border); }
 .all-names-summary { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; cursor: pointer; list-style: none; }
 .all-names-summary::-webkit-details-marker { display: none; }
+/* Unused-name delete: pinned to the far right of the row. */
+.all-names-summary .del-btn { margin-left: auto; }
 .name-count { font-size: .72rem; color: var(--muted); }
 .all-tags-item { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
 .name-discs { font-size: .72rem; color: var(--muted); }

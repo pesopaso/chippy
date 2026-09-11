@@ -84,17 +84,6 @@
     return tl.map(r => { total += r.comments + r.tasks; return { month: r.month, total }; });
   }
 
-  // The month (YYYY-MM) a task was closed: the latest "→ DONE"/"→ OBSL" action
-  // bullet, or the legacy Resolved:/Obsolete: marker as fallback.
-  function closedMonthOf(e) {
-    const body = e.body || '';
-    let last = null, m;
-    const act = /^- (\d{4}-\d{2})-\d{2} : → (?:DONE|OBSL)$/gm;
-    while ((m = act.exec(body))) if (!last || m[1] > last) last = m[1];
-    if (last) return last;
-    const mk = body.match(/(?:Resolved|Obsolete): (\d{4}-\d{2})/);
-    return mk ? mk[1] : null;
-  }
   // Consecutive YYYY-MM strings from start to end inclusive.
   function monthsBetween(start, end) {
     const out = []; let [y, m] = start.split('-').map(Number);
@@ -106,31 +95,70 @@
     }
     return out;
   }
-  // Burndown: open task/followup count at the end of each month = created up to
-  // that month minus those closed (Resolved:/Obsolete:) up to that month.
-  function taskBurndown(entries) {
-    const tasks = entries.filter(e => {
-      const t = e.tags || []; return t.includes('task') || t.includes('followup');
-    });
-    if (!tasks.length) return [];
-    const months = new Set();
-    for (const e of tasks) {
-      const cm = (e.created_at || '').slice(0, 7); if (cm) months.add(cm);
-      const clm = closedMonthOf(e); if (clm) months.add(clm);
+  // Tasks over time by state: rebuild each task's state history from its dated
+  // action bullets ("- YYYY-MM-DD : → WIP") plus legacy Resolved:/Obsolete:
+  // markers, then sample the whole population at the end of every month. DONE
+  // and OBSL are excluded from the chart by design.
+  //
+  // Robustness to the past — state-change actions were introduced later, so
+  // history can be incomplete:
+  //   - a task WITH recorded transitions is assumed OPEN from creation until
+  //     its first one (every task starts open);
+  //   - a task with NO recorded history is assumed to have held its CURRENT
+  //     state since creation — so a long-closed task without records never
+  //     fabricates an open period in the past;
+  //   - if the reconstructed history disagrees with the current tag state
+  //     (changes made before action logging, hand-edited files), a synthetic
+  //     transition today snaps the final sample to the truth, keeping this
+  //     chart consistent with the "Task states" pie.
+  const ACTION_TO_KEY = { OPEN: 'open', WIP: 'inprogress', CHK: 'check', HOLD: 'onhold', PRGT: 'purgatory', DONE: 'resolved', OBSL: 'obsolete' };
+  const AREA_STATES = [
+    ['open', '--orange', 'OPEN'], ['inprogress', '--state-wip', 'WIP'],
+    ['check', '--state-chk', 'CHK'], ['onhold', '--yellow', 'HOLD'],
+    ['purgatory', '--muted', 'PRGT']
+  ];
+
+  // One task's dated state history: [{date: 'YYYY-MM-DD', key}] sorted, first
+  // entry at creation. Returns null when the entry has no usable created_at.
+  function taskTransitions(e, todayDay) {
+    const created = (e.created_at || '').slice(0, 10);
+    if (!created) return null;
+    const cur = stateKeyOf(e.tags || []);
+    const tr = [];
+    let m;
+    const act = /^- (\d{4}-\d{2}-\d{2}) : → (OPEN|WIP|CHK|HOLD|PRGT|DONE|OBSL)$/gm;
+    while ((m = act.exec(e.body || ''))) tr.push({ date: m[1], key: ACTION_TO_KEY[m[2]] });
+    const legacy = /(Resolved|Obsolete): (\d{4}-\d{2}(?:-\d{2})?)/g;
+    while ((m = legacy.exec(e.body || ''))) {
+      tr.push({ date: m[2].length === 7 ? m[2] + '-01' : m[2], key: m[1] === 'Obsolete' ? 'obsolete' : 'resolved' });
     }
-    months.add(new Date().toISOString().slice(0, 7));
-    const sorted = [...months].filter(Boolean).sort();
-    if (!sorted.length) return [];
-    return monthsBetween(sorted[0], sorted[sorted.length - 1]).map(mo => {
-      let open = 0;
-      for (const e of tasks) {
-        const cm = (e.created_at || '').slice(0, 7);
-        if (!cm || cm > mo) continue;            // not yet created
-        const clm = closedMonthOf(e);
-        if (clm && clm <= mo) continue;          // already closed
-        open++;
+    tr.sort((a, b) => a.date.localeCompare(b.date));
+    tr.unshift({ date: created, key: tr.length ? 'open' : cur });
+    if (tr[tr.length - 1].key !== cur) tr.push({ date: todayDay, key: cur });
+    return { created, tr };
+  }
+
+  function taskStatesOverTime(entries, todayDay) {
+    todayDay = todayDay || new Date().toISOString().slice(0, 10);
+    const tasks = [];
+    for (const e of entries) {
+      const t = e.tags || [];
+      if (!(t.includes('task') || t.includes('followup'))) continue;
+      const x = taskTransitions(e, todayDay);
+      if (x) tasks.push(x);
+    }
+    if (!tasks.length) return [];
+    const first = tasks.map(t => t.created.slice(0, 7)).sort()[0];
+    return monthsBetween(first, todayDay.slice(0, 7)).map(mo => {
+      const sample = mo + '-99'; // string-sorts after every real day of the month
+      const row = { month: mo, open: 0, inprogress: 0, check: 0, onhold: 0, purgatory: 0 };
+      for (const { created, tr } of tasks) {
+        if (created > sample) continue;
+        let key = null;
+        for (const t of tr) { if (t.date <= sample) key = t.key; else break; }
+        if (key != null && row[key] !== undefined) row[key]++;
       }
-      return { month: mo, open };
+      return row;
     });
   }
 
@@ -235,19 +263,29 @@
     return box;
   }
 
-  function burndown(rows) {
+  function stateAreas(rows) {
     const box = el('div', 'chart wide');
-    box.append(el('div', 'chart-title', 'Open tasks over time (burndown)'));
+    box.append(el('div', 'chart-title', 'Tasks over time (by state)'));
     if (!rows.length) { box.append(el('div', 'panel-empty', 'No data.')); return box; }
-    const W = Math.max(320, rows.length * 40), H = 140, pad = 24;
-    const max = Math.max(1, ...rows.map(r => r.open));
+    // A single month cannot span an area — draw it as two identical points.
+    const draw = rows.length === 1 ? [rows[0], rows[0]] : rows;
+    const W = Math.max(320, draw.length * 40), H = 170, pad = 24;
+    const max = Math.max(1, ...draw.map(r => AREA_STATES.reduce((t, [k]) => t + r[k], 0)));
     const s = svg('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', height: H });
-    const x = i => pad + (rows.length === 1 ? 0 : i * (W - 2 * pad) / (rows.length - 1));
+    const x = i => pad + i * (W - 2 * pad) / (draw.length - 1);
     const y = v => H - pad - (v / max) * (H - 2 * pad);
-    const linePts = rows.map((r, i) => `${x(i)},${y(r.open)}`).join(' ');
-    s.append(svg('polygon', { points: `${x(0)},${y(0)} ${linePts} ${x(rows.length - 1)},${y(0)}`,
-      fill: VAR('--orange'), 'fill-opacity': '0.15' }));
-    s.append(svg('polyline', { points: linePts, fill: 'none', stroke: VAR('--orange'), 'stroke-width': 2 }));
+    // Stack bottom-up in AREA_STATES order: each band sits on the previous sum.
+    const base = draw.map(() => 0);
+    for (const [key, varName, label] of AREA_STATES) {
+      const tops = draw.map((r, i) => base[i] + r[key]);
+      const upper = draw.map((r, i) => `${x(i)},${y(tops[i])}`);
+      const lower = draw.map((r, i) => `${x(i)},${y(base[i])}`).reverse();
+      const poly = svg('polygon', { points: upper.concat(lower).join(' '),
+        fill: VAR(varName), 'fill-opacity': '0.75', stroke: VAR(varName), 'stroke-width': 1 });
+      const tt = svg('title'); tt.textContent = label; poly.append(tt);
+      s.append(poly);
+      for (let i = 0; i < draw.length; i++) base[i] = tops[i];
+    }
     s.append(svg('line', { x1: pad, y1: y(0), x2: W - pad, y2: y(0), stroke: VAR('--border'), 'stroke-width': 1 }));
     const tmax = svg('text', { x: pad, y: y(max) - 4, fill: VAR('--muted'), 'font-size': 10 });
     tmax.textContent = String(max); s.append(tmax);
@@ -258,6 +296,14 @@
       t1.textContent = rows[rows.length - 1].month; s.append(t1);
     }
     box.append(s);
+    const legend = el('div', 'pie-legend');
+    for (const [, varName, label] of AREA_STATES) {
+      const row = el('div', 'legend-row');
+      const sw = el('span', 'legend-swatch'); sw.style.background = VAR(varName);
+      row.append(sw, el('span', 'legend-label', label));
+      legend.append(row);
+    }
+    box.append(legend);
     return box;
   }
 
@@ -339,7 +385,7 @@
     container.append(grid);
 
     container.append(timeline(monthlyTimeline(entries)));
-    container.append(burndown(taskBurndown(entries)));
+    container.append(stateAreas(taskStatesOverTime(entries)));
     container.append(executionChart(taskExecution(entries)));
   }
 
@@ -347,6 +393,6 @@
     render,
     // pure aggregations exposed for tests
     inflowByRange, taskStateCounts, goalStateCounts, ideaStateCounts, monthlyTimeline, cumulative, entryType,
-    taskBurndown, closedMonthOf, monthsBetween, taskExecution, daysBetween
+    taskStatesOverTime, taskTransitions, monthsBetween, taskExecution, daysBetween
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

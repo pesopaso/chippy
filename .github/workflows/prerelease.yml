@@ -31,15 +31,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out staging
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: staging
           fetch-depth: 0
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: "20"
+          node-version: "24"
 
       - name: Read current staging version
         id: ver
@@ -90,7 +90,7 @@ jobs:
 
       - name: Upload build artifact (always, for inspection)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: chippy-zip-prerelease
           path: dist/*.zip

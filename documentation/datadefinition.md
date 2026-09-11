@@ -37,6 +37,14 @@ is loaded.
   `.archive.md` or `.chippy.md`. Discussions flagged as archived are excluded from the active
   list.
 - Per-discussion images live in a subfolder whose name matches the sanitized discussion name.
+- **Stem uniqueness.** Because sanitization can map distinct display names to the same filename
+  stem (`R&D` and `RD` both yield `RD.md`), stems are unique by rule: creating a discussion
+  whose display name or stem is taken appends `_2`, `_3`, … until both are free; renaming onto
+  a stem that belongs to another discussion is refused; a name that sanitizes to nothing is
+  rejected.
+- **Line endings.** The canonical on-disk form is LF. Files that arrive with CRLF line endings
+  (a git checkout with `eol=crlf`, a Windows editor) are read correctly and are normalized to
+  LF the next time the app rewrites them.
 
 ---
 
@@ -79,8 +87,8 @@ ordinary entries distinguished by reserved tags.
 
 **Legacy metadata lines** — older files may carry `> Tag: <value>` (or the older `> Group:
 <value>`) and `> Archived: true` directly after the title. Current files no longer store these;
-per-discussion tag, archived, and favorite state live in `navigation.md` as the single source
-of truth. The lines are still accepted when reading older files.
+per-discussion tag, archived, and favorite state live in `navigation.chippy.md` as the single
+source of truth. The lines are still accepted when reading older files.
 
 **`## Preparation`** — free-form preparation notes, one bullet (`- <line>`) per line. May be
 empty.
@@ -144,6 +152,12 @@ Task Resolution Actions
 - 2026-05-19 : → DONE
 ```
 
+**Idea-promotion cross-links.** Promoting an idea to a task or goal writes one action bullet
+on each side: the idea gains `- YYYY-MM-DD : Promoted to <task|goal>: <first line, max 80
+chars> (created <created_at>)`, and the newly created entry gains `- YYYY-MM-DD : Derived from
+idea: <first line, max 80 chars>`. Plain text like every other bullet — the promoted state
+itself is the `promoteditea` tag.
+
 **Legacy lifecycle markers** — older files carry single marker lines, each with a
 `YYYY-MM-DD HH:MM:SS` timestamp, written before state changes moved into the action log:
 
@@ -162,7 +176,7 @@ state markers are ever written**. The only marker still written is the move mark
 - **Name reference** — `@[Full Name]`. Typing `@` (at the start of the text or after
   whitespace) is the trigger to enter a name; selecting one inserts the `@[Full Name]` form.
   This form is kept literally in the text (the `@` and brackets are storage markers) and is
-  **not** a tag. Known names are listed in `names.md`. (There is no plain `@word` form — a bare
+  **not** a tag. Known names are listed in `names.chippy.md`. (There is no plain `@word` form — a bare
   `@` only ever starts a name reference.)
 - **URLs** — stored as Markdown links `[label](url)`. A bare URL is normalized on save: if a
   word immediately precedes it, that word (with underscores turned into spaces) becomes the
@@ -180,7 +194,7 @@ state markers are ever written**. The only marker still written is the move mark
 | `goal-<5 chars>` | A goal's unique identity tag (a 5-character base-36 suffix). Copied onto every comment linked to that goal, forming the historical trail. |
 | `idea` | Classifies the entry as an idea — an exploratory thought or possibility not yet committed as a task or goal. |
 | `high`, `medium`, `low` | Priority. |
-| `muted:<YYYY-MM-DD>` | Parking-lot mute marker; the encoded date is the auto-unmute expiry. |
+| `muted:<YYYY-MM-DD>` | Parking-lot mute marker; the encoded date is the auto-unmute expiry (the app writes creation day + 5 days; a past date reads as not muted). |
 | `sensitive` | Marks the entry as sensitive: it is excluded from automatically created AI summaries. App-managed (toggled from the discussion stream), never typed. A whole discussion is marked sensitive via the `| sensitive` navigation flag (section 3.1). |
 | `<origin-stem>:link-<5 chars>` | A task link's identity (section 2.4): the origin discussion's sanitized filename stem, a colon, and a 5-character base-36 id. Carried identically by the origin entry and by every reference to it in other discussions. Minted only when an entry is first connected — never on creation. |
 
@@ -231,8 +245,9 @@ Value rules:
 - The absence of any state tag is read as OPEN (tasks), as an open goal, or as Considered (ideas).
 - Every `goal` entry carries one unique `goal-<5 chars>` identity tag.
 
-State, priority, `task`/`followup`, `idea`, and `muted:*` tags remain in the file but are hidden from
-the on-screen tag chips.
+Every reserved tag remains in the file but is hidden from the on-screen tag chips: the kind
+tags (`task`, `followup`, `goal`, `idea`), state tags, priorities, `goal-<id>` identity tags,
+`<origin-stem>:link-<id>` link tags, `sensitive`, and `muted:*`.
 
 ### 2.3 Legacy `## Goals` section (read-only)
 
@@ -326,7 +341,8 @@ regenerated on demand.
 **`> theme:`** — optional line; value `light` selects the light theme. Dark is the implicit
 default and is not written.
 
-**`## Discussions`** — one line per discussion, sorted alphabetically. Each line is `- <name>`
+**`## Discussions`** — one line per discussion, in stored order (new discussions are appended
+at the end; the sidebar imposes its own grouping when rendering). Each line is `- <name>`
 followed by optional pipe-separated flags:
 
 - `| tag: <value>` — the sidebar group the discussion belongs to (omitted when empty).
@@ -365,6 +381,10 @@ discussions are lazy-loaded, the list is not pruned by re-scanning all files.
 
 A deduplicated, sorted list of known person names, one `- <name>` per line. These are the names
 offered when typing `@` in an entry and stored as `@[Full Name]` references in body text.
+Unlike the tag union, this list can shrink: a name with zero `@[…]` mentions across all
+discussions may be deleted from the Names page (the app re-verifies the count against every
+discussion before writing). A deleted name reappears automatically the next time it is
+mentioned.
 
 ### 3.4 Legacy layouts and the one-time migration
 
@@ -478,7 +498,8 @@ empty, holds a backslash, or holds a NUL character.
 **Cascading data changes:**
 
 - Renaming a discussion renames its `.md` file, renames the image subfolder, and rewrites every
-  image reference inside the entries.
+  image reference inside the entries as well as the `<stem>:link-` prefix of its link tags
+  (on its origin entries and on every reference in other discussions, section 2.4).
 - Moving an entry between discussions moves the image files it references into the target's
   subfolder and updates the references.
 - Deleting an entry that contains an image deletes that image file.

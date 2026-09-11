@@ -1142,6 +1142,27 @@
     return discTag ? arr.filter(n => n.count > 0) : arr;
   }
 
+  // Delete a name from names.chippy.md. Guarded to UNUSED names only: after
+  // loading every discussion, a name still @-mentioned in any entry body is
+  // refused (returns false) — the Names page offers deletion only at 0
+  // mentions, and this re-check protects direct callers too. Deleting is safe
+  // housekeeping either way: typing @name again simply re-adds it.
+  async function removeName(name) {
+    await ensureAllLoaded();
+    for (const [, m] of state.members) {
+      if (!m) continue;
+      for (const e of (m.entries || [])) {
+        if (extractNameTokens(e.body || '').includes(name)) return false;
+      }
+    }
+    const i = state.names.indexOf(name);
+    if (i === -1) return false;
+    state.names.splice(i, 1);
+    await io().saveNames(state.dirHandle, state.names);
+    emit({ type: 'nameRemoved', name });
+    return true;
+  }
+
   // Aggregate user-facing #tags across all loaded entries: total count and the
   // most recent use. Reserved/state/priority/goal-id/muted tags are excluded.
   function getAllTags(discTag) {
@@ -1291,7 +1312,7 @@
       setGoalState, updateIdeaState, promoteIdea, ideaInterestOf, editEntry, getLinks, renameLink, moveEntry, deleteEntry,
       isReference, resolveOrigin, connectToDiscussion, disconnectFromDiscussion,
       saveImage, getImageUrl,
-      ensureAllLoaded, collectEntries, applyUnifiedFilter, getAllNames, getAllTags,
+      ensureAllLoaded, collectEntries, applyUnifiedFilter, getAllNames, removeName, getAllTags,
       getRo3Candidates, pickRo3, doneRecent, resolvedDate,
       loadSummary, saveSummaryConfig, appendSummary, deleteSummary, updateSummary, moveSummaryToDiscussion, exportContribution, shortId,
       // pure helpers exposed for the UI and for tests

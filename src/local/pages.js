@@ -408,6 +408,29 @@
         sum.append(el('span', 'name-count', n.count + ' mentions'));
         if (n.lastSeen) sum.append(el('span', 'entry-time', 'last ' + n.lastSeen.slice(0, 10)));
         sum.append(el('span', 'name-discs', n.discussions.slice(0, 4).join(', ') + (n.discussions.length > 4 ? ' +' + (n.discussions.length - 4) : '')));
+        if (!n.count) {
+          // Unused name (0 mentions anywhere): offer deletion, behind the same
+          // confirm-modal pattern as comment delete. store.removeName re-checks
+          // the count before writing; a re-mention would re-add the name anyway.
+          const del = el('span', 'icon-btn del-btn', '🗑');
+          del.title = 'Delete this name (no mentions)';
+          del.addEventListener('click', (ev) => {
+            ev.preventDefault(); ev.stopPropagation(); // do not toggle the row open
+            ui().showModal('Delete name?', (modal, close) => {
+              modal.append(el('div', 'modal-preview', n.name + ' — 0 mentions'));
+              const actions = el('div', 'modal-actions');
+              const cancel = el('button', 'btn-sm', 'Cancel'); cancel.addEventListener('click', close);
+              const btn = el('button', 'btn-primary danger', 'Delete');
+              btn.addEventListener('click', async () => {
+                close();
+                const ok = await store().removeName(n.name);
+                if (ui().showToast) ui().showToast(ok ? 'Name deleted' : 'Name is still mentioned — not deleted', ok ? 'success' : 'error');
+              });
+              actions.append(cancel, btn); modal.append(actions);
+            });
+          });
+          sum.append(del);
+        }
         row.append(sum);
         for (const ex of n.excerpts) {
           const exr = el('div', 'name-excerpt');

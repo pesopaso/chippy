@@ -9,7 +9,7 @@
 
   // Single source of truth for the version. Used for display and as the cache-bust
   // query param on the CSS/JS tags in app.html (bump both together on release).
-  const VERSION = '3.3.0-dev.16';
+  const VERSION = '3.3.0-dev.19';
   Chippy.VERSION = VERSION;
 
   const THEME_KEY = 'chippy_theme';
@@ -193,7 +193,7 @@
       section('Right column', 'A live summary of the discussion — a section only appears once it has content (no open tasks, no Open Tasks section, and so on).', [
         ['Open Tasks', 'your open tasks — priority and state squares on the left; age, due date, ⚡ action and 🔇 mute on the right (muting lives only here: it hides a task for 5 days). Tasks linked from other discussions appear here too, marked 🔗.'],
         ['Goals', 'highlighted with a goal tint; ⚡ action, ✎ edit, ✓ achieved, ✕ canceled at the bottom-right.'],
-        ['Open Ideas', 'non-shelved ideas (💡) — click the state badge to change the lifecycle state, ⚡ adds an action; double-click jumps to the entry. Linked ideas from other discussions appear here too, marked 🔗.'],
+        ['Open Ideas', 'ideas still in play — Considered or Explored (💡); Promoted and Shelved leave this panel but stay in All Ideas. Click the state badge to change the lifecycle state, ⚡ adds an action; double-click jumps to the entry. Linked ideas from other discussions appear here too, marked 🔗.'],
         ['Links', 'links found in the comments and description, deduped (images excluded); ✎ renames a link.'],
         ['Images', 'a gallery of pasted images; click one for the full-screen carousel.']
       ]);
@@ -254,7 +254,7 @@
       section('Ideas', 'Ideas (💡) capture possibilities that aren’t yet commitments — a middle ground between comments and tasks/goals.', [
         ['Capture', 'tag a comment #idea; it appears in history with a 💡 icon and in the "Open Ideas" panel on the right.'],
         ['Lifecycle', 'Considered (default) → Explored → Promoted or Shelved — click the state badge for the menu. Transitions are logged as dated "→ STATE" lines in Idea Actions.'],
-        ['Shelved', 'shelved ideas collapse to one line in history and leave the Open Ideas panel; unshelve them via the badge any time.'],
+        ['Shelved', 'promoted and shelved ideas behave like done/obsolete tasks: dimmed and collapsed to one line in history (▸ expands) and absent from the Open Ideas panel; unshelve via the badge any time.'],
         ['Promote', 'the badge menu’s "→ Task…" / "→ Goal…" create the new entry (title prompt, prefilled), set the idea to Promoted, and cross-link both action logs.'],
         ['Interest', 'a ▲n indicator counts the actions and links an idea has attracted — a hint which ideas are generating discussion.'],
         ['Kanban', 'the 💡 Ideas toggle on the Kanban page adds the four lifecycle columns; drag an idea between them to change its state.'],
@@ -502,7 +502,7 @@
           case 'entryEdited': {
             const onMember = pages && pages.getCurrentScreen && pages.getCurrentScreen() === 'member';
             const handled = onMember && Chippy.discussion && Chippy.discussion.refreshEntry &&
-              Chippy.discussion.refreshEntry(cs.entryId);
+              Chippy.discussion.refreshEntry(cs.entryId, cs.idx);
             if (!handled && pages) pages.refresh();
             break;
           }

@@ -1016,3 +1016,31 @@ ahead of this log (the release workflow bumps `main`/`staging` before an entry e
 - **Stale names** — two leftover pre-migration references (`names.md`, `navigation.md`) now read `names.chippy.md` / `navigation.chippy.md`.
 - **Added** — §1: the stem-uniqueness rule from dev.11 (suffixing on create, refusal on rename, empty stems rejected) and the LF-canonical / CRLF-tolerant line-ending rule from dev.2 (3.2-dev line); §2.1: the idea-promotion cross-link bullets ("Promoted to …" / "Derived from idea: …"); §2.2: the mute's +5-day expiry; §3.3: names.chippy.md can shrink via the Names-page delete (dev.13); §5: the rename cascade also rewrites `<stem>:link-` tags.
 - **Version stamp** — `3.3.0-dev.16` via `npm run version:sync`.
+
+### v3.3.0-dev.17 — 2026-09-12 — Idea states review: Promoted is settled, ▲ counts real interest
+
+> Review of the idea lifecycle (Considered → Explored → Promoted / Shelved) found the model consistent across store, badge dropdown, All Ideas tabs, kanban columns, dashboard pie and docs — with two behavioral wrinkles, both fixed. First: a Promoted idea stayed in the discussion's Open Ideas panel forever, although its work lives on in the task/goal it became; "open" now means Considered or Explored, so Promoted joins Shelved as a settled state (All Ideas, kanban and the pie still show every state). Second: the ▲ interest indicator counted state-transition bullets, so flipping states inflated interest; it now counts only real activity bullets and links. Reviewed and deliberately left alone: re-promotion stays possible (one idea may legitimately spawn several tasks) and the on-disk `promoteditea` spelling stays (a rename needs a read-both migration for no user-facing gain; documented in datadefinition.md).
+
+- **`store.js`** — `isOpenIdea` also excludes `promoteditea`; `ideaInterestOf` filters out `- YYYY-MM-DD : → …` bullets.
+- **`main.js`** — help dialog: Open Ideas and Shelved lines describe the settled states.
+- **`tests/local/unit/ideas.test.mjs`** — two new tests (open/settled classification; transition bullets don't count as interest). Full unit suite green (83/83).
+- **Version stamp** — `3.3.0-dev.17` via `npm run version:sync`.
+
+### v3.3.0-dev.18 — 2026-09-12 — Settled ideas behave exactly like closed tasks
+
+> Follow-up to dev.17: Promoted and Shelved ideas now get the full closed-task treatment in the discussion stream — dimmed (`closed` styling), collapsed to the first line, ▸ triangle and click-to-expand — identical to done/obsolete tasks and achieved/canceled goals. Previously a shelved idea collapsed without the expand triangle (only a body click worked, and it never dimmed) and a promoted idea rendered as a full open card. Together with dev.17's panel rule, promoted and shelved ideas now behave the same as done/obsolete tasks in both the discussion and the right section.
+
+- **`ui.js`** — the entry card's `closed` computation includes `promoteditea`/`shelvedidea`; the separate half-styled `shelved` branch is gone.
+- **`main.js`** — help dialog Shelved line states the equivalence.
+- **Version stamp** — `3.3.0-dev.18` via `npm run version:sync`.
+
+### v3.3.0-dev.19 — 2026-09-12 — Fix: editing a comment could display another comment's text
+
+> With two entries sharing a created_at (legacy minute-precision `HH:MM` headers make twins common among older comments), editing one of them corrupted the display: the store edited the right entry (cards pass their exact index), but the targeted single-card refresh resolved the id by created_at alone and replaced the FIRST matching card — stamping the edited body onto the other twin's card until a full reload rebuilt the view. Entry identity is now (created_at, idx) end to end.
+
+- **`store.js`** — all eight per-entry mutation events (`entryEdited`, `dueChanged`, `priorityChanged`, `actionAppended`, `muteToggled`, `sensitiveToggled`, `goalStateChanged`, `ideaStateChanged`) carry `idx` alongside `entryId`.
+- **`ui.js`** — every entry card exposes `data-idx` next to `data-entry-id`, so timestamp twins are distinguishable in the DOM.
+- **`discussion.js`** — `refreshEntry(entryId, idx)` pins the entry via the event's index and targets the card matching BOTH id and index; an entryId-only match is accepted only when unambiguous, otherwise it bails out and the caller does a full refresh (always safe).
+- **`main.js`** — the event dispatcher passes `cs.idx` through.
+- **`tests/local/unit/entry-events.test.mjs`** — new suite (2 tests): editing the second twin edits it (not its sibling) and emits idx 1; due/sensitive events carry idx too. Full unit suite green (85/85). Headless end-to-end check: editing the older of two same-timestamp comments updates exactly its own card.
+- **Version stamp** — `3.3.0-dev.19` via `npm run version:sync`.

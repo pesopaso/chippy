@@ -55,6 +55,19 @@ test('body model: Idea Actions header round-trips without duplication', () => {
   assert.equal(rejoined, e.body);
 });
 
+test('open ideas: Promoted and Shelved are settled, Considered/Explored are open', () => {
+  const open = e => store.getOpenIdeas({ entries: [e] }).length === 1;
+  assert.equal(open(mk(['idea'])), true);
+  assert.equal(open(mk(['idea', 'exploredidea'])), true);
+  assert.equal(open(mk(['idea', 'promoteditea'])), false);
+  assert.equal(open(mk(['idea', 'shelvedidea'])), false);
+});
+
+test('interest level: state-transition bullets do not count', () => {
+  assert.equal(store.ideaInterestOf(mk(['idea', 'exploredidea'],
+    'thought\n\nIdea Actions\n- 2026-03-01 : → Explored\n- 2026-03-02 : → Shelved\n- 2026-03-03 : → Considered')), 0);
+});
+
 test('interest level: counts action bullets plus links', () => {
   assert.equal(store.ideaInterestOf(mk(['idea'], 'plain thought')), 0);
   assert.equal(store.ideaInterestOf(mk(['idea'],

@@ -55,7 +55,10 @@
     if (e.tags.includes('shelvedidea')) return 'shelved';
     return 'considered'; // default if no state tag
   };
-  const isOpenIdea = e => isIdeaEntry(e) && !e.tags.includes('shelvedidea');
+  // An idea is "open" while it can still develop: Considered or Explored.
+  // Promoted (graduated to a task/goal) and Shelved are settled states and
+  // leave the Open Ideas panel; both stay visible in All Ideas and kanban.
+  const isOpenIdea = e => isIdeaEntry(e) && !e.tags.includes('shelvedidea') && !e.tags.includes('promoteditea');
 
   function io() {
     if (!Chippy.io) throw new Error('Chippy.io not loaded — io.js must load before store.js');
@@ -612,7 +615,7 @@
     e.tags.push(next);
     await ensureTagsInUnion(e.tags);
     await io().saveDiscussion(state.dirHandle, m);
-    emit({ type: 'priorityChanged', name, entryId, priority: next });
+    emit({ type: 'priorityChanged', name, entryId, idx: m.entries.indexOf(e), priority: next });
   }
 
   async function setDue(name, entryId, due, idx) {
@@ -620,7 +623,7 @@
     if (!e) return;
     e.due = due || null;
     await io().saveDiscussion(state.dirHandle, m);
-    emit({ type: 'dueChanged', name, entryId, due: e.due });
+    emit({ type: 'dueChanged', name, entryId, idx: m.entries.indexOf(e), due: e.due });
   }
 
   // Append a dated action bullet, consolidating into one action section at the
@@ -639,7 +642,7 @@
     }
     if (namesChanged) { state.names.sort((a, b) => a.localeCompare(b)); await io().saveNames(state.dirHandle, state.names); }
     await io().saveDiscussion(state.dirHandle, m);
-    emit({ type: 'actionAppended', name, entryId });
+    emit({ type: 'actionAppended', name, entryId, idx: m.entries.indexOf(e) });
   }
 
   // Toggle a 5-day mute (muted:<expiry>). (v2.3)
@@ -655,7 +658,7 @@
     }
     await ensureTagsInUnion(e.tags);
     await io().saveDiscussion(state.dirHandle, m);
-    emit({ type: 'muteToggled', name, entryId });
+    emit({ type: 'muteToggled', name, entryId, idx: m.entries.indexOf(e) });
   }
 
   /* ---------------------------- sensitive ------------------------------- */
@@ -673,7 +676,7 @@
     else e.tags.push('sensitive');
     await ensureTagsInUnion(e.tags);
     await io().saveDiscussion(state.dirHandle, m);
-    emit({ type: 'sensitiveToggled', name, entryId, sensitive: isSensitiveEntry(e) });
+    emit({ type: 'sensitiveToggled', name, entryId, idx: m.entries.indexOf(e), sensitive: isSensitiveEntry(e) });
   }
 
   // Filter for summary building: drop entries tagged 'sensitive' and every
@@ -711,7 +714,7 @@
 
     await ensureTagsInUnion(e.tags);
     await io().saveDiscussion(state.dirHandle, m);
-    emit({ type: 'ideaStateChanged', name, entryId, state: newState });
+    emit({ type: 'ideaStateChanged', name, entryId, idx: m.entries.indexOf(e), state: newState });
   }
 
   // Promote an idea to a task or goal: create the new entry in the same
@@ -746,8 +749,11 @@
   // action bullets plus links in the body. Pure; used for the ▲n indicator.
   function ideaInterestOf(e) {
     const parts = splitBodyParts(e.body || '');
+    // State-transition bullets ("- date : → Explored") are bookkeeping, not
+    // interest — flipping states back and forth must not inflate ▲n.
+    const activity = parts.bullets.filter(b => !/^- \d{4}-\d{2}-\d{2} : → /.test(b)).length;
     const links = (String(e.body || '').match(/\[[^\]]+\]\(([^)]+)\)/g) || []).length;
-    return parts.bullets.length + links;
+    return activity + links;
   }
 
   /* ----------------------------- goals --------------------------------- */
@@ -770,7 +776,7 @@
     if (stateKey !== prev) logStateAction(e, GOAL_STATE_LABEL[stateKey] || stateKey);
     await ensureTagsInUnion(e.tags);
     await io().saveDiscussion(state.dirHandle, m);
-    emit({ type: 'goalStateChanged', name, entryId, stateKey });
+    emit({ type: 'goalStateChanged', name, entryId, idx: m.entries.indexOf(e), stateKey });
   }
 
   // Edit an entry's comment part. Only the comment text is replaced — the
@@ -798,7 +804,7 @@
     }
     await ensureTagsInUnion(e.tags);
     await io().saveDiscussion(state.dirHandle, m);
-    emit({ type: 'entryEdited', name, entryId });
+    emit({ type: 'entryEdited', name, entryId, idx: m.entries.indexOf(e) });
   }
 
   /* --------------------------- links + move ---------------------------- */

@@ -744,24 +744,34 @@
   // re-rendering the whole discussion — so the changed task's top stays exactly
   // where it is and nothing above it reflows. Returns false if it can't (then
   // the caller falls back to a full render).
-  function refreshEntry(entryId) {
+  function refreshEntry(entryId, idxHint) {
     const screen = document.getElementById('memberScreen');
     const member = store().getActiveMember();
     if (!screen || !member || !entryId) return false;
-    const idx = (member.entries || []).findIndex(e => e.created_at === entryId);
-    if (idx < 0) return false;
-    const e = member.entries[idx];
+    // created_at is not unique (legacy minute-precision timestamps), so the
+    // event's idx pins the exact entry; without a valid hint fall back to the
+    // first timestamp match ONLY when it is unambiguous.
+    const entries = member.entries || [];
+    let idx = (typeof idxHint === 'number' && entries[idxHint] && entries[idxHint].created_at === entryId)
+      ? idxHint : -1;
+    if (idx < 0) {
+      const matches = [];
+      entries.forEach((e, i) => { if (e.created_at === entryId) matches.push(i); });
+      if (matches.length !== 1) return false; // ambiguous or missing -> caller does a full refresh
+      idx = matches[0];
+    }
+    const e = entries[idx];
 
     const list = screen.querySelector('.history-list');
     let replaced = false;
     if (list) {
-      const cards = list.querySelectorAll('.entry-card');
-      for (const old of cards) {
-        if (old.dataset.entryId === entryId) {
-          old.replaceWith(ui().entryCard(e, { member: member.name, timeOnly: true, idx, sensitiveControl: true, dueControl: true }));
-          replaced = true;
-          break;
-        }
+      // Same rule for the DOM side: prefer the card that carries this exact
+      // index; accept an entryId-only match only when it is the only one.
+      const cards = [...list.querySelectorAll('.entry-card')].filter(c => c.dataset.entryId === entryId);
+      const target = cards.find(c => c.dataset.idx === String(idx)) || (cards.length === 1 ? cards[0] : null);
+      if (target) {
+        target.replaceWith(ui().entryCard(e, { member: member.name, timeOnly: true, idx, sensitiveControl: true, dueControl: true }));
+        replaced = true;
       }
     }
     if (!replaced) return false;

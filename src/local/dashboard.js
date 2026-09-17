@@ -162,24 +162,35 @@
     });
   }
 
-  // Tasks grouped by the day they were created, counted by current state, for a
-  // stacked per-day bar chart.
+  // Tasks grouped by the ISO week (Monday) they were created in, counted by current state, for a
+  // stacked per-week bar chart.
   const EXEC_STATES = [
     ['open', '--orange', 'OPEN'], ['inprogress', '--state-wip', 'WIP'],
     ['check', '--state-chk', 'CHK'], ['onhold', '--yellow', 'HOLD'],
     ['purgatory', '--muted', 'PRGT'], ['resolved', '--green', 'DONE'],
     ['obsolete', '--border', 'OBSL']
   ];
-  // Consecutive YYYY-MM-DD strings from start to end inclusive.
-  function daysBetween(start, end) {
+  // The Monday (YYYY-MM-DD) of the ISO week containing the given day.
+  // All date math here is UTC-only: mixing a LOCAL-midnight Date with
+  // toISOString() (UTC) shifts the day for every timezone ahead of UTC, which
+  // made bucket keys and the filled week list disagree — and the chart empty.
+  function weekOf(dayStr) {
+    const d = new Date(String(dayStr) + 'T00:00:00Z');
+    if (isNaN(d)) return null;
+    const shift = (d.getUTCDay() + 6) % 7; // Mon=0 … Sun=6
+    d.setUTCDate(d.getUTCDate() - shift);
+    return d.toISOString().slice(0, 10);
+  }
+  // Consecutive week-start (Monday) YYYY-MM-DD strings from start to end inclusive.
+  function weeksBetween(start, end) {
     const out = [];
-    const d = new Date(start + 'T00:00:00'), e = new Date(end + 'T00:00:00');
+    const d = new Date(start + 'T00:00:00Z'), e = new Date(end + 'T00:00:00Z');
     let guard = 0;
-    while (d <= e && guard++ < 4000) { out.push(d.toISOString().slice(0, 10)); d.setDate(d.getDate() + 1); }
+    while (d <= e && guard++ < 600) { out.push(d.toISOString().slice(0, 10)); d.setUTCDate(d.getUTCDate() + 7); }
     return out;
   }
-  function emptyExecRow(day) {
-    const r = { day, total: 0 };
+  function emptyExecRow(week) {
+    const r = { week, total: 0 };
     for (const [k] of EXEC_STATES) r[k] = 0;
     return r;
   }
@@ -188,16 +199,16 @@
     for (const e of entries) {
       const t = e.tags || [];
       if (!(t.includes('task') || t.includes('followup'))) continue;
-      const day = (e.created_at || '').slice(0, 10);
-      if (!day) continue;
-      if (!map.has(day)) map.set(day, emptyExecRow(day));
-      const r = map.get(day);
+      const week = weekOf((e.created_at || '').slice(0, 10));
+      if (!week) continue;
+      if (!map.has(week)) map.set(week, emptyExecRow(week));
+      const r = map.get(week);
       r[stateKeyOf(t)]++; r.total++;
     }
-    const days = [...map.keys()].sort();
-    if (!days.length) return [];
-    // Fill every calendar day in the span, so days with no tasks show as gaps.
-    return daysBetween(days[0], days[days.length - 1]).map(day => map.get(day) || emptyExecRow(day));
+    const weeks = [...map.keys()].sort();
+    if (!weeks.length) return [];
+    // Fill every calendar week in the span, so weeks with no tasks show as gaps.
+    return weeksBetween(weeks[0], weeks[weeks.length - 1]).map(w => map.get(w) || emptyExecRow(w));
   }
 
   /* ------------------------------- SVG --------------------------------- */
@@ -309,10 +320,10 @@
 
   function executionChart(rows) {
     const box = el('div', 'chart wide');
-    box.append(el('div', 'chart-title', 'Tasks created per day (by current state)'));
+    box.append(el('div', 'chart-title', 'Tasks created per week (by current state)'));
     if (!rows.length) { box.append(el('div', 'panel-empty', 'No data.')); return box; }
     const n = rows.length, bw = 16, gap = 8, pad = 24, H = 170;
-    const labelStep = Math.ceil(n / 12); // thin the x-axis labels when many days
+    const labelStep = Math.ceil(n / 12); // thin the x-axis labels when many weeks
     const W = Math.max(320, pad * 2 + n * (bw + gap));
     const max = Math.max(1, ...rows.map(r => r.total));
     const scale = (H - 2 * pad) / max;
@@ -325,7 +336,7 @@
         const c = r[key]; if (!c) continue;
         const h = c * scale; yTop -= h;
         const rect = svg('rect', { x, y: yTop, width: bw, height: h, fill: VAR(varName) });
-        const tt = svg('title'); tt.textContent = `${r.day} · ${label}: ${c}`; rect.append(tt);
+        const tt = svg('title'); tt.textContent = `week of ${r.week} · ${label}: ${c}`; rect.append(tt);
         s.append(rect);
       }
       if (r.total > 0) {
@@ -334,7 +345,7 @@
       }
       if (i % labelStep === 0) {
         const dl = svg('text', { x: x + bw / 2, y: H - pad + 10, fill: VAR('--muted'), 'font-size': 8, 'text-anchor': 'end', transform: `rotate(-60 ${x + bw / 2} ${H - pad + 10})` });
-        dl.textContent = r.day.slice(5); s.append(dl);
+        dl.textContent = r.week.slice(5); s.append(dl);
       }
     });
     box.append(s);
@@ -393,6 +404,6 @@
     render,
     // pure aggregations exposed for tests
     inflowByRange, taskStateCounts, goalStateCounts, ideaStateCounts, monthlyTimeline, cumulative, entryType,
-    taskStatesOverTime, taskTransitions, monthsBetween, taskExecution, daysBetween
+    taskStatesOverTime, taskTransitions, monthsBetween, taskExecution, weekOf, weeksBetween
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

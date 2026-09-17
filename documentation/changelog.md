@@ -1065,3 +1065,19 @@ ahead of this log (the release workflow bumps `main`/`staging` before an entry e
 
 - **`main.js`** — `showAbout` Repository list gets the releases link below the repo link.
 - **Version stamp** — `3.3.0-dev.22` via `npm run version:sync`.
+
+### v3.3.0-dev.23 — 2026-09-17 — Activity: tasks created per WEEK (was per day)
+
+> The "Tasks created per day (by current state)" chart now buckets by ISO week instead of day: one stacked bar per calendar week (labeled by its Monday), which keeps the chart readable as history grows — a year is ~52 bars instead of ~365. Colors, legend, per-state stacking, totals and the gap-filling for empty periods are unchanged; tooltips read "week of YYYY-MM-DD".
+
+- **`dashboard.js`** — `weekOf` (Monday of the ISO week) + `weeksBetween` replace `daysBetween`; `taskExecution` buckets rows as `{ week, … }`; `executionChart` title, tooltips and axis labels updated.
+- **`main.js`** — help dialog Activity line says tasks-created-per-week.
+- **`tests/local/unit/tasks-per-week.test.mjs`** — new suite (3 tests): same-week days aggregate into one Monday-keyed row, week gaps are filled, Sunday belongs to the Monday-started week. Full unit suite green (88/88).
+- **Version stamp** — `3.3.0-dev.23` via `npm run version:sync`.
+
+### v3.3.0-dev.24 — 2026-09-17 — Fix: per-week chart rendered empty in timezones ahead of UTC
+
+> dev.23's week bucketing mixed LOCAL-midnight dates with `toISOString()` (UTC): in any timezone ahead of UTC, local Monday 00:00 reads back as Sunday, so the bucket keys and the gap-filled week list disagreed by a day and no bucket ever matched a rendered row — the chart showed axis labels but zero bars. All week math is now UTC-only (`T00:00:00Z`, `getUTCDay`/`setUTCDate`), so the keys agree in every timezone. The unit suite now runs green under UTC, Europe/Zurich, Pacific/Auckland and America/New_York (88/88); the container's UTC clock is why dev.23's tests missed it.
+
+- **`dashboard.js`** — `weekOf` / `weeksBetween` rewritten with UTC-only date math; comment documents the trap. The calendar's own helpers in `pages.js` are consistently local and unaffected.
+- **Version stamp** — `3.3.0-dev.24` via `npm run version:sync`.

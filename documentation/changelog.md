@@ -1139,3 +1139,12 @@ ahead of this log (the release workflow bumps `main`/`staging` before an entry e
 
 - **`style.css`** — `#sidebar` width and flex-basis 200px → 206px.
 - **Version stamp** — `3.3.0-dev.31` via `npm run version:sync`.
+
+### v3.3.0-dev.32 — 2026-09-17 — DOMPurify upgraded 3.2.6 → 3.4.15
+
+> The vendored sanitizer moves from 3.2.6 (June 2025 era) to the current 3.4.15 (2026-09-06), picking up the security work in between: sanitizer-bypass fixes around allow-listed risky tags (3.4.14), DOM-clobbering protections (3.4.13, 3.4.6), hook/config-leakage fixes (3.4.11), and Trusted-Types/IN_PLACE hardening. No Chippy code changes — the sanitize API and config are unchanged. Verified in the running app: DOMPurify.version reports 3.4.15 and hostile input (`<img onerror>`, `<script>`) through renderEntryText/safeSetHtml stays inert escaped text while markdown links and formatting render as before.
+
+- **`dompurify.min.js`** — official `dist/purify.min.js` from the upstream 3.4.15 tag (29,369 bytes, replaces the 3.2.6 build).
+- **`main.js`** — About dialog External References line reads DOMPurify 3.4.15.
+- **`THIRD-PARTY-NOTICES.md`** — version updated; the stale "placeholder build" warning (long obsolete — the real 3.2.6 build had been vendored) replaced by upgrade instructions.
+- **Version stamp** — `3.3.0-dev.32` via `npm run version:sync`.

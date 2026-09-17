@@ -9,7 +9,7 @@
 
   // Single source of truth for the version. Used for display and as the cache-bust
   // query param on the CSS/JS tags in app.html (bump both together on release).
-  const VERSION = '3.3.0-dev.31';
+  const VERSION = '3.3.0-dev.32';
   Chippy.VERSION = VERSION;
 
   const THEME_KEY = 'chippy_theme';
@@ -109,7 +109,7 @@
       modal.appendChild(compHead);
       const compList = mk('ul', 'about-meta-list');
       const compItem = mk('li');
-      compItem.appendChild(mkLink('DOMPurify 3.2.6', 'https://github.com/cure53/DOMPurify'));
+      compItem.appendChild(mkLink('DOMPurify 3.4.15', 'https://github.com/cure53/DOMPurify'));
       compItem.appendChild(document.createTextNode(' — HTML sanitisation by Cure53'));
       compList.appendChild(compItem);
       modal.appendChild(compList);

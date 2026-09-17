@@ -8,13 +8,13 @@ for the Chippy license (Apache-2.0).
 
 - **Component:** DOMPurify (HTML sanitization boundary)
 - **Author:** Cure53 and contributors
-- **Version (target):** 3.2.6
+- **Version:** 3.4.15
 - **License:** Apache-2.0 OR MPL-2.0
 - **Vendored as:** `dompurify.min.js` (flat, at the app root)
 - **Upstream:** https://github.com/cure53/DOMPurify
-- **Status:** ⚠️ The vendored `dompurify.min.js` is currently a **placeholder** (no
-  sanitization). Replace it with the real 3.2.6 minified build before Step 5. Download:
-  `https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.6/purify.min.js`
+- **Status:** Real minified build vendored (official `dist/purify.min.js` from the
+  upstream 3.4.15 tag). To upgrade: replace the file with the new tag's build and
+  update the version here and in the About dialog (`main.js`).
 
 ## Roboto
 

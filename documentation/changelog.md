@@ -1081,3 +1081,20 @@ ahead of this log (the release workflow bumps `main`/`staging` before an entry e
 
 - **`dashboard.js`** — `weekOf` / `weeksBetween` rewritten with UTC-only date math; comment documents the trap. The calendar's own helpers in `pages.js` are consistently local and unaffected.
 - **Version stamp** — `3.3.0-dev.24` via `npm run version:sync`.
+
+### v3.3.0-dev.25 — 2026-09-17 — Activity over time: legend + actions + state changes
+
+> The Activity-over-time chart gains a legend (it never had one — seven colored lines are unreadable without it), first/last month labels like the other wide charts, and two new series: **Actions** (dated action bullets) and **State changes** (`- date : → LABEL` bullets). Both count in the month of the bullet's OWN date, not the entry's creation month — an action logged in June on a March task belongs to June — so months that only saw follow-up work now show activity too.
+
+- **`dashboard.js`** — `monthlyTimeline` parses dated bullets per entry and buckets them by bullet month (creating rows for months with only bullet activity); `timeline` renders the two extra lines, hover titles per line, month labels and the legend.
+- **`main.js`** — help dialog Activity line lists the series and the bullet-month rule.
+- **`tests/local/unit/timeline.test.mjs`** — new suite (2 tests): bullets count in their own month with → separated as state changes; undated markdown bullets in bodies are not miscounted. Full unit suite green (90/90).
+- **Version stamp** — `3.3.0-dev.25` via `npm run version:sync`.
+
+### v3.3.0-dev.26 — 2026-09-17 — Activity charts: legend moves to the right
+
+> The legends of the three wide Activity charts — Activity over time, Tasks over time (by state) and Tasks created per week — now sit to the RIGHT of the chart instead of below it. The legend is a narrow column anyway, so beside the SVG it costs no extra card height; on narrow (slim) layouts the row wraps and the legend drops below again.
+
+- **`dashboard.js`** — each wide chart wraps SVG + legend in a `.chart-flex` row.
+- **`style.css`** — `.chart-flex` (flex row, SVG flexes, legend fixed; wraps under `body.slim`).
+- **Version stamp** — `3.3.0-dev.26` via `npm run version:sync`.

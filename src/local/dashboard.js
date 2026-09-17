@@ -64,17 +64,30 @@
   }
   function monthlyTimeline(entries) {
     const map = new Map();
+    const row = mo => {
+      if (!map.has(mo)) map.set(mo, { month: mo, comments: 0, tasks: 0, ideas: 0, links: 0, images: 0, actions: 0, stateChanges: 0 });
+      return map.get(mo);
+    };
+    // A dated action bullet: "- YYYY-MM-DD : text"; a "→ " right after the
+    // colon marks a state-change bullet. Each is counted in the month of ITS
+    // OWN date (an action logged in June on a March task belongs to June).
+    const BULLET = /^- (\d{4}-\d{2})-\d{2} : (→ )?/gm;
     for (const e of entries) {
       const mo = (e.created_at || '').slice(0, 7);
       if (!mo) continue;
-      if (!map.has(mo)) map.set(mo, { month: mo, comments: 0, tasks: 0, ideas: 0, links: 0, images: 0 });
-      const r = map.get(mo);
+      const r = row(mo);
       const ty = entryType(e);
       if (ty === 'comment') r.comments++;
       else if (ty === 'task' || ty === 'followup') r.tasks++;
       else if (ty === 'idea') r.ideas++;
       r.links += linkCount(e.body);
       r.images += imageCount(e.body);
+      let m;
+      BULLET.lastIndex = 0;
+      while ((m = BULLET.exec(String(e.body || '')))) {
+        const br = row(m[1]);
+        if (m[2]) br.stateChanges++; else br.actions++;
+      }
     }
     return [...map.values()].sort((a, b) => a.month.localeCompare(b.month));
   }
@@ -261,16 +274,40 @@
     box.append(el('div', 'chart-title', 'Activity over time'));
     if (!rows.length) { box.append(el('div', 'panel-empty', 'No data.')); return box; }
     const W = Math.max(320, rows.length * 40), H = 140, pad = 24;
-    const max = Math.max(1, ...rows.flatMap(r => [r.comments, r.tasks, r.ideas || 0, r.links, r.images]));
+    const series = [
+      ['comments', VAR('--accent'), 'Comments'], ['tasks', VAR('--orange'), 'Tasks'],
+      ['ideas', VAR('--idea'), 'Ideas'], ['links', VAR('--green'), 'Links'],
+      ['images', VAR('--pink'), 'Images'], ['actions', VAR('--yellow'), 'Actions'],
+      ['stateChanges', VAR('--muted'), 'State changes']
+    ];
+    const max = Math.max(1, ...rows.flatMap(r => series.map(([k]) => r[k] || 0)));
     const s = svg('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', height: H });
     const x = i => pad + (rows.length === 1 ? 0 : i * (W - 2 * pad) / (rows.length - 1));
     const y = v => H - pad - (v / max) * (H - 2 * pad);
-    const series = [['comments', VAR('--accent')], ['tasks', VAR('--orange')], ['ideas', VAR('--idea')], ['links', VAR('--green')], ['images', VAR('--pink')]];
-    for (const [key, color] of series) {
+    for (const [key, color, label] of series) {
       const pts = rows.map((r, i) => `${x(i)},${y(r[key] || 0)}`).join(' ');
-      s.append(svg('polyline', { points: pts, fill: 'none', stroke: color, 'stroke-width': 2 }));
+      const line = svg('polyline', { points: pts, fill: 'none', stroke: color, 'stroke-width': 2 });
+      const tt = svg('title'); tt.textContent = label; line.append(tt);
+      s.append(line);
     }
-    box.append(s);
+    // First/last month labels for orientation (matches the other wide charts).
+    const t0 = svg('text', { x: x(0), y: H - 6, fill: VAR('--muted'), 'font-size': 10 });
+    t0.textContent = rows[0].month; s.append(t0);
+    if (rows.length > 1) {
+      const t1 = svg('text', { x: W - pad, y: H - 6, fill: VAR('--muted'), 'font-size': 10, 'text-anchor': 'end' });
+      t1.textContent = rows[rows.length - 1].month; s.append(t1);
+    }
+    const legend = el('div', 'pie-legend');
+    for (const [, color, label] of series) {
+      const lr = el('div', 'legend-row');
+      const sw = el('span', 'legend-swatch'); sw.style.background = color;
+      lr.append(sw, el('span', 'legend-label', label));
+      legend.append(lr);
+    }
+    // Chart and legend side by side: the legend column costs no extra height.
+    const flexRow = el('div', 'chart-flex');
+    flexRow.append(s, legend);
+    box.append(flexRow);
     return box;
   }
 
@@ -306,7 +343,6 @@
       const t1 = svg('text', { x: W - pad, y: H - 6, fill: VAR('--muted'), 'font-size': 10, 'text-anchor': 'end' });
       t1.textContent = rows[rows.length - 1].month; s.append(t1);
     }
-    box.append(s);
     const legend = el('div', 'pie-legend');
     for (const [, varName, label] of AREA_STATES) {
       const row = el('div', 'legend-row');
@@ -314,7 +350,9 @@
       row.append(sw, el('span', 'legend-label', label));
       legend.append(row);
     }
-    box.append(legend);
+    const flexRow = el('div', 'chart-flex');
+    flexRow.append(s, legend);
+    box.append(flexRow);
     return box;
   }
 
@@ -348,7 +386,6 @@
         dl.textContent = r.week.slice(5); s.append(dl);
       }
     });
-    box.append(s);
     const legend = el('div', 'pie-legend');
     for (const [, varName, label] of EXEC_STATES) {
       const row = el('div', 'legend-row');
@@ -356,7 +393,9 @@
       row.append(sw, el('span', 'legend-label', label));
       legend.append(row);
     }
-    box.append(legend);
+    const flexRow = el('div', 'chart-flex');
+    flexRow.append(s, legend);
+    box.append(flexRow);
     return box;
   }
 

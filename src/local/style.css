@@ -721,6 +721,12 @@ body.slim .cal-month { grid-template-columns: repeat(7, minmax(0, 1fr)); }
 .chart.wide { width: 100%; margin-top: 16px; }
 .chart-title { font-size: .78rem; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin-bottom: 8px; }
 .pie-wrap { display: flex; gap: 12px; align-items: center; }
+/* Wide charts: SVG and legend side by side — the legend sits to the RIGHT of
+   the chart instead of below it, so the card stays as short as the chart. */
+.chart-flex { display: flex; gap: 18px; align-items: center; }
+.chart-flex svg { flex: 1 1 auto; min-width: 0; }
+.chart-flex .pie-legend { flex: 0 0 auto; }
+body.slim .chart-flex { flex-wrap: wrap; }
 .pie-legend { display: flex; flex-direction: column; gap: 3px; }
 .legend-row { display: flex; align-items: center; gap: 6px; font-size: .72rem; }
 .legend-swatch { width: 10px; height: 10px; border-radius: 2px; flex: 0 0 auto; }

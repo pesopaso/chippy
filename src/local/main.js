@@ -9,7 +9,7 @@
 
   // Single source of truth for the version. Used for display and as the cache-bust
   // query param on the CSS/JS tags in app.html (bump both together on release).
-  const VERSION = '3.3.0-dev.19';
+  const VERSION = '3.3.0-dev.22';
   Chippy.VERSION = VERSION;
 
   const THEME_KEY = 'chippy_theme';
@@ -92,6 +92,18 @@
       // Separator.
       modal.appendChild(mk('hr', 'about-sep'));
 
+      // Authorship.
+      modal.appendChild(mk('div', 'about-meta-head', 'Authorship'));
+      const authList = mk('ul', 'about-meta-list');
+      const authItem = mk('li', null, 'Authored-By: ');
+      authItem.appendChild(mkLink('pesopaso.com', 'http://www.pesopaso.com/'));
+      authList.appendChild(authItem);
+      authList.appendChild(mk('li', null, 'Co-Authored-By: Claude Fable 5, Opus 5, Opus 4.8 and Sonnet 5'));
+      modal.appendChild(authList);
+
+      // Separator.
+      modal.appendChild(mk('hr', 'about-sep'));
+
       // External References.
       const compHead = mk('div', 'about-meta-head', 'External References');
       modal.appendChild(compHead);
@@ -116,6 +128,9 @@
       const repoItem = mk('li');
       repoItem.appendChild(mkLink('Chippy GitHub Repo', 'https://github.com/pesopaso/chippy'));
       repoList.appendChild(repoItem);
+      const relItem = mk('li');
+      relItem.appendChild(mkLink('Chippy GitHub Releases', 'https://github.com/pesopaso/chippy/releases/'));
+      repoList.appendChild(relItem);
       modal.appendChild(repoList);
 
       const row = mk('div', 'modal-actions');

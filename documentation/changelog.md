@@ -1044,3 +1044,24 @@ ahead of this log (the release workflow bumps `main`/`staging` before an entry e
 - **`main.js`** — the event dispatcher passes `cs.idx` through.
 - **`tests/local/unit/entry-events.test.mjs`** — new suite (2 tests): editing the second twin edits it (not its sibling) and emits idx 1; due/sensitive events carry idx too. Full unit suite green (85/85). Headless end-to-end check: editing the older of two same-timestamp comments updates exactly its own card.
 - **Version stamp** — `3.3.0-dev.19` via `npm run version:sync`.
+
+### v3.3.0-dev.20 — 2026-09-15 — About dialog: Authorship section
+
+> The About Chippy dialog gains an Authorship section, placed above External References and Repository in the same head + list style: `Authored-By:` pesopaso.com (linked) and `Co-Authored-By: Claude Fable 5, Opus 5, Opus 4.8 and Sonnet 5`.
+
+- **`main.js`** — `showAbout` renders the new section between the description paragraphs and External References.
+- **Version stamp** — `3.3.0-dev.20` via `npm run version:sync`.
+
+### v3.3.0-dev.21 — 2026-09-15 — About: Authored-By link target corrected
+
+> The Authorship section's pesopaso.com link now points to http://www.pesopaso.com/.
+
+- **`main.js`** — `showAbout` link href updated.
+- **Version stamp** — `3.3.0-dev.21` via `npm run version:sync`.
+
+### v3.3.0-dev.22 — 2026-09-15 — About: Releases link in the Repository section
+
+> The About dialog's Repository section gains a second entry: Chippy GitHub Releases → https://github.com/pesopaso/chippy/releases/.
+
+- **`main.js`** — `showAbout` Repository list gets the releases link below the repo link.
+- **Version stamp** — `3.3.0-dev.22` via `npm run version:sync`.

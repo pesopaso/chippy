@@ -83,7 +83,7 @@ test('dashboard: idea state distribution and inflow/timeline series', () => {
   const inflow = dashboard.inflowByRange(es, 'all');
   assert.equal(inflow.idea, 3);
   assert.equal(inflow.comment, 1);
-  const tl = dashboard.monthlyTimeline(es);
+  const tl = dashboard.weeklyTimeline(es);
   assert.equal(tl.length, 1);
   assert.equal(tl[0].ideas, 3);
   assert.equal(tl[0].comments, 1);
@@ -101,7 +101,7 @@ test('performance: filtering and aggregating 5000 ideas stays fast', () => {
   const t0 = performance.now();
   const explored = store.applyUnifiedFilter(es, '#idea:explored');
   const counts = dashboard.ideaStateCounts(es);
-  const tl = dashboard.monthlyTimeline(es);
+  const tl = dashboard.weeklyTimeline(es);
   for (const e of es) store.ideaInterestOf(e);
   const ms = performance.now() - t0;
   assert.equal(explored.length, 1250);

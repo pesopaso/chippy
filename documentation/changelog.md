@@ -1098,3 +1098,20 @@ ahead of this log (the release workflow bumps `main`/`staging` before an entry e
 - **`dashboard.js`** — each wide chart wraps SVG + legend in a `.chart-flex` row.
 - **`style.css`** — `.chart-flex` (flex row, SVG flexes, legend fixed; wraps under `body.slim`).
 - **Version stamp** — `3.3.0-dev.26` via `npm run version:sync`.
+
+### v3.3.0-dev.27 — 2026-09-17 — Activity & tasks-over-time charts: weekly x-axis
+
+> Activity over time and Tasks over time (by state) move from monthly to weekly buckets, matching the per-week bars chart: the timeline counts entries, actions and state changes in the ISO week (Monday-keyed, UTC-safe) of their own date and gap-fills empty weeks so the x-axis stays even; the state areas sample the task population at the END of every week from the first task's creation week to this week. Axis end labels read "week of YYYY-MM-DD"; per-point width budgets shrink 40→16 so a year of weeks still fits.
+
+- **`dashboard.js`** — `monthlyTimeline` becomes `weeklyTimeline` (rows keyed `week`, bullet weeks via `weekOf`, span filled via `weeksBetween`); `cumulative` follows; `taskStatesOverTime` samples per week at `weekEndOf` (new helper, exported); both renderers label weeks.
+- **`main.js`** — help dialog Activity line says weekly for both charts.
+- **Tests** — `timeline.test.mjs` and `tasks-over-time.test.mjs` rewritten for weekly buckets (+ a new gap-fill case); `ideas.test.mjs` switched to `weeklyTimeline`. Suite green under UTC, Europe/Zurich and Pacific/Auckland (91/91).
+- **Version stamp** — `3.3.0-dev.27` via `npm run version:sync`.
+
+### v3.3.0-dev.28 — 2026-09-17 — Wide charts: one aligned width
+
+> The three wide Activity charts each computed their own SVG canvas width from their row count, so the browser centered them at different scales and their plot areas never lined up. All three now share one canvas width (`CHART_W = 1000`) and the same side padding: the x-axes align exactly. The per-week bar chart spreads its bars evenly across that width (bar width adapts, capped at the old 16px), instead of a fixed 24px slot per week.
+
+- **`dashboard.js`** — shared `CHART_W` for `timeline`, `stateAreas` and `executionChart`; the bar chart derives slot/bar width from the shared canvas; all three SVGs left-align their content (`xMinYMid`), so differing legend widths cannot shift the plots.
+- **`style.css`** — the side legend gets a uniform `min-width`, keeping the three flex rows the same shape.
+- **Version stamp** — `3.3.0-dev.28` via `npm run version:sync`.

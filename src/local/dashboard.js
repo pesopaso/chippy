@@ -62,20 +62,23 @@
     }
     return c;
   }
-  function monthlyTimeline(entries) {
+  function emptyTimelineRow(week) {
+    return { week, comments: 0, tasks: 0, ideas: 0, links: 0, images: 0, actions: 0, stateChanges: 0 };
+  }
+  function weeklyTimeline(entries) {
     const map = new Map();
-    const row = mo => {
-      if (!map.has(mo)) map.set(mo, { month: mo, comments: 0, tasks: 0, ideas: 0, links: 0, images: 0, actions: 0, stateChanges: 0 });
-      return map.get(mo);
+    const row = wk => {
+      if (!map.has(wk)) map.set(wk, emptyTimelineRow(wk));
+      return map.get(wk);
     };
     // A dated action bullet: "- YYYY-MM-DD : text"; a "→ " right after the
-    // colon marks a state-change bullet. Each is counted in the month of ITS
+    // colon marks a state-change bullet. Each is counted in the week of ITS
     // OWN date (an action logged in June on a March task belongs to June).
-    const BULLET = /^- (\d{4}-\d{2})-\d{2} : (→ )?/gm;
+    const BULLET = /^- (\d{4}-\d{2}-\d{2}) : (→ )?/gm;
     for (const e of entries) {
-      const mo = (e.created_at || '').slice(0, 7);
-      if (!mo) continue;
-      const r = row(mo);
+      const wk = weekOf((e.created_at || '').slice(0, 10));
+      if (!wk) continue;
+      const r = row(wk);
       const ty = entryType(e);
       if (ty === 'comment') r.comments++;
       else if (ty === 'task' || ty === 'followup') r.tasks++;
@@ -85,16 +88,21 @@
       let m;
       BULLET.lastIndex = 0;
       while ((m = BULLET.exec(String(e.body || '')))) {
-        const br = row(m[1]);
+        const bw = weekOf(m[1]);
+        if (!bw) continue;
+        const br = row(bw);
         if (m[2]) br.stateChanges++; else br.actions++;
       }
     }
-    return [...map.values()].sort((a, b) => a.month.localeCompare(b.month));
+    const weeks = [...map.keys()].sort();
+    if (!weeks.length) return [];
+    // Fill every calendar week in the span so the line chart's x-axis is even.
+    return weeksBetween(weeks[0], weeks[weeks.length - 1]).map(w => map.get(w) || emptyTimelineRow(w));
   }
   function cumulative(entries) {
-    const tl = monthlyTimeline(entries);
+    const tl = weeklyTimeline(entries);
     let total = 0;
-    return tl.map(r => { total += r.comments + r.tasks; return { month: r.month, total }; });
+    return tl.map(r => { total += r.comments + r.tasks; return { week: r.week, total }; });
   }
 
   // Consecutive YYYY-MM strings from start to end inclusive.
@@ -161,10 +169,10 @@
       if (x) tasks.push(x);
     }
     if (!tasks.length) return [];
-    const first = tasks.map(t => t.created.slice(0, 7)).sort()[0];
-    return monthsBetween(first, todayDay.slice(0, 7)).map(mo => {
-      const sample = mo + '-99'; // string-sorts after every real day of the month
-      const row = { month: mo, open: 0, inprogress: 0, check: 0, onhold: 0, purgatory: 0 };
+    const first = tasks.map(t => t.created).sort()[0];
+    return weeksBetween(weekOf(first), weekOf(todayDay)).map(wk => {
+      const sample = weekEndOf(wk); // the week's Sunday: sample at end of week
+      const row = { week: wk, open: 0, inprogress: 0, check: 0, onhold: 0, purgatory: 0 };
       for (const { created, tr } of tasks) {
         if (created > sample) continue;
         let key = null;
@@ -192,6 +200,12 @@
     if (isNaN(d)) return null;
     const shift = (d.getUTCDay() + 6) % 7; // Mon=0 … Sun=6
     d.setUTCDate(d.getUTCDate() - shift);
+    return d.toISOString().slice(0, 10);
+  }
+  // The Sunday closing the week that starts on the given Monday.
+  function weekEndOf(weekStart) {
+    const d = new Date(weekStart + 'T00:00:00Z');
+    d.setUTCDate(d.getUTCDate() + 6);
     return d.toISOString().slice(0, 10);
   }
   // Consecutive week-start (Monday) YYYY-MM-DD strings from start to end inclusive.
@@ -225,6 +239,11 @@
   }
 
   /* ------------------------------- SVG --------------------------------- */
+
+  // One viewBox width for all three wide charts (Activity over time, Tasks
+  // over time, Tasks created per week): identical canvas + identical padding
+  // means their plot areas line up exactly, whatever each chart contains.
+  const CHART_W = 1000;
 
   function svg(tag, attrs) {
     const e = document.createElementNS(SVGNS, tag);
@@ -273,7 +292,7 @@
     const box = el('div', 'chart wide');
     box.append(el('div', 'chart-title', 'Activity over time'));
     if (!rows.length) { box.append(el('div', 'panel-empty', 'No data.')); return box; }
-    const W = Math.max(320, rows.length * 40), H = 140, pad = 24;
+    const W = CHART_W, H = 140, pad = 24; // shared width: aligns with the other wide charts
     const series = [
       ['comments', VAR('--accent'), 'Comments'], ['tasks', VAR('--orange'), 'Tasks'],
       ['ideas', VAR('--idea'), 'Ideas'], ['links', VAR('--green'), 'Links'],
@@ -281,7 +300,7 @@
       ['stateChanges', VAR('--muted'), 'State changes']
     ];
     const max = Math.max(1, ...rows.flatMap(r => series.map(([k]) => r[k] || 0)));
-    const s = svg('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', height: H });
+    const s = svg('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', height: H, preserveAspectRatio: 'xMinYMid meet' });
     const x = i => pad + (rows.length === 1 ? 0 : i * (W - 2 * pad) / (rows.length - 1));
     const y = v => H - pad - (v / max) * (H - 2 * pad);
     for (const [key, color, label] of series) {
@@ -292,10 +311,10 @@
     }
     // First/last month labels for orientation (matches the other wide charts).
     const t0 = svg('text', { x: x(0), y: H - 6, fill: VAR('--muted'), 'font-size': 10 });
-    t0.textContent = rows[0].month; s.append(t0);
+    t0.textContent = 'week of ' + rows[0].week; s.append(t0);
     if (rows.length > 1) {
       const t1 = svg('text', { x: W - pad, y: H - 6, fill: VAR('--muted'), 'font-size': 10, 'text-anchor': 'end' });
-      t1.textContent = rows[rows.length - 1].month; s.append(t1);
+      t1.textContent = 'week of ' + rows[rows.length - 1].week; s.append(t1);
     }
     const legend = el('div', 'pie-legend');
     for (const [, color, label] of series) {
@@ -317,9 +336,9 @@
     if (!rows.length) { box.append(el('div', 'panel-empty', 'No data.')); return box; }
     // A single month cannot span an area — draw it as two identical points.
     const draw = rows.length === 1 ? [rows[0], rows[0]] : rows;
-    const W = Math.max(320, draw.length * 40), H = 170, pad = 24;
+    const W = CHART_W, H = 170, pad = 24; // shared width: aligns with the other wide charts
     const max = Math.max(1, ...draw.map(r => AREA_STATES.reduce((t, [k]) => t + r[k], 0)));
-    const s = svg('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', height: H });
+    const s = svg('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', height: H, preserveAspectRatio: 'xMinYMid meet' });
     const x = i => pad + i * (W - 2 * pad) / (draw.length - 1);
     const y = v => H - pad - (v / max) * (H - 2 * pad);
     // Stack bottom-up in AREA_STATES order: each band sits on the previous sum.
@@ -338,10 +357,10 @@
     const tmax = svg('text', { x: pad, y: y(max) - 4, fill: VAR('--muted'), 'font-size': 10 });
     tmax.textContent = String(max); s.append(tmax);
     const t0 = svg('text', { x: x(0), y: H - 6, fill: VAR('--muted'), 'font-size': 10 });
-    t0.textContent = rows[0].month; s.append(t0);
+    t0.textContent = 'week of ' + rows[0].week; s.append(t0);
     if (rows.length > 1) {
       const t1 = svg('text', { x: W - pad, y: H - 6, fill: VAR('--muted'), 'font-size': 10, 'text-anchor': 'end' });
-      t1.textContent = rows[rows.length - 1].month; s.append(t1);
+      t1.textContent = 'week of ' + rows[rows.length - 1].week; s.append(t1);
     }
     const legend = el('div', 'pie-legend');
     for (const [, varName, label] of AREA_STATES) {
@@ -360,15 +379,17 @@
     const box = el('div', 'chart wide');
     box.append(el('div', 'chart-title', 'Tasks created per week (by current state)'));
     if (!rows.length) { box.append(el('div', 'panel-empty', 'No data.')); return box; }
-    const n = rows.length, bw = 16, gap = 8, pad = 24, H = 170;
+    const n = rows.length, pad = 24, H = 170;
     const labelStep = Math.ceil(n / 12); // thin the x-axis labels when many weeks
-    const W = Math.max(320, pad * 2 + n * (bw + gap));
+    const W = CHART_W; // shared width: aligns with the other wide charts
+    const slot = (W - 2 * pad) / n;             // bars spread over the full width
+    const bw = Math.max(2, Math.min(16, slot * 0.7));
     const max = Math.max(1, ...rows.map(r => r.total));
     const scale = (H - 2 * pad) / max;
-    const s = svg('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', height: H, preserveAspectRatio: 'xMidYMid meet' });
+    const s = svg('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', height: H, preserveAspectRatio: 'xMinYMid meet' });
     s.append(svg('line', { x1: pad, y1: H - pad, x2: W - pad, y2: H - pad, stroke: VAR('--border'), 'stroke-width': 1 }));
     rows.forEach((r, i) => {
-      const x = pad + i * (bw + gap);
+      const x = pad + i * slot + (slot - bw) / 2;
       let yTop = H - pad;
       for (const [key, varName, label] of EXEC_STATES) {
         const c = r[key]; if (!c) continue;
@@ -434,7 +455,7 @@
     ]));
     container.append(grid);
 
-    container.append(timeline(monthlyTimeline(entries)));
+    container.append(timeline(weeklyTimeline(entries)));
     container.append(stateAreas(taskStatesOverTime(entries)));
     container.append(executionChart(taskExecution(entries)));
   }
@@ -442,7 +463,7 @@
   Chippy.dashboard = {
     render,
     // pure aggregations exposed for tests
-    inflowByRange, taskStateCounts, goalStateCounts, ideaStateCounts, monthlyTimeline, cumulative, entryType,
-    taskStatesOverTime, taskTransitions, monthsBetween, taskExecution, weekOf, weeksBetween
+    inflowByRange, taskStateCounts, goalStateCounts, ideaStateCounts, weeklyTimeline, cumulative, entryType,
+    taskStatesOverTime, taskTransitions, monthsBetween, taskExecution, weekOf, weekEndOf, weeksBetween
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

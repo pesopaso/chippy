@@ -725,7 +725,7 @@ body.slim .cal-month { grid-template-columns: repeat(7, minmax(0, 1fr)); }
    the chart instead of below it, so the card stays as short as the chart. */
 .chart-flex { display: flex; gap: 18px; align-items: center; }
 .chart-flex svg { flex: 1 1 auto; min-width: 0; }
-.chart-flex .pie-legend { flex: 0 0 auto; }
+.chart-flex .pie-legend { flex: 0 0 auto; min-width: 110px; }
 body.slim .chart-flex { flex-wrap: wrap; }
 .pie-legend { display: flex; flex-direction: column; gap: 3px; }
 .legend-row { display: flex; align-items: center; gap: 6px; font-size: .72rem; }

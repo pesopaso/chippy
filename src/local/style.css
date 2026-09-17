@@ -116,8 +116,8 @@ body {
 }
 
 #sidebar {
-  width: 200px;
-  flex: 0 0 200px;
+  width: 206px;
+  flex: 0 0 206px;
   background: var(--surface);
   border-right: 1px solid var(--border);
   display: flex;
@@ -701,6 +701,10 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 body.slim .cal-board { flex-wrap: wrap; }
 body.slim .cal-month { grid-template-columns: repeat(7, minmax(0, 1fr)); }
 .kanban-focus-btn { margin-left: auto; }
+/* Page-header controls (List/Kanban view toggle, board options): top right. */
+.header-actions { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+.header-actions .btn-sm.active { border-color: var(--accent); color: var(--accent); }
+.view-toggle { display: flex; gap: 4px; }
 .kanban-focus-btn.active { border-color: var(--accent); color: var(--accent); }
 .kanban-col.drag-over { border-color: var(--accent); background: var(--card); }
 .kanban-col-header { font-size: .7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; }

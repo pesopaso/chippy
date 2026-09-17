@@ -9,7 +9,7 @@
 
   // Single source of truth for the version. Used for display and as the cache-bust
   // query param on the CSS/JS tags in app.html (bump both together on release).
-  const VERSION = '3.3.0-dev.28';
+  const VERSION = '3.3.0-dev.31';
   Chippy.VERSION = VERSION;
 
   const THEME_KEY = 'chippy_theme';
@@ -272,7 +272,7 @@
         ['Shelved', 'promoted and shelved ideas behave like done/obsolete tasks: dimmed and collapsed to one line in history (▸ expands) and absent from the Open Ideas panel; unshelve via the badge any time.'],
         ['Promote', 'the badge menu’s "→ Task…" / "→ Goal…" create the new entry (title prompt, prefilled), set the idea to Promoted, and cross-link both action logs.'],
         ['Interest', 'a ▲n indicator counts the actions and links an idea has attracted — a hint which ideas are generating discussion.'],
-        ['Kanban', 'the 💡 Ideas toggle on the Kanban page adds the four lifecycle columns; drag an idea between them to change its state.'],
+        ['Kanban', 'the All Ideas page has a ▦ Kanban view (toggle top right) with the four lifecycle columns; drag an idea between them to change its state.'],
         ['Search', '#idea finds all ideas; #idea:explored (or #state:explored) filters by lifecycle state — works in every search box.']
       ]);
       chipLegend('Idea-state badges (click for the menu):', [
@@ -291,7 +291,7 @@
         ['Images', 'every image; click for the carousel.'],
         ['Names', '@[Name] references — counts, last-seen and a drill-down.'],
         ['Tags', 'every tag with its total uses and the date last used.'],
-        ['Kanban', 'drag tasks between state columns; the DONE column shows ~2 months. The 💡 Ideas toggle adds the idea lifecycle columns.'],
+        ['Kanban', 'no longer a separate page: the All Tasks and All Ideas pages each have a ☰ List / ▦ Kanban toggle (top right). Tasks: drag between state columns (◎ Focus hides HOLD/PRGT; the DONE column shows ~2 months). Ideas: drag between the four lifecycle columns.'],
         ['Calendar', 'a due-date calendar over open tasks/followups — day, focus, work, full and month views. In the work week, full week and month views, drag a task onto another day to change its due date (nothing else changes). The ⏰ Overdue toggle adds a column on the left with everything overdue — drag a task out of it onto a day to reschedule it. On Focus the toggle is on by default and controls the Overdue column there.'],
         ['Ro3', 'Rule of Three — three open tasks picked at random; Refresh re-rolls.'],
         ['Activity', 'charts: comment inflow (incl. ideas), task/goal/idea states, a weekly activity timeline with legend (comments, tasks, ideas, links, images, actions, state changes — actions and state changes count in the week they were logged), weekly tasks-over-time state areas (open/WIP/CHK/HOLD/PRGT, rebuilt from the dated state-change actions), and tasks-created-per-week by state.'],

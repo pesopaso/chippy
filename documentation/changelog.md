@@ -1115,3 +1115,27 @@ ahead of this log (the release workflow bumps `main`/`staging` before an entry e
 - **`dashboard.js`** — shared `CHART_W` for `timeline`, `stateAreas` and `executionChart`; the bar chart derives slot/bar width from the shared canvas; all three SVGs left-align their content (`xMinYMid`), so differing legend widths cannot shift the plots.
 - **`style.css`** — the side legend gets a uniform `min-width`, keeping the three flex rows the same shape.
 - **Version stamp** — `3.3.0-dev.28` via `npm run version:sync`.
+
+### v3.3.0-dev.29 — 2026-09-17 — Kanban moves into All Tasks and All Ideas (one nav button fewer)
+
+> The Kanban page is gone from the left navigation. Instead, the All Tasks and All Ideas pages each carry a ☰ List / ▦ Kanban toggle at the top right: Tasks switches between the open-task list and the state-column board (with the ◎ Focus option, shown only in board view, hiding HOLD/PRGT; DONE keeps its ~2-month window), Ideas between the idea list and the four lifecycle columns. Drag & drop works exactly as on the old page. Each page remembers its view for the session; the boards follow their page's discussion-tag filter (the idea board now follows the IDEAS page's filter — previously the combined page reused the task filter for both). The idea state tabs stay list-only, since the board shows every state as a column. The unified search now persists across board drops and store refreshes on both pages.
+
+- **`pages.js`** — `crossScreen` gains optional persistent-search accessors and a `headerExtra` hook; `openKanban` is replaced by `buildTaskBoard` / `buildIdeaBoard` embedded via a shared `viewToggle`; `kanbanShowIdeas`/`kanbanSearch` state retired; kanban entries removed from the cross-view map and filter resets.
+- **`app.html`** — Kanban nav button and screen section removed.
+- **`main.js`** — help dialog: the Pages and Ideas sections describe the toggles.
+- **`style.css`** — `.header-actions` / `.view-toggle` (top-right header controls with accent-active state).
+- **Version stamp** — `3.3.0-dev.29` via `npm run version:sync`.
+
+### v3.3.0-dev.30 — 2026-09-17 — Navigation: new cross-page button order
+
+> The buttons at the bottom of the left navigation are reordered: Comments · Calendar · Ro3 · Tasks · Ideas · Goals · Links · Images · Names · Tags · Activity · Summary. (Activity was not in the requested list; it keeps its place before Summary rather than being dropped.)
+
+- **`app.html`** — nav buttons reordered; no behavioral change.
+- **Version stamp** — `3.3.0-dev.30` via `npm run version:sync`.
+
+### v3.3.0-dev.31 — 2026-09-17 — Navigation: sidebar 3% wider
+
+> The left navigation grows from 200px to 206px (+3%).
+
+- **`style.css`** — `#sidebar` width and flex-basis 200px → 206px.
+- **Version stamp** — `3.3.0-dev.31` via `npm run version:sync`.

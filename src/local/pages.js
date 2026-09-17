@@ -220,18 +220,23 @@
     return wrap;
   }
 
-  function crossScreen(id, title, build, count, preSearch) {
+  // search: optional { get, set } module-state accessors — the query then
+  // survives the full re-renders that board drops and store events trigger.
+  // headerExtra: optional callback to add controls to the header (top right).
+  function crossScreen(id, title, build, count, preSearch, search, headerExtra) {
     const screen = document.getElementById(id);
     if (!screen) return;
     screen.replaceChildren();
     const header = el('div', 'member-header');
     header.append(el('h1', 'member-title', title));
     if (count != null) header.append(el('span', 'member-count', count + (count === 1 ? ' comment' : ' comments')));
+    if (headerExtra) headerExtra(header);
     screen.append(header);
     if (preSearch) preSearch(screen);
     const body = el('div', 'cross-body');
-    screen.append(makeSearchBar(q => { body.replaceChildren(); build(body, q); }), body);
-    build(body, '');
+    const q0 = search ? (search.get() || '') : '';
+    screen.append(makeSearchBar(q => { if (search) search.set(q); body.replaceChildren(); build(body, q); }, q0), body);
+    build(body, q0);
   }
 
   // Helper: append a disc-tag filter-buttons row to a cross-view screen.
@@ -291,6 +296,7 @@
   }
   function openTasks() {
     crossScreen('allTasksScreen', 'All Tasks', (c, q) => {
+      if (allTasksView === 'kanban') { buildTaskBoard(c, q); return; }
       const items = store().applyUnifiedFilter(store().collectEntries({ discTag: allTasksTagFilter }), q)
         .filter(e => (e.tags || []).some(t => t === 'task' || t === 'followup') && !(e.tags || []).some(t => CLOSED_TASK.includes(t)))
         .sort((a, b) => {
@@ -301,7 +307,19 @@
       if (!items.length) { c.append(el('div', 'panel-empty', 'No open tasks.')); return; }
       for (const e of items) c.append(entryRow(e, Object.assign({}, OVERVIEW_OPTS, { dim: store().isMuted(e) })));
     }, undefined, (screen) => addCrossDiscFilter(screen, 'allTasksFilters',
-      () => allTasksTagFilter, v => { allTasksTagFilter = v; }, openTasks));
+      () => allTasksTagFilter, v => { allTasksTagFilter = v; }, openTasks),
+    { get: () => allTasksSearch, set: v => { allTasksSearch = v; } },
+    (header) => {
+      const actions = el('span', 'header-actions');
+      if (allTasksView === 'kanban') {
+        const focusBtn = el('button', 'btn-sm' + (kanbanFocus ? ' active' : ''), '◎ Focus');
+        focusBtn.title = 'Focus: hide the HOLD and PRGT columns';
+        focusBtn.addEventListener('click', () => { kanbanFocus = !kanbanFocus; openTasks(); });
+        actions.append(focusBtn);
+      }
+      actions.append(viewToggle(() => allTasksView, v => { allTasksView = v; }, openTasks));
+      header.append(actions);
+    });
   }
   function openGoals() {
     crossScreen('allGoalsScreen', 'All Goals', (c, q) => {
@@ -320,6 +338,7 @@
     tags.includes('promoteditea') ? 'promoted' : tags.includes('shelvedidea') ? 'shelved' : 'considered';
   function openIdeas() {
     crossScreen('allIdeasScreen', 'All Ideas', (c, q) => {
+      if (allIdeasView === 'kanban') { buildIdeaBoard(c, q); return; }
       const items = store().applyUnifiedFilter(store().collectEntries({ discTag: allIdeasTagFilter }), q)
         .filter(e => (e.tags || []).includes('idea'))
         .filter(e => allIdeasStateTab === 'all' || ideaStateOf(e.tags || []) === allIdeasStateTab)
@@ -329,6 +348,9 @@
     }, undefined, (screen) => {
       addCrossDiscFilter(screen, 'allIdeasFilters',
         () => allIdeasTagFilter, v => { allIdeasTagFilter = v; }, openIdeas);
+      // The lifecycle tabs filter the LIST; the kanban shows every state as a
+      // column anyway, so the tab row is omitted there.
+      if (allIdeasView === 'kanban') return;
       const tabs = el('div', 'cross-disc-tag-filters idea-state-tabs');
       for (const [key, label] of IDEA_STATE_TABS) {
         const btn = el('button', 'disc-tag-filter-btn' + (allIdeasStateTab === key ? ' active' : ''), label);
@@ -336,6 +358,12 @@
         tabs.append(btn);
       }
       screen.append(tabs);
+    },
+    { get: () => allIdeasSearch, set: v => { allIdeasSearch = v; } },
+    (header) => {
+      const actions = el('span', 'header-actions');
+      actions.append(viewToggle(() => allIdeasView, v => { allIdeasView = v; }, openIdeas));
+      header.append(actions);
     });
   }
   function openLinks() {
@@ -467,9 +495,13 @@
                        ['onhold', 'HOLD'], ['purgatory', 'PRGT'], ['resolved', 'DONE']];
   const PRIO_LABEL = Chippy.tags.PRIO_LABEL; // taxonomy.js
   let kanbanFocus = false; // when on, hide the HOLD and PRGT columns
-  let kanbanShowIdeas = false; // when on, append the idea lifecycle columns (off by default)
   const KANBAN_IDEA_COLS = [['considered', 'Considered'], ['explored', 'Explored'], ['promoted', 'Promoted'], ['shelved', 'Shelved']];
-  let kanbanSearch = '';   // unified search query; survives board re-renders
+  // The kanban is no longer its own page: All Tasks renders the task board and
+  // All Ideas the idea lifecycle board, via a List/Kanban toggle per page.
+  let allTasksView = 'list';  // 'list' | 'kanban'
+  let allIdeasView = 'list';  // 'list' | 'kanban'
+  let allTasksSearch = '';    // survives the re-renders board drops trigger
+  let allIdeasSearch = '';
 
   // Tag taxonomy lives in taxonomy.js (Chippy.tags); aliased here for brevity.
   const stateKeyOf = Chippy.tags.stateKeyOf;
@@ -526,95 +558,88 @@
     return card;
   }
 
-  function openKanban() {
-    const screen = document.getElementById('kanbanScreen');
-    if (!screen) return;
-    screen.replaceChildren();
-    const header = el('div', 'member-header'); header.append(el('h1', 'member-title', 'Kanban'));
-    const focusBtn = el('button', 'btn-sm kanban-focus-btn' + (kanbanFocus ? ' active' : ''), '◎ Focus');
-    focusBtn.title = 'Focus: hide the HOLD and PRGT columns';
-    focusBtn.addEventListener('click', () => { kanbanFocus = !kanbanFocus; openKanban(); });
-    header.append(focusBtn);
-    const ideasBtn = el('button', 'btn-sm kanban-focus-btn' + (kanbanShowIdeas ? ' active' : ''), '💡 Ideas');
-    ideasBtn.title = 'Show the idea lifecycle columns (Considered / Explored / Promoted / Shelved)';
-    ideasBtn.addEventListener('click', () => { kanbanShowIdeas = !kanbanShowIdeas; openKanban(); });
-    header.append(ideasBtn);
-    screen.append(header);
-    addCrossDiscFilter(screen, 'kanbanFilters',
-      () => allTasksTagFilter, v => { allTasksTagFilter = v; }, openKanban);
-
-    // Unified search (same #tag / @name / freetext syntax as the list views).
-    // Typing rebuilds only the board so the input keeps its focus; the value
-    // survives the full re-renders triggered by drag-drop and the Focus toggle.
-    const boardWrap = el('div');
-    screen.append(makeSearchBar(q => { kanbanSearch = q; renderBoard(); }, kanbanSearch), boardWrap);
-
-    function renderBoard() {
-      boardWrap.replaceChildren();
-      const board = el('div', 'kanban-board');
-      const tasks = store().applyUnifiedFilter(
-        store().collectEntries({ discTag: allTasksTagFilter }), kanbanSearch
-      ).filter(e => {
-        const t = e.tags || [];
-        return (t.includes('task') || t.includes('followup')) && !t.includes('obsoletetask');
-      });
-      const rank = e => ({ high: 0, medium: 1, low: 2 })[prioOf(e.tags)] ?? 3;
-      const cols = kanbanFocus ? KANBAN_COLS.filter(([k]) => k !== 'onhold' && k !== 'purgatory') : KANBAN_COLS;
-      for (const [key, label] of cols) {
-        const col = el('div', 'kanban-col');
-        col.append(el('div', 'kanban-col-header', label));
-        let colTasks = tasks.filter(e => stateKeyOf(e.tags) === key);
-        if (key === 'resolved') colTasks = colTasks.filter(e => store().doneRecent(e, 2));
-        colTasks.sort((a, b) => {
-          const ma = store().isMuted(a) ? 1 : 0, mb = store().isMuted(b) ? 1 : 0;
-          return ma !== mb ? ma - mb : rank(a) - rank(b);
-        });
-        for (const e of colTasks) col.append(kanbanCard(e));
-        col.addEventListener('dragover', ev => { ev.preventDefault(); ev.dataTransfer.dropEffect = 'move'; col.classList.add('drag-over'); });
-        col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
-        col.addEventListener('drop', async ev => {
-          ev.preventDefault(); col.classList.remove('drag-over');
-          let ref = kanbanDrag;
-          if (!ref) { try { ref = JSON.parse(ev.dataTransfer.getData('text/plain')); } catch (_) {} }
-          kanbanDrag = null;
-          if (!ref || !ref.id || ref.kind === 'idea') return; // ideas don't take task states
-          try {
-            await store().setTaskState(ref.m, ref.id, key, ref.idx);
-            openKanban();
-          } catch (_) {}
-        });
-        board.append(col);
-      }
-      // Idea lifecycle columns (💡 toggle, off by default): drag to transition state.
-      if (kanbanShowIdeas) {
-        const ideas = store().applyUnifiedFilter(
-          store().collectEntries({ discTag: allTasksTagFilter }), kanbanSearch
-        ).filter(e => (e.tags || []).includes('idea'));
-        for (const [key, label] of KANBAN_IDEA_COLS) {
-          const col = el('div', 'kanban-col idea-col');
-          col.append(el('div', 'kanban-col-header idea', '💡 ' + label));
-          const colIdeas = ideas.filter(e => ideaStateOf(e.tags || []) === key);
-          colIdeas.sort((a, b) => rank(a) - rank(b) || (b.created_at || '').localeCompare(a.created_at || ''));
-          for (const e of colIdeas) col.append(kanbanCard(e));
-          col.addEventListener('dragover', ev => { ev.preventDefault(); ev.dataTransfer.dropEffect = 'move'; col.classList.add('drag-over'); });
-          col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
-          col.addEventListener('drop', async ev => {
-            ev.preventDefault(); col.classList.remove('drag-over');
-            let ref = kanbanDrag;
-            if (!ref) { try { ref = JSON.parse(ev.dataTransfer.getData('text/plain')); } catch (_) {} }
-            kanbanDrag = null;
-            if (!ref || !ref.id || ref.kind !== 'idea') return; // tasks don't take idea states
-            try {
-              await store().updateIdeaState(ref.m, ref.id, key, ref.idx);
-              openKanban();
-            } catch (_) {}
-          });
-          board.append(col);
-        }
-      }
-      boardWrap.append(board);
+  // List/Kanban switch for a page header (top right).
+  function viewToggle(getView, setView, reopen) {
+    const wrap = el('span', 'view-toggle');
+    for (const [key, label] of [['list', '☰ List'], ['kanban', '▦ Kanban']]) {
+      const b = el('button', 'btn-sm' + (getView() === key ? ' active' : ''), label);
+      b.addEventListener('click', () => { if (getView() !== key) { setView(key); reopen(); } });
+      wrap.append(b);
     }
-    renderBoard();
+    return wrap;
+  }
+
+  const rankPrio = e => ({ high: 0, medium: 1, low: 2 })[prioOf(e.tags)] ?? 3;
+
+  // The former Kanban page's task board, rendered inside All Tasks. Drops
+  // change the task state; the page re-opens (search and view survive via
+  // module state).
+  function buildTaskBoard(c, q) {
+    const board = el('div', 'kanban-board');
+    const tasks = store().applyUnifiedFilter(
+      store().collectEntries({ discTag: allTasksTagFilter }), q
+    ).filter(e => {
+      const t = e.tags || [];
+      return (t.includes('task') || t.includes('followup')) && !t.includes('obsoletetask');
+    });
+    const cols = kanbanFocus ? KANBAN_COLS.filter(([k]) => k !== 'onhold' && k !== 'purgatory') : KANBAN_COLS;
+    for (const [key, label] of cols) {
+      const col = el('div', 'kanban-col');
+      col.append(el('div', 'kanban-col-header', label));
+      let colTasks = tasks.filter(e => stateKeyOf(e.tags) === key);
+      if (key === 'resolved') colTasks = colTasks.filter(e => store().doneRecent(e, 2));
+      colTasks.sort((a, b) => {
+        const ma = store().isMuted(a) ? 1 : 0, mb = store().isMuted(b) ? 1 : 0;
+        return ma !== mb ? ma - mb : rankPrio(a) - rankPrio(b);
+      });
+      for (const e of colTasks) col.append(kanbanCard(e));
+      col.addEventListener('dragover', ev => { ev.preventDefault(); ev.dataTransfer.dropEffect = 'move'; col.classList.add('drag-over'); });
+      col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
+      col.addEventListener('drop', async ev => {
+        ev.preventDefault(); col.classList.remove('drag-over');
+        let ref = kanbanDrag;
+        if (!ref) { try { ref = JSON.parse(ev.dataTransfer.getData('text/plain')); } catch (_) {} }
+        kanbanDrag = null;
+        if (!ref || !ref.id || ref.kind === 'idea') return; // ideas don't take task states
+        try {
+          await store().setTaskState(ref.m, ref.id, key, ref.idx);
+          openTasks();
+        } catch (_) {}
+      });
+      board.append(col);
+    }
+    c.append(board);
+  }
+
+  // The idea lifecycle board (formerly the Kanban page's 💡 toggle), rendered
+  // inside All Ideas: drag an idea between columns to transition its state.
+  function buildIdeaBoard(c, q) {
+    const board = el('div', 'kanban-board');
+    const ideas = store().applyUnifiedFilter(
+      store().collectEntries({ discTag: allIdeasTagFilter }), q
+    ).filter(e => (e.tags || []).includes('idea'));
+    for (const [key, label] of KANBAN_IDEA_COLS) {
+      const col = el('div', 'kanban-col idea-col');
+      col.append(el('div', 'kanban-col-header idea', '💡 ' + label));
+      const colIdeas = ideas.filter(e => ideaStateOf(e.tags || []) === key);
+      colIdeas.sort((a, b) => rankPrio(a) - rankPrio(b) || (b.created_at || '').localeCompare(a.created_at || ''));
+      for (const e of colIdeas) col.append(kanbanCard(e));
+      col.addEventListener('dragover', ev => { ev.preventDefault(); ev.dataTransfer.dropEffect = 'move'; col.classList.add('drag-over'); });
+      col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
+      col.addEventListener('drop', async ev => {
+        ev.preventDefault(); col.classList.remove('drag-over');
+        let ref = kanbanDrag;
+        if (!ref) { try { ref = JSON.parse(ev.dataTransfer.getData('text/plain')); } catch (_) {} }
+        kanbanDrag = null;
+        if (!ref || !ref.id || ref.kind !== 'idea') return; // tasks don't take idea states
+        try {
+          await store().updateIdeaState(ref.m, ref.id, key, ref.idx);
+          openIdeas();
+        } catch (_) {}
+      });
+      board.append(col);
+    }
+    c.append(board);
   }
 
   /* ----------------------------- Rule of Three ------------------------- */
@@ -1066,20 +1091,19 @@
   const CROSS = {
     allComments: openComments, allTasks: openTasks, allGoals: openGoals, allIdeas: openIdeas,
     allLinks: openLinks, allImages: openImages, allNames: openNames, allTags: openTags,
-    kanban: openKanban, calendar: openCalendar, ro3: openRo3, activity: openActivity, summary: openSummary
+    calendar: openCalendar, ro3: openRo3, activity: openActivity, summary: openSummary
   };
 
   // Reset maps for disc tag filters so each page starts at "All" on fresh navigation.
   const DISC_FILTER_RESET = {
     allComments: () => { allCommentsTagFilter = null; allCommentsIdeasOnly = false; },
-    allTasks:    () => { allTasksTagFilter = null; },
+    allTasks:    () => { allTasksTagFilter = null; allTasksSearch = ''; },
     allGoals:    () => { allGoalsTagFilter = null; },
-    allIdeas:    () => { allIdeasTagFilter = null; allIdeasStateTab = 'all'; },
+    allIdeas:    () => { allIdeasTagFilter = null; allIdeasStateTab = 'all'; allIdeasSearch = ''; },
     allImages:   () => { allImagesTagFilter = null; },
     allLinks:    () => { allLinksTagFilter = null; },
     allNames:    () => { allNamesTagFilter = null; },
     allTags:     () => { allTagsTagFilter = null; },
-    kanban:      () => { allTasksTagFilter = null; kanbanSearch = ''; },
     calendar:    () => { calendarTagFilter = null; calendarSearch = ''; },
     ro3:         () => { ro3TagFilter = null; },
   };

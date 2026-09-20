@@ -141,7 +141,7 @@ only, one space on each side of the colon.
 **State changes are logged here.** Every task, followup, goal, or idea state transition appends an
 action bullet `- YYYY-MM-DD : → <LABEL>`, where `<LABEL>` is the state's display label (task
 states `OPEN`, `WIP`, `CHK`, `HOLD`, `PRGT`, `DONE`, `OBSL`; goal states `Achieved`,
-`Canceled`, `Open`; idea states `Considered`, `Explored`, `Promoted`, `Shelved`). The bullet does **not** carry the entry's state — the state is always the
+`Canceled`, `Open`; idea states `Considered`, `Explored`, `Promoted`, `Realized`, `Shelved`). The bullet does **not** carry the entry's state — the state is always the
 state tag in the header (section 2.2); the bullet is only a human-readable record of *when*
 the transition happened.
 
@@ -228,13 +228,14 @@ Naming note: the "Archived" state is stored as the `achievedgoal` tag and its bo
 `Achieved:` — the human-facing label ("Archived") and the stored token (`achieved…`) differ;
 the data uses the `achieved` form. The older `resolvedgoal` tag is still accepted on read.
 
-**Idea states.** An idea's state is carried by its state tag. There are four states:
+**Idea states.** An idea's state is carried by its state tag. There are five states:
 
 | State | Label | Tag |
 |---|---|---|
 | Considered | Entry is captured and under consideration | `consideredidea` (or no state tag) |
 | Explored | Idea has been discussed or researched | `exploredidea` |
-| Promoted | Idea has graduated to a task or goal | `promoteditea` |
+| Promoted | Idea has spawned at least one task; stays active — further tasks and goals are created from it | `promoteditea` |
+| Realized | Idea has been realized directly — done in reality without (necessarily) becoming a task or goal | `realizedidea` |
 | Shelved | Idea is deprioritized or deemed not viable | `shelvedidea` |
 
 The absence of any state tag is read as Considered (so `consideredidea` is rarely written explicitly). A shelved idea may transition back to Considered if circumstances change (unshelving).

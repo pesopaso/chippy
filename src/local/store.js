@@ -38,7 +38,7 @@
 
   const CLOSED_TASK = new Set(['resolvedtask', 'obsoletetask', 'resolvedfollowup']);
   const CLOSED_GOAL = new Set(['achievedgoal', 'canceledgoal', 'resolvedgoal']);
-  const IDEA_STATES = new Set(['consideredidea', 'exploredidea', 'promoteditea', 'shelvedidea']);
+  const IDEA_STATES = new Set(['consideredidea', 'exploredidea', 'promoteditea', 'realizedidea', 'shelvedidea']);
   const PRIORITY = ['high', 'medium', 'low'];
   const KINDS = ['task', 'followup', 'goal', 'idea'];
 
@@ -52,13 +52,17 @@
     if (!isIdeaEntry(e)) return null;
     if (e.tags.includes('exploredidea')) return 'explored';
     if (e.tags.includes('promoteditea')) return 'promoted';
+    if (e.tags.includes('realizedidea')) return 'realized';
     if (e.tags.includes('shelvedidea')) return 'shelved';
     return 'considered'; // default if no state tag
   };
   // An idea is "open" while it can still develop: Considered or Explored.
   // Promoted (graduated to a task/goal) and Shelved are settled states and
   // leave the Open Ideas panel; both stay visible in All Ideas and kanban.
-  const isOpenIdea = e => isIdeaEntry(e) && !e.tags.includes('shelvedidea') && !e.tags.includes('promoteditea');
+  // Open = still in play: Considered, Explored or Promoted (a promoted idea
+  // keeps living — further tasks and goals are created from it). Only
+  // Realized and Shelved are closed and leave the Open Ideas panel.
+  const isOpenIdea = e => isIdeaEntry(e) && !e.tags.some(t => ['shelvedidea', 'realizedidea'].includes(t));
 
   function io() {
     if (!Chippy.io) throw new Error('Chippy.io not loaded — io.js must load before store.js');
@@ -689,8 +693,8 @@
 
   /* ----------------------------- ideas --------------------------------- */
 
-  const IDEA_STATE_TAGS = ['consideredidea', 'exploredidea', 'promoteditea', 'shelvedidea'];
-  const IDEA_STATE_LABEL = { considered: 'Considered', explored: 'Explored', promoted: 'Promoted', shelved: 'Shelved' };
+  const IDEA_STATE_TAGS = ['consideredidea', 'exploredidea', 'promoteditea', 'realizedidea', 'shelvedidea'];
+  const IDEA_STATE_LABEL = { considered: 'Considered', explored: 'Explored', promoted: 'Promoted', realized: 'Realized', shelved: 'Shelved' };
 
   // Idea state transition: change from one state to another (considered / explored / promoted / shelved).
   // Logs the transition as an Idea Actions bullet.
@@ -705,6 +709,7 @@
     const stateTag = newState === 'considered' ? null :
                      newState === 'explored' ? 'exploredidea' :
                      newState === 'promoted' ? 'promoteditea' :
+                     newState === 'realized' ? 'realizedidea' :
                      newState === 'shelved' ? 'shelvedidea' : null;
     if (stateTag) e.tags.push(stateTag);
 
@@ -725,6 +730,13 @@
     if (kind !== 'task' && kind !== 'goal') return null;
     const [m, e] = findEntry(name, entryId, idx);
     if (!e || !isIdeaEntry(e)) return null;
+    // Process rules: linked tasks can be created from Explored on (an explored
+    // idea is promoted by its first task); goals only from an already
+    // Promoted idea. Considered must be explored first; Realized/Shelved are
+    // closed and create nothing.
+    const st = getIdeaState(e);
+    if (kind === 'task' && st !== 'explored' && st !== 'promoted') return null;
+    if (kind === 'goal' && st !== 'promoted') return null;
     const text = String(title || '').trim() || (e.body || '').split('\n')[0];
     const created = await addEntry(name, { text, tags: [kind] });
     if (!created) return null;

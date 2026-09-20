@@ -1148,3 +1148,44 @@ ahead of this log (the release workflow bumps `main`/`staging` before an entry e
 - **`main.js`** — About dialog External References line reads DOMPurify 3.4.15.
 - **`THIRD-PARTY-NOTICES.md`** — version updated; the stale "placeholder build" warning (long obsolete — the real 3.2.6 build had been vendored) replaced by upgrade instructions.
 - **Version stamp** — `3.3.0-dev.32` via `npm run version:sync`.
+
+### v3.3.0-dev.33 — 2026-09-18 — Docs: JetBrains Mono analysis recorded (deferred)
+
+> The assessment of introducing JetBrains Mono is written down in `documentation/jetbrains-mono-analysis.md` and the idea is deferred: OFL 1.1 licensing is unproblematic, the font would have to be vendored as woff2 (file:// app, no CDN), the natural scope is code/pre blocks (currently browser-default mono) plus optionally timestamps — a whole-UI switch is advised against. No app change.
+
+- **`documentation/jetbrains-mono-analysis.md`** — new analysis/decision record with an implementation sketch for later.
+- **Version stamp** — `3.3.0-dev.33` via `npm run version:sync`.
+
+### v3.3.0-dev.34 — 2026-09-20 — Ideas: new Realized state
+
+> Not every idea's realization goes through the notebook: some ideas simply get done without ever becoming a task or goal. The idea lifecycle gains a fifth state, **Realized** (`realizedidea` tag, badge color teal `#b2dfdb`), sitting between Promoted and Shelved in every list. Semantics: settled like Promoted/Shelved — the card dims and collapses in the discussion stream, the idea leaves the Open Ideas panel, and it stays fully visible in All Ideas (new Realized tab), the ▦ Kanban lifecycle board (fifth column, drag-to-transition) and the Idea States pie. Transitions remain unrestricted and reversible, logged as "- YYYY-MM-DD : → Realized"; distinction to Promoted: Promoted = became a task/goal (with cross-links), Realized = done directly.
+
+- **`taxonomy.js`** — `realizedidea` joins the reserved-tag vocabulary.
+- **`store.js`** — `getIdeaState`/`isOpenIdea`/`IDEA_STATE_TAGS`/`IDEA_STATE_LABEL`/`updateIdeaState` know the state.
+- **`ui.js` / `discussion.js`** — badge shows Realized (card + Open Ideas panel rows); the state dropdown offers it; settled-card collapse includes it.
+- **`pages.js`** — All Ideas tab + kanban column.
+- **`dashboard.js`** — Idea States pie gains the Realized slice.
+- **`style.css`** — `.idea-state-badge.state-realized`.
+- **`main.js`** — help dialog: reserved tags, Open Ideas, Lifecycle, Ideas page and Kanban lines updated (five columns).
+- **`documentation/datadefinition.md`** — idea-state table row + action-label list.
+- **Tests** — new `idea-realized.test.mjs` (reserved tag, tag swap + action bullet + settled, reversibility); counts and open/settled assertions extended. Suite green (94/94).
+- **Version stamp** — `3.3.0-dev.34` via `npm run version:sync`.
+
+### v3.3.0-dev.35 — 2026-09-20 — Idea process: create tasks from Explored, Promoted stays open
+
+> Three process adjustments to the idea lifecycle. (1) Linked tasks can now be created already from the EXPLORED state — the badge menu offers → Task… there (tasks only, no goals yet); the first task promotes the idea. (2) A PROMOTED idea remains OPEN: it stays uncollapsed in the discussion stream, stays in the Open Ideas panel, and is the place to create further linked tasks AND goals (→ Task…/→ Goal…). (3) Only REALIZED and SHELVED are closed: they collapse like done tasks and leave the right section. Considered offers no creation (explore first); closed states create nothing. store.promoteIdea enforces the same rules the menu shows, so nothing can bypass them.
+
+- **`store.js`** — `isOpenIdea` excludes only `realizedidea`/`shelvedidea`; `promoteIdea` gains state/kind guards (task: Explored+Promoted; goal: Promoted only).
+- **`ui.js`** — settled-card collapse drops `promoteditea`; the state dropdown gates its creation entries by the current state.
+- **`main.js`** — help dialog: Open Ideas, Lifecycle and Shelved lines describe the new process.
+- **`documentation/datadefinition.md`** — Promoted row reworded (spawned at least one task; stays active).
+- **Tests** — new `idea-process.test.mjs` (5 tests: explored+task promotes, explored+goal refused, promoted creates both and stays promoted, considered creates nothing, closed states create nothing); open/closed classification updated. Suite green (99/99).
+- **Version stamp** — `3.3.0-dev.35` via `npm run version:sync`.
+
+### v3.3.0-dev.36 — 2026-09-20 — Ideas: priority square on the stream card
+
+> An idea's priority was visible (and cyclable) only on its row in the right-hand Open Ideas panel. The discussion-stream card now shows the same clickable HI/MI/LO priority square as task and goal cards, next to the idea's state badge — click to cycle, exactly as on tasks. Link stubs stay bare as before.
+
+- **`ui.js`** — the entry card's priority-square condition includes ideas.
+- **`main.js`** — help dialog Capture line mentions badge + priority square.
+- **Version stamp** — `3.3.0-dev.36` via `npm run version:sync`.

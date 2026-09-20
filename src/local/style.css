@@ -456,6 +456,7 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .idea-state-badge.state-considered { background: #b3e5fc; }
 .idea-state-badge.state-explored { background: #fff9c4; }
 .idea-state-badge.state-promoted { background: #c8e6c9; }
+.idea-state-badge.state-realized { background: #b2dfdb; }
 .idea-state-badge.state-shelved { background: #e0e0e0; }
 .idea-icon { font-size: .9rem; flex: 0 0 auto; }
 

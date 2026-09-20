@@ -333,9 +333,9 @@
   }
   // All Ideas: every #idea entry across discussions, filterable by lifecycle
   // state (Considered / Explored / Promoted / Shelved) via a tab row.
-  const IDEA_STATE_TABS = [['all', 'All'], ['considered', 'Considered'], ['explored', 'Explored'], ['promoted', 'Promoted'], ['shelved', 'Shelved']];
+  const IDEA_STATE_TABS = [['all', 'All'], ['considered', 'Considered'], ['explored', 'Explored'], ['promoted', 'Promoted'], ['realized', 'Realized'], ['shelved', 'Shelved']];
   const ideaStateOf = tags => tags.includes('exploredidea') ? 'explored' :
-    tags.includes('promoteditea') ? 'promoted' : tags.includes('shelvedidea') ? 'shelved' : 'considered';
+    tags.includes('promoteditea') ? 'promoted' : tags.includes('realizedidea') ? 'realized' : tags.includes('shelvedidea') ? 'shelved' : 'considered';
   function openIdeas() {
     crossScreen('allIdeasScreen', 'All Ideas', (c, q) => {
       if (allIdeasView === 'kanban') { buildIdeaBoard(c, q); return; }
@@ -495,7 +495,7 @@
                        ['onhold', 'HOLD'], ['purgatory', 'PRGT'], ['resolved', 'DONE']];
   const PRIO_LABEL = Chippy.tags.PRIO_LABEL; // taxonomy.js
   let kanbanFocus = false; // when on, hide the HOLD and PRGT columns
-  const KANBAN_IDEA_COLS = [['considered', 'Considered'], ['explored', 'Explored'], ['promoted', 'Promoted'], ['shelved', 'Shelved']];
+  const KANBAN_IDEA_COLS = [['considered', 'Considered'], ['explored', 'Explored'], ['promoted', 'Promoted'], ['realized', 'Realized'], ['shelved', 'Shelved']];
   // The kanban is no longer its own page: All Tasks renders the task board and
   // All Ideas the idea lifecycle board, via a List/Kanban toggle per page.
   let allTasksView = 'list';  // 'list' | 'kanban'

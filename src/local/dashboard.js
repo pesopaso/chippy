@@ -51,12 +51,13 @@
     return c;
   }
   function ideaStateCounts(entries) {
-    const c = { considered: 0, explored: 0, promoted: 0, shelved: 0 };
+    const c = { considered: 0, explored: 0, promoted: 0, realized: 0, shelved: 0 };
     for (const e of entries) {
       const t = e.tags || [];
       if (!t.includes('idea')) continue;
       if (t.includes('exploredidea')) c.explored++;
       else if (t.includes('promoteditea')) c.promoted++;
+      else if (t.includes('realizedidea')) c.realized++;
       else if (t.includes('shelvedidea')) c.shelved++;
       else c.considered++;
     }
@@ -451,7 +452,8 @@
     const is = ideaStateCounts(entries);
     grid.append(pie('Idea states', [
       ['Considered', is.considered, '#b3e5fc'], ['Explored', is.explored, '#fff9c4'],
-      ['Promoted', is.promoted, '#c8e6c9'], ['Shelved', is.shelved, '#e0e0e0']
+      ['Promoted', is.promoted, '#c8e6c9'], ['Realized', is.realized, '#b2dfdb'],
+      ['Shelved', is.shelved, '#e0e0e0']
     ]));
     container.append(grid);
 

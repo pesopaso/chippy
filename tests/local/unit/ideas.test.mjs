@@ -55,11 +55,12 @@ test('body model: Idea Actions header round-trips without duplication', () => {
   assert.equal(rejoined, e.body);
 });
 
-test('open ideas: Promoted and Shelved are settled, Considered/Explored are open', () => {
+test('open ideas: Realized and Shelved are closed; Considered/Explored/Promoted are open', () => {
   const open = e => store.getOpenIdeas({ entries: [e] }).length === 1;
   assert.equal(open(mk(['idea'])), true);
   assert.equal(open(mk(['idea', 'exploredidea'])), true);
-  assert.equal(open(mk(['idea', 'promoteditea'])), false);
+  assert.equal(open(mk(['idea', 'promoteditea'])), true); // promoted stays open
+  assert.equal(open(mk(['idea', 'realizedidea'])), false);
   assert.equal(open(mk(['idea', 'shelvedidea'])), false);
 });
 
@@ -79,7 +80,7 @@ test('dashboard: idea state distribution and inflow/timeline series', () => {
     mk(['idea']), mk(['idea', 'exploredidea']), mk(['idea', 'shelvedidea']),
     mk(['task']), mk([], 'c')
   ];
-  assert.deepEqual(dashboard.ideaStateCounts(es), { considered: 1, explored: 1, promoted: 0, shelved: 1 });
+  assert.deepEqual(dashboard.ideaStateCounts(es), { considered: 1, explored: 1, promoted: 0, realized: 0, shelved: 1 });
   const inflow = dashboard.inflowByRange(es, 'all');
   assert.equal(inflow.idea, 3);
   assert.equal(inflow.comment, 1);

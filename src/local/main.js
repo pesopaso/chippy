@@ -9,7 +9,7 @@
 
   // Single source of truth for the version. Used for display and as the cache-bust
   // query param on the CSS/JS tags in app.html (bump both together on release).
-  const VERSION = '3.3.0-dev.32';
+  const VERSION = '3.3.0-dev.36';
   Chippy.VERSION = VERSION;
 
   const THEME_KEY = 'chippy_theme';
@@ -208,7 +208,7 @@
       section('Right column', 'A live summary of the discussion — a section only appears once it has content (no open tasks, no Open Tasks section, and so on).', [
         ['Open Tasks', 'your open tasks — priority and state squares on the left; age, due date, ⚡ action and 🔇 mute on the right (muting lives only here: it hides a task for 5 days). Tasks linked from other discussions appear here too, marked 🔗.'],
         ['Goals', 'highlighted with a goal tint; ⚡ action, ✎ edit, ✓ achieved, ✕ canceled at the bottom-right.'],
-        ['Open Ideas', 'ideas still in play — Considered or Explored (💡); Promoted and Shelved leave this panel but stay in All Ideas. Click the state badge to change the lifecycle state, ⚡ adds an action; double-click jumps to the entry. Linked ideas from other discussions appear here too, marked 🔗.'],
+        ['Open Ideas', 'ideas still in play — Considered, Explored or Promoted (💡); Realized and Shelved leave this panel but stay in All Ideas. Click the state badge to change the lifecycle state, ⚡ adds an action; double-click jumps to the entry. Linked ideas from other discussions appear here too, marked 🔗.'],
         ['Links', 'links found in the comments and description, deduped (images excluded); ✎ renames a link.'],
         ['Images', 'a gallery of pasted images; click one for the full-screen carousel.']
       ]);
@@ -219,7 +219,7 @@
         ['"Updated:"', 'a single line recording the latest edit on a later day than creation; refreshed in place on every further edit. Editing only touches the comment text — actions and the Updated line are preserved.'],
         ['Classify', '#task, #followup, #goal or #idea turn a comment into that item type.'],
         ['Priority', '#high / #medium / #low (the priority square cycles them).'],
-        ['Reserved tags (hidden from the chip row)', 'state tags (opentask, inprogresstask, checktask, onholdtask, purgatorytask, resolvedtask, obsoletetask, resolvedfollowup), goal states (achievedgoal, canceledgoal), idea states (consideredidea, exploredidea, promoteditea, shelvedidea), muted:<date> (temporary mute), sensitive (excluded from AI summaries — shows the red chip instead), goal-<id> (links a comment to a goal) and <discussion>:link-<id> (task-link identity shared by a connected task and its references).']
+        ['Reserved tags (hidden from the chip row)', 'state tags (opentask, inprogresstask, checktask, onholdtask, purgatorytask, resolvedtask, obsoletetask, resolvedfollowup), goal states (achievedgoal, canceledgoal), idea states (consideredidea, exploredidea, promoteditea, realizedidea, shelvedidea), muted:<date> (temporary mute), sensitive (excluded from AI summaries — shows the red chip instead), goal-<id> (links a comment to a goal) and <discussion>:link-<id> (task-link identity shared by a connected task and its references).']
       ]);
       chipLegend('Priority chips (click to cycle):', [
         ['prio-square prio-high', 'HI', 'high'],
@@ -267,12 +267,12 @@
       ]);
 
       section('Ideas', 'Ideas (💡) capture possibilities that aren’t yet commitments — a middle ground between comments and tasks/goals.', [
-        ['Capture', 'tag a comment #idea; it appears in history with a 💡 icon and in the "Open Ideas" panel on the right.'],
-        ['Lifecycle', 'Considered (default) → Explored → Promoted or Shelved — click the state badge for the menu. Transitions are logged as dated "→ STATE" lines in Idea Actions.'],
-        ['Shelved', 'promoted and shelved ideas behave like done/obsolete tasks: dimmed and collapsed to one line in history (▸ expands) and absent from the Open Ideas panel; unshelve via the badge any time.'],
+        ['Capture', 'tag a comment #idea; it appears in history with a 💡 icon, its state badge and priority square, and in the "Open Ideas" panel on the right.'],
+        ['Lifecycle', 'Considered (default) → Explored → Promoted → Realized or Shelved — click the state badge for the menu. From Explored the menu creates linked tasks (→ Task…; the first task promotes the idea); a Promoted idea stays open and creates further tasks and goals (→ Task…/→ Goal…). Realized (done directly, no task/goal needed) and Shelved are the closed states. Transitions are logged as dated "→ STATE" lines in Idea Actions.'],
+        ['Shelved', 'realized and shelved ideas behave like done/obsolete tasks: dimmed and collapsed to one line in history (▸ expands) and absent from the Open Ideas panel; unshelve or reopen via the badge any time.'],
         ['Promote', 'the badge menu’s "→ Task…" / "→ Goal…" create the new entry (title prompt, prefilled), set the idea to Promoted, and cross-link both action logs.'],
         ['Interest', 'a ▲n indicator counts the actions and links an idea has attracted — a hint which ideas are generating discussion.'],
-        ['Kanban', 'the All Ideas page has a ▦ Kanban view (toggle top right) with the four lifecycle columns; drag an idea between them to change its state.'],
+        ['Kanban', 'the All Ideas page has a ▦ Kanban view (toggle top right) with the five lifecycle columns; drag an idea between them to change its state.'],
         ['Search', '#idea finds all ideas; #idea:explored (or #state:explored) filters by lifecycle state — works in every search box.']
       ]);
       chipLegend('Idea-state badges (click for the menu):', [
@@ -286,12 +286,12 @@
         ['Comments', 'every comment across all discussions.'],
         ['Tasks', 'all open tasks.'],
         ['Goals', 'all open goals.'],
-        ['Ideas', 'all ideas across discussions, with state tabs (Considered / Explored / Promoted / Shelved).'],
+        ['Ideas', 'all ideas across discussions, with state tabs (Considered / Explored / Promoted / Realized / Shelved).'],
         ['Links', 'all links, deduped (images excluded), renameable.'],
         ['Images', 'every image; click for the carousel.'],
         ['Names', '@[Name] references — counts, last-seen and a drill-down.'],
         ['Tags', 'every tag with its total uses and the date last used.'],
-        ['Kanban', 'no longer a separate page: the All Tasks and All Ideas pages each have a ☰ List / ▦ Kanban toggle (top right). Tasks: drag between state columns (◎ Focus hides HOLD/PRGT; the DONE column shows ~2 months). Ideas: drag between the four lifecycle columns.'],
+        ['Kanban', 'no longer a separate page: the All Tasks and All Ideas pages each have a ☰ List / ▦ Kanban toggle (top right). Tasks: drag between state columns (◎ Focus hides HOLD/PRGT; the DONE column shows ~2 months). Ideas: drag between the five lifecycle columns.'],
         ['Calendar', 'a due-date calendar over open tasks/followups — day, focus, work, full and month views. In the work week, full week and month views, drag a task onto another day to change its due date (nothing else changes). The ⏰ Overdue toggle adds a column on the left with everything overdue — drag a task out of it onto a day to reschedule it. On Focus the toggle is on by default and controls the Overdue column there.'],
         ['Ro3', 'Rule of Three — three open tasks picked at random; Refresh re-rolls.'],
         ['Activity', 'charts: comment inflow (incl. ideas), task/goal/idea states, a weekly activity timeline with legend (comments, tasks, ideas, links, images, actions, state changes — actions and state changes count in the week they were logged), weekly tasks-over-time state areas (open/WIP/CHK/HOLD/PRGT, rebuilt from the dated state-change actions), and tasks-created-per-week by state.'],

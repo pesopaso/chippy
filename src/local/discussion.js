@@ -576,6 +576,7 @@
     let ideaClass = 'state-considered';
     if ((idea.tags || []).includes('exploredidea')) { ideaState = 'Explored'; ideaClass = 'state-explored'; }
     else if ((idea.tags || []).includes('promoteditea')) { ideaState = 'Promoted'; ideaClass = 'state-promoted'; }
+    else if ((idea.tags || []).includes('realizedidea')) { ideaState = 'Realized'; ideaClass = 'state-realized'; }
     else if ((idea.tags || []).includes('shelvedidea')) { ideaState = 'Shelved'; ideaClass = 'state-shelved'; }
     const ideaBadge = el('span', 'idea-state-badge ' + ideaClass, ideaState); ideaBadge.title = 'Change idea state';
     ideaBadge.addEventListener('click', () =>

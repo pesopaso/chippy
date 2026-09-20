@@ -16,7 +16,7 @@
   // Tags that the app manages internally (state, priority, goal/followup
   // markers, mutes, goal ids, link ids, the sensitive marker). These are never
   // shown as free-form chips.
-  const RESERVED = /^(task|followup|goal|idea|opentask|inprogresstask|checktask|onholdtask|purgatorytask|resolvedtask|obsoletetask|resolvedfollowup|achievedgoal|canceledgoal|resolvedgoal|consideredidea|exploredidea|promoteditea|shelvedidea|high|medium|low|sensitive|goal-[a-z0-9]{5}|[A-Za-z0-9_ -]+:link-[a-z0-9]{5}|muted:.*)$/;
+  const RESERVED = /^(task|followup|goal|idea|opentask|inprogresstask|checktask|onholdtask|purgatorytask|resolvedtask|obsoletetask|resolvedfollowup|achievedgoal|canceledgoal|resolvedgoal|consideredidea|exploredidea|promoteditea|realizedidea|shelvedidea|high|medium|low|sensitive|goal-[a-z0-9]{5}|[A-Za-z0-9_ -]+:link-[a-z0-9]{5}|muted:.*)$/;
   const isReserved = (tag) => RESERVED.test(tag);
 
   // The reserved tags a user may legitimately type by hand (in the new-comment

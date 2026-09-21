@@ -20,9 +20,9 @@ test.describe('Discussion management', () => {
   });
 
   // REAL: inline title edit — ✎ .rename-btn -> input.rename-input -> Enter.
-  // store.renameDiscussion -> io.renameDiscussion renames <name>.md AND moves the
+  // store.renameDiscussion -> io.renameDiscussion renames <name>.chippy.md AND moves the
   // per-discussion image folder.
-  test('edit the discussion title — renames the .md file and the image folder', async ({ app }) => {
+  test('edit the discussion title — renames the .chippy.md file and the image folder', async ({ app }) => {
     const oldName = 'Cloud Migration';
     const newName = 'Cloud Strategy';
     await app.open(oldName);
@@ -47,7 +47,7 @@ test.describe('Discussion management', () => {
       catch { return false; }
     }, path);
 
-    // .md renamed (new present, old gone)
+    // .chippy.md renamed (new present, old gone)
     await expect.poll(() => app.readDiscussion(newName)).not.toBeNull();
     await expect.poll(() => app.readDiscussion(oldName)).toBeNull();
     // image folder moved with it

@@ -61,15 +61,15 @@ test('createDiscussion: a name with no filename characters is rejected', async (
 
 test('renameDiscussion: refuses a new name whose stem belongs to another discussion', async () => {
   seed();
-  await assert.rejects(() => store.renameDiscussion('Alpha', 'R&D'), /same file \(RD\.md\)/);
+  await assert.rejects(() => store.renameDiscussion('Alpha', 'R&D'), /same file \(RD\.chippy\.md\)/);
   assert.equal(disk.get('RD').entries[0].body, 'Keep me.');
-  assert.ok(disk.has('Alpha'), 'Alpha.md still there');
+  assert.ok(disk.has('Alpha'), 'Alpha.chippy.md still there');
   assert.ok(store.getDiscussions().some(d => d.name === 'Alpha'));
 });
 
 test('renameDiscussion: same-stem rename keeps the file and rewrites its title', async () => {
   seed();
-  await store.renameDiscussion('RD', 'R&D');       // stem unchanged: RD.md
+  await store.renameDiscussion('RD', 'R&D');       // stem unchanged: RD.chippy.md
   assert.equal(disk.size, 2, 'no new file');
   assert.equal(disk.get('RD').name, 'R&D', 'title line updated in the file');
   assert.equal(disk.get('RD').entries[0].body, 'Keep me.');

@@ -876,7 +876,7 @@
     arc.addEventListener('click', () => {
       ui().showModal('Archive discussion?', (modal, close) => {
         const p = el('p');
-        p.textContent = 'Archive "' + member.name + '"? Its file is renamed to *.archive.md and ' +
+        p.textContent = 'Archive "' + member.name + '"? Its file is renamed to *.archive.chippy.md and ' +
           'removed from the list. Nothing is deleted — restore it by renaming the file back.';
         modal.append(p);
         const row = el('div', 'modal-actions');

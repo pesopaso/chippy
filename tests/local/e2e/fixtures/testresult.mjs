@@ -9,7 +9,7 @@
 // is appended at the very end of the run).
 //
 // NOTE: the app derives a discussion's filename from its title, so the file is
-// "Test Execution.md". For a literal "testresult.md" the title would be
+// "Test Execution.chippy.md". For a literal "testresult.chippy.md" the title would be
 // "testresult" — change TESTRESULT_NAME below.
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
@@ -20,10 +20,10 @@ const fmt = globalThis.Chippy.format;
 
 export const TESTRESULT_NAME = 'Test Execution';
 const sanitize = n => String(n).replace(/[^A-Za-z0-9_ -]/g, '');
-export const TESTRESULT_FILE = sanitize(TESTRESULT_NAME) + '.md';
+export const TESTRESULT_FILE = sanitize(TESTRESULT_NAME) + '.chippy.md';
 
 // Append one run-result entry to the Test Execution discussion and fold its tags
-// into tags.md. No-op (returns false) if the discussion file is absent.
+// into tags.sys.chippy.md. No-op (returns false) if the discussion file is absent.
 export function appendTestResult(dir, { createdAt, tags = [], body }) {
   const path = join(dir, TESTRESULT_FILE);
   if (!existsSync(path)) return false;
@@ -32,8 +32,8 @@ export function appendTestResult(dir, { createdAt, tags = [], body }) {
   member.entries.push({ created_at: createdAt, tags: tags.slice(), goal: null, due: null, body });
   writeFileSync(path, fmt.serializeDiscussion(member));
 
-  // Keep tags.md consistent (deduped, sorted) if the entry introduces tags.
-  const tagsPath = join(dir, 'tags.md');
+  // Keep tags.sys.chippy.md consistent (deduped, sorted) if the entry introduces tags.
+  const tagsPath = join(dir, 'tags.sys.chippy.md');
   if (existsSync(tagsPath)) {
     const union = fmt.parseTags(readFileSync(tagsPath, 'utf8'));
     let changed = false;
@@ -44,7 +44,7 @@ export function appendTestResult(dir, { createdAt, tags = [], body }) {
 }
 
 // Append many entries at once (one read/serialize/write), folding all their tags
-// into tags.md. `entries` is [{ created_at, tags, body }] in chronological order.
+// into tags.sys.chippy.md. `entries` is [{ created_at, tags, body }] in chronological order.
 // Returns the number appended; 0 if the discussion file is absent.
 export function appendTestResults(dir, entries) {
   const path = join(dir, TESTRESULT_FILE);
@@ -56,7 +56,7 @@ export function appendTestResults(dir, entries) {
   }
   writeFileSync(path, fmt.serializeDiscussion(member));
 
-  const tagsPath = join(dir, 'tags.md');
+  const tagsPath = join(dir, 'tags.sys.chippy.md');
   if (existsSync(tagsPath)) {
     const union = fmt.parseTags(readFileSync(tagsPath, 'utf8'));
     let changed = false;

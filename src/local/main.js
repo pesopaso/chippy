@@ -9,7 +9,7 @@
 
   // Single source of truth for the version. Used for display and as the cache-bust
   // query param on the CSS/JS tags in app.html (bump both together on release).
-  const VERSION = '3.3.0-dev.36';
+  const VERSION = '3.3.0-dev.37';
   Chippy.VERSION = VERSION;
 
   const THEME_KEY = 'chippy_theme';
@@ -198,7 +198,7 @@
       ]);
 
       section('Discussion', 'The middle column is where you read and write a discussion.', [
-        ['Title & actions', 'the discussion name with its comment count; on the right: ★ favourite, 🔓/🔒 sensitive (locks the whole discussion out of AI summaries — a red "sensitive" chip appears next to the title), ↻ reload from disk, ⬇ export a contribution summary, 🗄 archive (renames the file to *.archive.md — nothing is deleted).'],
+        ['Title & actions', 'the discussion name with its comment count; on the right: ★ favourite, 🔓/🔒 sensitive (locks the whole discussion out of AI summaries — a red "sensitive" chip appears next to the title), ↻ reload from disk, ⬇ export a contribution summary, 🗄 archive (renames the file to *.archive.chippy.md — nothing is deleted).'],
         ['Description', 'editable notes for the discussion (✎ at the top-right); the "Description" label hides once it has text.'],
         ['New comment', 'type a note — #tag to classify, @ to mention a name, Ctrl+V to paste an image; select some text and Ctrl+V a copied URL to turn the selection into the title of a link. Below the box: tag chips on the left; goal link, due date and Save on the right. The box clears after saving.'],
         ['Search this discussion', 'filters the comments below by #tag / @name / free text.'],
@@ -299,7 +299,7 @@
       ]);
 
       section('AI Summary — settings', 'The Summary page talks to a local, OpenAI-compatible LLM endpoint.', [
-        ['Endpoint & model', 'set the API URL and model name; both are saved to summary.md and your browser.'],
+        ['Endpoint & model', 'set the API URL and model name; both are saved to summary.sys.chippy.md and your browser.'],
         ['Range', 'choose day, week or month of comments to summarise.'],
         ['Generate', 'posts the selected comments to the endpoint and renders the reply (sanitised).'],
         ['Sensitive content', 'comments marked 🔒 and whole discussions locked via the title toggle are filtered out before the prompt is built — they never reach the LLM.'],

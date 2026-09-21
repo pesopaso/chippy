@@ -8,37 +8,46 @@ Everything is stored as plain Markdown in one user-selected folder. There is no 
 configuration outside that folder. These file categories live at the folder root, plus
 per-discussion image subfolders:
 
-1. One `<DiscussionName>.md` per discussion — its content.
-2. Three index files — `navigation.chippy.md` (the discussion list and theme),
-   `tags.chippy.md` (the union of all tags), and `names.chippy.md` (known person names).
-   Loaded on startup so the sidebar and autocomplete render without parsing any discussion.
-3. One `summary.chippy.md` — AI-summary history plus the LLM API configuration (present once
-   the Summary screen has been used).
+1. One `<DiscussionName>.chippy.md` per discussion — its content.
+2. Three system (index) files — `navigation.sys.chippy.md` (the discussion list and theme),
+   `tags.sys.chippy.md` (the union of all tags), and `names.sys.chippy.md` (known person
+   names). Loaded on startup so the sidebar and autocomplete render without parsing any
+   discussion.
+3. One `summary.sys.chippy.md` — AI-summary history plus the LLM API configuration (present
+   once the Summary screen has been used).
 
-All app-managed files share the `.chippy.md` suffix. Because discussion filenames are
-sanitized to `[A-Za-z0-9_ -]` (dots are stripped), no discussion file can ever end in
-`.chippy.md` — the two namespaces cannot collide, and `navigation`, `tags`, `names`, and
-`summary` are ordinary discussion names.
+**Every file Chippy owns ends in `.chippy.md`** (since v3.3.0-dev.37), so one glob selects them
+all. What comes before that suffix decides the kind of file. Because discussion filenames are
+sanitized to `[A-Za-z0-9_ -]` (dots are stripped), a discussion stem never contains a dot:
 
-Archived discussions are renamed `<DiscussionName>.archive.md` and are skipped when the folder
-is loaded.
+| Filename | Kind |
+|---|---|
+| `<stem>.chippy.md` — no dot in `<stem>` | active discussion |
+| `<stem>.archive.chippy.md` | archived discussion — skipped when the folder is loaded |
+| `<name>.sys.chippy.md` | system file (`navigation`, `tags`, `names`, `summary`) |
+| any other `*.<kind>.chippy.md` | reserved, ignored |
+
+The namespaces cannot collide, so `navigation`, `tags`, `names`, and `summary` are ordinary
+discussion names (`tags.chippy.md` is a discussion called "tags").
 
 ---
 
 ## 1. File naming and the data folder
 
-- Each discussion is one `.md` file at the folder root. The filename is the discussion's
-  display name with every character outside `[A-Za-z0-9_ -]` removed, followed by `.md`.
-  Example: a discussion displayed as `R&D` is stored as `RD.md`, while the display name kept
-  inside the file (`# R&D`) retains the ampersand.
-- App-managed files (`navigation.chippy.md`, `tags.chippy.md`, `names.chippy.md`,
-  `summary.chippy.md`) and any `*.archive.md` file are not treated as discussions.
-- A file counts as a loadable discussion only when it ends in `.md` and does **not** end in
-  `.archive.md` or `.chippy.md`. Discussions flagged as archived are excluded from the active
-  list.
+- Each discussion is one `.chippy.md` file at the folder root. The filename is the
+  discussion's display name with every character outside `[A-Za-z0-9_ -]` removed, followed
+  by `.chippy.md`. Example: a discussion displayed as `R&D` is stored as `RD.chippy.md`, while
+  the display name kept inside the file (`# R&D`) retains the ampersand.
+- System files (`navigation.sys.chippy.md`, `tags.sys.chippy.md`, `names.sys.chippy.md`,
+  `summary.sys.chippy.md`) and any `*.archive.chippy.md` file are not treated as discussions.
+- A file counts as a loadable discussion only when it ends in `.chippy.md` and the part before
+  that suffix is a valid stem (non-empty, contains no dot). Discussions flagged as archived are
+  excluded from the active list. Plain `<stem>.md` / `<stem>.archive.md` files are the
+  pre-dev.37 layout — they are renamed on load (section 1.1) and, while a rename is still
+  pending, remain readable.
 - Per-discussion images live in a subfolder whose name matches the sanitized discussion name.
 - **Stem uniqueness.** Because sanitization can map distinct display names to the same filename
-  stem (`R&D` and `RD` both yield `RD.md`), stems are unique by rule: creating a discussion
+  stem (`R&D` and `RD` both yield `RD.chippy.md`), stems are unique by rule: creating a discussion
   whose display name or stem is taken appends `_2`, `_3`, … until both are free; renaming onto
   a stem that belongs to another discussion is refused; a name that sanitizes to nothing is
   rejected.
@@ -46,9 +55,35 @@ is loaded.
   (a git checkout with `eol=crlf`, a Windows editor) are read correctly and are normalized to
   LF the next time the app rewrites them.
 
+### 1.1 Discussion filename sweep (pre-dev.37 folders)
+
+Before v3.3.0-dev.37 a discussion was `<stem>.md` and an archived one `<stem>.archive.md`.
+Every time a folder is opened or reloaded — after the system files have been migrated (section
+3.4), never before — the app sweeps the folder root once and renames:
+
+| From | To |
+|---|---|
+| `<stem>.md` | `<stem>.chippy.md` |
+| `<stem>.archive.md` | `<stem>.archive.chippy.md` |
+
+Rules of the sweep:
+
+- Content is copied byte-for-byte; the old file is removed only after the new one is written
+  (File System Access has no rename).
+- It never overwrites: when the target already exists, the old file is left untouched and a
+  warning is logged. The current-layout file is the one that is listed and loaded.
+- A file that cannot be read (for example a cloud placeholder that is not materialized) is
+  skipped and retried on the next open; the sweep itself never fails the folder load.
+- Only files whose stem is a valid sanitized stem are touched. `foo.bar.md` was never loadable
+  by name and stays as it is; non-Markdown files are never touched.
+- The sweep is idempotent — on a migrated folder it costs one directory listing.
+- Safety net for a partially migrated folder: a `<stem>.md` that is still pending is listed
+  and loaded like any discussion, and the next save writes `<stem>.chippy.md` and removes the
+  old file.
+
 ---
 
-## 2. The discussion `.md` file
+## 2. The discussion `.chippy.md` file
 
 ```markdown
 # Alice Johnson
@@ -311,12 +346,12 @@ reference entry; the origin — and every other reference — is untouched.
 
 ---
 
-## 3. Index files
+## 3. System (index) files
 
-Three small index files at the folder root let the app render the sidebar and drive
+Three small system files at the folder root let the app render the sidebar and drive
 autocomplete without parsing any discussion content. They are split by concern:
-`navigation.chippy.md` (the discussion list and theme), `tags.chippy.md` (the tag union), and
-`names.chippy.md` (known person names).
+`navigation.sys.chippy.md` (the discussion list and theme), `tags.sys.chippy.md` (the tag
+union), and `names.sys.chippy.md` (known person names).
 
 **Why these are persisted and not rebuilt at load.** Discussion files are loaded lazily — the
 app does not read every discussion on startup, only what the user opens. The tag union and the
@@ -325,7 +360,7 @@ defeating lazy loading, and application speed is the priority. So each index is 
 persisted file, maintained incrementally as discussions and entries change, rather than a cache
 regenerated on demand.
 
-### 3.1 `navigation.chippy.md` — discussions and theme
+### 3.1 `navigation.sys.chippy.md` — discussions and theme
 
 ```markdown
 # Navigation
@@ -355,7 +390,7 @@ followed by optional pipe-separated flags:
 Per-discussion tag, archived, and favorite state are owned here (the single source of truth),
 not in the discussion files.
 
-### 3.2 `tags.chippy.md` — tag union
+### 3.2 `tags.sys.chippy.md` — tag union
 
 ```markdown
 # Tags
@@ -371,7 +406,7 @@ A deduplicated, alphabetically sorted list of every tag in use across all discus
 filters. Maintained incrementally: a tag is added when an entry first introduces it. Because
 discussions are lazy-loaded, the list is not pruned by re-scanning all files.
 
-### 3.3 `names.chippy.md` — known names
+### 3.3 `names.sys.chippy.md` — known names
 
 ```markdown
 # Names
@@ -389,16 +424,23 @@ mentioned.
 
 ### 3.4 Legacy layouts and the one-time migration
 
-Two older folder layouts are recognized and migrated to the `.chippy.md` layout on first load.
-The migration runs **only when no `navigation.chippy.md` exists yet**; once the new files are
-present, files named `navigation.md`, `tags.md`, `names.md`, or `summary.md` are ordinary
-discussions and are never read as indexes.
+Three older folder layouts are recognized and migrated to the `.sys.chippy.md` layout on first
+load. The migration runs **only when no `navigation.sys.chippy.md` exists yet**; once the new
+files are present, files named `navigation.md`, `tags.md`, `names.md`, `summary.md` (or their
+`.chippy.md` forms) are ordinary discussions and are never read as system files. The system
+files are always migrated **before** the discussion filename sweep (section 1.1): a
+generation-3 `tags.chippy.md` must be moved to `tags.sys.chippy.md` before any `<stem>.md` is
+renamed into the `.chippy.md` namespace, otherwise it would be taken for a discussion "tags".
+
+**Generation 3 (v3.1 – v3.3.0-dev.36).** The four files under `navigation.chippy.md`,
+`tags.chippy.md`, `names.chippy.md`, and `summary.chippy.md`. Each present file is renamed
+byte-for-byte to its `.sys.chippy.md` name; an absent one stays absent.
 
 **Generation 2 (pre-v3.1 split layout).** The same three index files under their old names —
 `navigation.md`, `tags.md`, `names.md` — plus an optional `summary.md`. On load, each is read,
-written out under its `.chippy.md` name, and the legacy file is removed: effectively a rename.
-A `summary` entry in the legacy discussion list (reserved-file pollution from old versions) is
-dropped during the migration.
+written out under its `.sys.chippy.md` name, and the legacy file is removed: effectively a
+rename. A `summary` entry in the legacy discussion list (reserved-file pollution from old
+versions) is dropped during the migration.
 
 **Generation 1 (single-file layout).** Before the split, all three lists lived in a single
 `navigation.md` with `## Discussions`, `## Tags`, and `## Names` sections:
@@ -422,22 +464,22 @@ dropped during the migration.
 - Anna Wehrli
 ```
 
-Both generations are handled in one pass when chippy loads, so existing folders keep working:
+Generations 1 and 2 are handled in one pass when chippy loads, so existing folders keep working:
 
 - **Read precedence.** A dedicated legacy `tags.md` / `names.md`, when present, is
   authoritative. When absent, the corresponding `## Tags` / `## Names` section inside the
   legacy `navigation.md` is read as the fallback source.
 - **Discussions and theme** are always read from the legacy `navigation.md` regardless of
   generation.
-- **Migration on load.** The data is written to `navigation.chippy.md`, `tags.chippy.md`, and
-  `names.chippy.md` (and `summary.md` is renamed to `summary.chippy.md` when present); the
-  legacy files are then removed. The migration therefore runs at most once per folder — after
-  the first load, the folder is in the `.chippy.md` layout and the legacy names are free for
-  ordinary discussions.
+- **Migration on load.** The data is written to `navigation.sys.chippy.md`,
+  `tags.sys.chippy.md`, and `names.sys.chippy.md` (and `summary.md` is renamed to
+  `summary.sys.chippy.md` when present); the legacy files are then removed. The migration
+  therefore runs at most once per folder — after the first load, the folder is in the
+  `.sys.chippy.md` layout and the legacy names are free for ordinary discussions.
 
 ---
 
-## 4. `summary.chippy.md` — AI summaries and API configuration
+## 4. `summary.sys.chippy.md` — AI summaries and API configuration
 
 Optional file, present once the Summary screen has been used. It holds two things: the LLM API
 configuration and the saved summaries.
@@ -477,18 +519,18 @@ image filename is `yyyy-mm-dd hh-mm-ss.jpg`. Inside entry text, images are refer
 
 ```
 <data folder>\
-├── navigation.chippy.md
-├── tags.chippy.md
-├── names.chippy.md
-├── summary.chippy.md
-├── Alice Johnson.md
+├── navigation.sys.chippy.md
+├── tags.sys.chippy.md
+├── names.sys.chippy.md
+├── summary.sys.chippy.md
+├── Alice Johnson.chippy.md
 ├── Alice Johnson\
 │   ├── 2026-02-25 10-30-45.jpg
 │   └── 2026-03-01 14-22-10.jpg
-├── Bob Smith.md
+├── Bob Smith.chippy.md
 ├── Bob Smith\
 │   └── 2026-02-26 09-15-33.jpg
-└── Project Phoenix.archive.md
+└── Project Phoenix.archive.chippy.md
 ```
 
 **Image-reference validity** — a stored image path must be a relative path inside the data
@@ -498,7 +540,7 @@ empty, holds a backslash, or holds a NUL character.
 
 **Cascading data changes:**
 
-- Renaming a discussion renames its `.md` file, renames the image subfolder, and rewrites every
+- Renaming a discussion renames its `.chippy.md` file, renames the image subfolder, and rewrites every
   image reference inside the entries as well as the `<stem>:link-` prefix of its link tags
   (on its origin entries and on every reference in other discussions, section 2.4).
 - Moving an entry between discussions moves the image files it references into the target's

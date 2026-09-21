@@ -7,7 +7,7 @@
 // opens the folder through the real "Open Folder" button (the hook bypasses the
 // OS picker). It then exposes `app`, a small API of navigation, control, and
 // read-back helpers grounded in the app's actual DOM (discussion.js / pages.js /
-// ui.js). Assertions read the discussion .md back from OPFS — the authoritative
+// ui.js). Assertions read the discussion .chippy.md back from OPFS — the authoritative
 // check that a UI action persisted.
 //
 // Each test gets a fresh context, so it re-imports the pristine seed into its own
@@ -106,7 +106,7 @@ export const test = base.extend({
           try { const fh = await root.getFileHandle(fn); return await (await fh.getFile()).text(); } catch { return null; }
         }, fileName);
       },
-      async readDiscussion(name) { return await api.readFile(sanitize(name) + '.md'); }
+      async readDiscussion(name) { return await api.readFile(sanitize(name) + '.chippy.md'); }
     };
 
     await use(api);

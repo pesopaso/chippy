@@ -19,10 +19,13 @@
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
-// App-managed files live in the .chippy.md namespace (datadefinition §1).
-const NAV_FILE = 'navigation.chippy.md';
-const TAGS_FILE = 'tags.chippy.md';
-const NAMES_FILE = 'names.chippy.md';
+// System files live in the .sys.chippy.md namespace; discussions are
+// <stem>.chippy.md, archived ones <stem>.archive.chippy.md (datadefinition §1).
+const NAV_FILE = 'navigation.sys.chippy.md';
+const TAGS_FILE = 'tags.sys.chippy.md';
+const NAMES_FILE = 'names.sys.chippy.md';
+export const isDiscussionFile = f =>
+  f.endsWith('.chippy.md') && !f.endsWith('.archive.chippy.md') && !f.endsWith('.sys.chippy.md');
 
 // Reserved tags from datadefinition.md §2.2 (current + accepted legacy).
 const TASK_STATE_TAGS = new Set([
@@ -107,9 +110,7 @@ function parseNav(text) {
 export function readSeed(dir) {
   if (!existsSync(dir)) throw new Error(`seed dir does not exist: ${dir}`);
   const all = readdirSync(dir);
-  const discussionFiles = all.filter(
-    f => f.endsWith('.md') && !f.endsWith('.archive.md') && !f.endsWith('.chippy.md')
-  );
+  const discussionFiles = all.filter(isDiscussionFile);
 
   const discussions = discussionFiles.map(f =>
     parseDiscussionFile(f, readFileSync(join(dir, f), 'utf8'))
@@ -255,7 +256,7 @@ export function validateCompleteness(seed, goldenDir) {
   const err = (code, message, file) => out.push({ level: 'error', code, message, file });
   if (!existsSync(goldenDir)) return out; // no golden snapshot yet -> nothing to compare
 
-  const goldenFiles = readdirSync(goldenDir).filter(f => f.endsWith('.md'));
+  const goldenFiles = readdirSync(goldenDir).filter(f => f.endsWith('.chippy.md'));
   if (goldenFiles.length === 0) return out;
 
   for (const f of goldenFiles) {

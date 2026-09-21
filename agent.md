@@ -15,10 +15,10 @@ Project documentation lives under `documentation\`:
 
 ## Tasks
 
-- discussion: C:\Users\phili\OneDrive\pesopaso\Notebook\chippy.md
+- discussion: C:\Users\phili\OneDrive\pesopaso\Notebook\chippy.chippy.md
 - tag: dev
 
 ## Fields
 
-- `discussion` — absolute path to a discussion `.md` file. Add additional `- discussion:` lines to bind multiple discussions; the skill merges and re-sorts tasks across the union.
+- `discussion` — absolute path to a discussion `.chippy.md` file (since v3.3.0-dev.37; older folders are renamed by the app on first open). Add additional `- discussion:` lines to bind multiple discussions; the skill merges and re-sorts tasks across the union.
 - `tag` — the tag a task must carry (in addition to `#task` and an open state) to be picked up. Defaults to `dev`.

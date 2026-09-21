@@ -81,7 +81,7 @@
     const body = document.querySelector('#sidebar .sidebar-body');
     if (!body) return;
     // "summary" needs no special-casing anymore: app files live in the
-    // .chippy.md namespace and the legacy-index migration drops the polluted
+    // .sys.chippy.md namespace and the legacy-index migration drops the polluted
     // nav entry, so a discussion named "summary" is legitimate. (v3.1.0-dev.92)
     const discs = store().getDiscussions().filter(d => !d.archived);
 

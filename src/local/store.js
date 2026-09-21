@@ -319,7 +319,7 @@
     return member;
   }
 
-  // Archive a discussion: rename its file to *.archive.md on disk, drop it from
+  // Archive a discussion: rename its file to *.archive.chippy.md on disk, drop it from
   // the navigation index (so it's no longer listed or loaded), and forget any
   // cached copy. (R-archive)
   async function archiveDiscussion(name) {
@@ -333,7 +333,7 @@
 
   // Discussion files are named by the SANITIZED stem (io.sanitizeName strips
   // everything outside [A-Za-z0-9_ -]), so distinct display names can map to
-  // the same file: "R&D" and "RD" both live in RD.md. Uniqueness therefore has
+  // the same file: "R&D" and "RD" both live in RD.chippy.md. Uniqueness therefore has
   // to be checked on stems, not display names — otherwise create/rename would
   // silently overwrite another discussion's file. `except` is a display name
   // to leave out of the check (the discussion being renamed).
@@ -345,7 +345,7 @@
     if (!stem) throw new Error('"' + name + '" contains no usable filename characters (A-Z, a-z, 0-9, _, -, space).');
   }
 
-  // Rename a discussion: renames the .md file, moves the image folder, updates
+  // Rename a discussion: renames the .chippy.md file, moves the image folder, updates
   // the nav entry and member cache, and emits 'discussionRenamed'. (R64)
   async function renameDiscussion(oldName, newName) {
     const trimmed = newName && newName.trim();
@@ -356,7 +356,7 @@
     const newStem = io().sanitizeName(trimmed);
     assertValidStem(trimmed, newStem);
     if (newStem !== oldStem && stemTaken(newStem, oldName)) {
-      throw new Error('"' + trimmed + '" would use the same file (' + newStem + '.md) as an existing discussion.');
+      throw new Error('"' + trimmed + '" would use the same file (' + io().discussionFilename(newStem) + ') as an existing discussion.');
     }
     if (newStem === oldStem) {
       // Display-only rename (e.g. "R&D" -> "R & D"): same file, so io.renameDiscussion
@@ -408,7 +408,7 @@
     emit({ type: 'discussionRenamed', oldName, name: trimmed });
   }
 
-  // Create a new empty discussion: write its .md file, register it in navigation,
+  // Create a new empty discussion: write its .chippy.md file, register it in navigation,
   // and cache the empty member object. Appends _2, _3, … if the base name is
   // already taken. Opens the new discussion immediately. (R60)
   async function createDiscussion(name) {

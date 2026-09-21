@@ -64,7 +64,7 @@
     for (const l of lines) {
       if (l.startsWith('# ')) { name = l.slice(2); break; }
     }
-    if (!name && filename) name = String(filename).replace(/\.md$/i, '');
+    if (!name && filename) name = String(filename).replace(/(\.archive)?(\.chippy)?\.md$/i, '');
 
     const prepIdx = lines.findIndex(l => l === '## Preparation');
     const entriesIdx = lines.findIndex(l => l === '## Entries');

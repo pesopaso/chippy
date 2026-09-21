@@ -4,7 +4,7 @@
 //
 // The app (today a scaffold) can add entries to an existing discussion but
 // cannot create discussions or open an empty folder (loadIndexes requires a
-// navigation.md). So this Node batch lays down the minimal skeleton — an index
+// navigation file). So this Node batch lays down the minimal skeleton — a system-file
 // trio plus one empty discussion file per discussion — and the app then fills
 // in every comment through its real write-path.
 //
@@ -27,7 +27,7 @@ export function createSkeleton(dir, discussionNames) {
   // The content discussions plus the Test Execution meta-discussion (run results).
   const allNames = [...discussionNames, TESTRESULT_NAME];
 
-  // Seed per-discussion groups (the "major tag" in navigation.chippy.md) so the
+  // Seed per-discussion groups (the "major tag" in navigation.sys.chippy.md) so the
   // tag editor and tag-filter tests have data to act on.
   const GROUPS = {
     '1-1 Maria Lopez': 'People',
@@ -40,15 +40,15 @@ export function createSkeleton(dir, discussionNames) {
     theme: 'dark',
     discussions: allNames.map(name => ({ name, tag: GROUPS[name] || null, favorite: false, archived: false }))
   };
-  writeFileSync(join(dir, 'navigation.chippy.md'), fmt.serializeNav(nav));
-  writeFileSync(join(dir, 'tags.chippy.md'), fmt.serializeTags([]));
-  writeFileSync(join(dir, 'names.chippy.md'), fmt.serializeNames([]));
+  writeFileSync(join(dir, 'navigation.sys.chippy.md'), fmt.serializeNav(nav));
+  writeFileSync(join(dir, 'tags.sys.chippy.md'), fmt.serializeTags([]));
+  writeFileSync(join(dir, 'names.sys.chippy.md'), fmt.serializeNames([]));
 
   // Same sanitisation rule the app uses: keep [A-Za-z0-9_ -].
   const sanitize = n => String(n).replace(/[^A-Za-z0-9_ -]/g, '');
   for (const name of allNames) {
     const member = { name, group: null, archived: false, prep: '', entries: [] };
-    writeFileSync(join(dir, sanitize(name) + '.md'), fmt.serializeDiscussion(member));
+    writeFileSync(join(dir, sanitize(name) + '.chippy.md'), fmt.serializeDiscussion(member));
   }
   return { dir, discussions: discussionNames.length };
 }

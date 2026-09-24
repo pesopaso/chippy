@@ -1201,3 +1201,37 @@ ahead of this log (the release workflow bumps `main`/`staging` before an entry e
 - **`agent.md`** — dev-task discussion path is `chippy.chippy.md`.
 - **Tests** — `io-migration.test.mjs` rewritten for the three-generation chain (fake dir gains `entries()`; ordering test: gen-3 `tags.chippy.md` + `Alpha.md` ends as `tags.sys.chippy.md` + `Alpha.chippy.md`, no discussion "tags"); new `io-filenames.test.mjs` (classification, sweep rename / never-overwrite / read-failure skip / idempotence, sweep-from-loadIndexes + reconcile, partial-folder list/load/save fallback, archive + rename, parseDiscussion fallback); `discussion-names.test.mjs` expectations; `tests/local/data/validator.mjs`, `tests/local/run.mjs`, e2e fixtures (`init-folder`, `operate`, `testresult`) and specs (`seed`, `discussions`), `regressionharness/roundtrip.test.mjs` routing accept the new names. Unit suite green (109/109). Headless verify: a gen-3 OPFS folder with `Alpha.md`, `Beta.md` (not in nav), `Old Topic.archive.md`, `Gamma.chippy.md`, `notes.txt` opens as 4 discussions with the exact expected layout; create + archive afterwards write the new names.
 - **Version stamp** — `3.3.0-dev.37` via `npm run version:sync`.
+
+### v3.3.0-dev.38 — 2026-09-22 — MCP server for AI assistants
+
+> New `mcp/` folder: a Model Context Protocol server that lets an AI assistant (Claude Desktop, Claude Code, any MCP client) read and update a Chippy data folder. It runs the app's own `format.js` / `taxonomy.js` / `io.js` / `store.js` under Node through a small File System Access shim, so every write follows the same rules as the app — nothing about the data format is re-implemented. Nine tools: `list_discussions`, `read_discussion`, `search_entries` (Chippy query syntax, open/state/type filters, priority sort), `add_entry`, `set_state`, `append_action`, `update_entry`, `promote_idea`, `create_discussion`. Entries are addressed by (created_at, idx); writes on a linked reference go to its origin; reserved tags cannot be set directly. Sensitive entries and discussions are hidden unless the server is started with `--include-sensitive`; `--read-only` offers only the three read tools. The server re-reads the folder on every call, refuses folders Chippy has never opened, and never deletes, moves or archives. Zero dependencies, stdio transport. The app itself is unchanged — use Reload folder after the assistant has written.
+
+- **`mcp/chippy-mcp.mjs`** — entry point: argument parsing (`--folder` / `CHIPPY_NOTEBOOK`, `--read-only`, `--include-sensitive`), newline-delimited JSON-RPC on stdio, all logging to stderr.
+- **`mcp/chippy-tools.mjs`** — tools, protocol handshake (2025-06-18 / 2025-03-26 / 2024-11-05), serialized tool calls with a folder re-read before each.
+- **`mcp/node-fs-access.mjs`** — FileSystemDirectoryHandle / FileHandle shim over `node:fs` (DOMException-style error names, temp-file + rename writes with a direct-write fallback for sync-client locks).
+- **`mcp/README.md`** — setup for Claude Desktop and Claude Code, options, tool reference, working next to the app.
+- **`package.json`** — `npm run mcp -- --folder <path>`.
+- **`agent.md`** — documentation list mentions `mcp/README.md`.
+- **Tests** — new `mcp-server.test.mjs` (15 tests: handshake and errors, read-only tool list, unknown-folder refusal, sensitive filtering, search syntax/order, idx disambiguation, exact bytes for state/add/action/update/promote, reference-to-origin writes, create_discussion, outside edits picked up, stdio round trip). Unit suite green (124/124), also under `TZ=Europe/Zurich`.
+- **Version stamp** — `3.3.0-dev.38` via `npm run version:sync`.
+
+### v3.3.0-dev.39 — 2026-09-23 — MCP server install script
+
+> One step to install the MCP server: double-click `mcp\install.cmd` (or `npm run mcp:setup`). The script checks Node.js, finds the notebook folder (`--folder`, `CHIPPY_NOTEBOOK`, or the folder of the discussion bound in `agent.md` as the default at the prompt), refuses folders Chippy has never opened, smoke-tests the real server read-only against the folder, and then adds or updates the `chippy` entry in Claude Desktop's `claude_desktop_config.json` — other servers and settings kept, a timestamped backup written first, invalid JSON never overwritten, absolute paths to `node` and the server. The Microsoft Store app's config is updated too when present. Options: `--read-only`, `--include-sensitive`, `--claude-code` (also `claude mcp add --scope user`), `--uninstall`, `--dry-run`, `--yes`, `--name`. The app is unchanged.
+
+- **`scripts/setup-mcp.mjs`** — the installer; pure config helpers exported for tests.
+- **`mcp/install.cmd`** — double-click wrapper (checks that `node` is on PATH, keeps the window open).
+- **`mcp/README.md`** — Setup section leads with the install script; manual steps kept.
+- **`package.json`** — `npm run mcp:setup`.
+- **Tests** — new `mcp-setup.test.mjs` (10 tests: argument parsing, Node version gate, folder from `agent.md`, config paths incl. the Store package, merge keeps other servers and user `env`, added/updated/unchanged/removed, invalid JSON refused, unique backups, dry run, end-to-end install + uninstall against a temp config). Unit suite green (134/134), also under `TZ=Europe/Zurich`.
+- **Version stamp** — `3.3.0-dev.39` via `npm run version:sync`.
+
+### v3.3.0-dev.40 — 2026-09-24 — Mute button back on Ro3 and the Tasks page
+
+> Fix: the 🔇 mute button had been removed from every overview page (dev line of the task-connect/sensitive change), leaving it only on the right-column task rows. It is back on the Ro3 cards and on the All Tasks page — list rows and task kanban cards. It stays off the discussion stream and off idea cards. Muting a Ro3 pick drops it and backfills from the pool; muted rows/cards render dimmed and sort last. Store logic unchanged.
+
+- **`src/local/ui.js`** — `entryCard` gains `opts.muteControl` (task/followup only, not on link stubs): 🔇 / 🔈 toggles `store.toggleMute`.
+- **`src/local/pages.js`** — `ro3Card` and the All Tasks list pass `muteControl: true`; `kanbanCard` shows the mute button again on task/followup cards (not ideas).
+- **`src/local/main.js`** — help text: where the mute button lives (right-column task rows, Ro3, All Tasks list + kanban); Ro3 line mentions mute.
+- **Tests** — unit suite green (134/134). Headless check: no mute on stream cards; Ro3 mute replaces the pick; All Tasks list mute dims the row and toggles back; task kanban 5/5 cards with mute; idea kanban none.
+- **Version stamp** — `3.3.0-dev.40` via `npm run version:sync`.

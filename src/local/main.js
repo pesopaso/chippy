@@ -9,7 +9,7 @@
 
   // Single source of truth for the version. Used for display and as the cache-bust
   // query param on the CSS/JS tags in app.html (bump both together on release).
-  const VERSION = '3.3.0-dev.37';
+  const VERSION = '3.3.0-dev.40';
   Chippy.VERSION = VERSION;
 
   const THEME_KEY = 'chippy_theme';
@@ -206,7 +206,7 @@
       ]);
 
       section('Right column', 'A live summary of the discussion — a section only appears once it has content (no open tasks, no Open Tasks section, and so on).', [
-        ['Open Tasks', 'your open tasks — priority and state squares on the left; age, due date, ⚡ action and 🔇 mute on the right (muting lives only here: it hides a task for 5 days). Tasks linked from other discussions appear here too, marked 🔗.'],
+        ['Open Tasks', 'your open tasks — priority and state squares on the left; age, due date, ⚡ action and 🔇 mute on the right (mute hides a task for 5 days). Tasks linked from other discussions appear here too, marked 🔗.'],
         ['Goals', 'highlighted with a goal tint; ⚡ action, ✎ edit, ✓ achieved, ✕ canceled at the bottom-right.'],
         ['Open Ideas', 'ideas still in play — Considered, Explored or Promoted (💡); Realized and Shelved leave this panel but stay in All Ideas. Click the state badge to change the lifecycle state, ⚡ adds an action; double-click jumps to the entry. Linked ideas from other discussions appear here too, marked 🔗.'],
         ['Links', 'links found in the comments and description, deduped (images excluded); ✎ renames a link.'],
@@ -215,7 +215,7 @@
 
       section('Comments — functions & special tags',
         'Comments support Markdown (headings, bold/italic, lists, code, quotes), auto-linked URLs, @[Name] mentions and inline images.', [
-        ['Actions', '✎ edit inline (tags are editable here — type #tag or use "+ tag"; × removes one; #task / #followup / #goal and priorities promote the comment; Ctrl+V pastes an image), ⚡ add a dated action, 📅 due date (calendar icon when unset; shows the date once set), 🔓/🔒 mark sensitive, ➜ move to another discussion, 🔗 connect to another discussion, and — set slightly apart — 🗑 delete. On a linked comment ✂ disconnects instead (removes only the link). Muting moved to the task rows in the right column.'],
+        ['Actions', '✎ edit inline (tags are editable here — type #tag or use "+ tag"; × removes one; #task / #followup / #goal and priorities promote the comment; Ctrl+V pastes an image), ⚡ add a dated action, 📅 due date (calendar icon when unset; shows the date once set), 🔓/🔒 mark sensitive, ➜ move to another discussion, 🔗 connect to another discussion, and — set slightly apart — 🗑 delete. On a linked comment ✂ disconnects instead (removes only the link). Mute (🔇) is not in the stream — it sits on the task rows in the right column, on Ro3 and on the All Tasks page.'],
         ['"Updated:"', 'a single line recording the latest edit on a later day than creation; refreshed in place on every further edit. Editing only touches the comment text — actions and the Updated line are preserved.'],
         ['Classify', '#task, #followup, #goal or #idea turn a comment into that item type.'],
         ['Priority', '#high / #medium / #low (the priority square cycles them).'],
@@ -252,7 +252,7 @@
         ['Collapse', 'DONE / OBSL (and achieved/canceled goals) collapse to one line; click ▸ to expand.'],
         ['FollowUps', 'behave like tasks; resolving one marks it resolvedfollowup.'],
         ['Goals', '✓ achieve or ✕ cancel logs a dated "→ Achieved" / "→ Canceled" line in Goal Actions; goals are visually highlighted. Link a comment to a goal, and double-click any task/goal to jump to its source entry.'],
-        ['Mute', 'hides a task for 5 days (muted:<date>) to cut noise in Ro3 and the kanban; the 🔇 button lives only on the task rows in the right column — muted tasks render dimmed and sort last elsewhere.'],
+        ['Mute', 'hides a task for 5 days (muted:<date>) to cut noise in Ro3 and the kanban; the 🔇 button sits on the task rows in the right column, the Ro3 cards and the All Tasks page (list and kanban) — not in the discussion stream. Muted tasks render dimmed and sort last; a muted Ro3 pick is replaced.'],
         ['Connect (🔗)', 'links a task/followup/idea into other discussions: each connected discussion shows it live (🔗 badge) at the date it was connected, and in its Open Tasks/Ideas panel. Changes made anywhere are saved in the task’s own discussion. ✂ disconnects (removes only the link); ⚠ marks a link whose origin is gone.'],
         ['Sensitive (🔒)', 'excludes content from AI summaries. Click the 🔓 on a comment (discussion stream only) to lock that comment, or the 🔓 next to the discussion title to lock the whole discussion — locked content shows a red "sensitive" chip and is never sent to the LLM. Click the 🔒 to unlock.']
       ]);
@@ -293,7 +293,7 @@
         ['Tags', 'every tag with its total uses and the date last used.'],
         ['Kanban', 'no longer a separate page: the All Tasks and All Ideas pages each have a ☰ List / ▦ Kanban toggle (top right). Tasks: drag between state columns (◎ Focus hides HOLD/PRGT; the DONE column shows ~2 months). Ideas: drag between the five lifecycle columns.'],
         ['Calendar', 'a due-date calendar over open tasks/followups — day, focus, work, full and month views. In the work week, full week and month views, drag a task onto another day to change its due date (nothing else changes). The ⏰ Overdue toggle adds a column on the left with everything overdue — drag a task out of it onto a day to reschedule it. On Focus the toggle is on by default and controls the Overdue column there.'],
-        ['Ro3', 'Rule of Three — three open tasks picked at random; Refresh re-rolls.'],
+        ['Ro3', 'Rule of Three — three open tasks picked at random; Refresh re-rolls. 🔇 mutes a pick for 5 days and replaces it.'],
         ['Activity', 'charts: comment inflow (incl. ideas), task/goal/idea states, a weekly activity timeline with legend (comments, tasks, ideas, links, images, actions, state changes — actions and state changes count in the week they were logged), weekly tasks-over-time state areas (open/WIP/CHK/HOLD/PRGT, rebuilt from the dated state-change actions), and tasks-created-per-week by state.'],
         ['AI Summary', 'generate a summary of your comments via a local LLM — 🔒 sensitive comments and discussions are never included.']
       ]);

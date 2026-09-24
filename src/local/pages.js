@@ -305,7 +305,7 @@
           return (b.created_at || '').localeCompare(a.created_at || ''); // else newest first
         });
       if (!items.length) { c.append(el('div', 'panel-empty', 'No open tasks.')); return; }
-      for (const e of items) c.append(entryRow(e, Object.assign({}, OVERVIEW_OPTS, { dim: store().isMuted(e) })));
+      for (const e of items) c.append(entryRow(e, Object.assign({}, OVERVIEW_OPTS, { dim: store().isMuted(e), muteControl: true })));
     }, undefined, (screen) => addCrossDiscFilter(screen, 'allTasksFilters',
       () => allTasksTagFilter, v => { allTasksTagFilter = v; }, openTasks),
     { get: () => allTasksSearch, set: v => { allTasksSearch = v; } },
@@ -538,9 +538,14 @@
     const act = el('span', 'icon-btn act', '⚡'); act.title = 'Add action'; stop(act);
     act.addEventListener('click', (ev) => { ev.stopPropagation();
       ui().showActionModal('Add action', (text) => store().appendAction(e._member, e.created_at, text, e._idx)); });
-    // (Mute removed — muting lives only on the task/followup rows in the
-    // discussion's right-hand panel; muted cards still render dimmed here.)
     meta.append(act);
+    // Mute on task/followup cards (not ideas); muted cards render dimmed.
+    if (!isIdea) {
+      const on = store().isMuted(e);
+      const mute = el('span', 'icon-btn mute', on ? '🔈' : '🔇'); mute.title = on ? 'Unmute' : 'Mute 5 days'; stop(mute);
+      mute.addEventListener('click', (ev) => { ev.stopPropagation(); store().toggleMute(e._member, e.created_at, e._idx); });
+      meta.append(mute);
+    }
     card.append(meta);
     const txt = el('div', 'kanban-card-text clamp');
     ui().safeSetHtml(txt, ui().renderEntryText(e.body || ''));
@@ -660,10 +665,11 @@
 
   function ro3Card(e) {
     // No outer wrapper — the unified comment box is the whole card (avoids a double box).
-    // Ro3 is a focus view: just state/priority and the action controls (right-aligned).
+    // Ro3 is a focus view: just state/priority and the action/mute controls (right-aligned).
+    // Muting a pick drops it from Ro3 on the next render (reconcileRo3 backfills).
     // Double-click jumps to the exact comment in its discussion.
     return ui().entryCard(e, { member: e._member, showMember: true, idx: e._idx,
-      hideEdit: true, hideMove: true, hideDelete: true, controlsRight: true,
+      hideEdit: true, hideMove: true, hideDelete: true, controlsRight: true, muteControl: true,
       onJump: () => jumpToEntry(e._member, e.created_at) });
   }
 

@@ -12,6 +12,7 @@ Project documentation lives under `documentation\`:
 - `documentation\datadefinition.md` — authoritative on-disk data format; the spec the `dev-task-runner` skill operates against.
 - `documentation\changelog.md` — version history of implementation changes; the reference for the current and future version history. **Every entry is a version update**: after appending one, run `npm run version:sync` so `main.js`/`app.html` carry that version (`npm run version:check` / Phase 0 of `npm test` fail otherwise).
 - `documentation\chippy-color-reference.html` — canonical color palette (dark and light).
+- `mcp\README.md` — MCP server that lets AI assistants read and update a Chippy data folder (setup, tools).
 
 ## Tasks
 

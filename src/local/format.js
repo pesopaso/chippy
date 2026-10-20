@@ -186,6 +186,35 @@
   function parseNames(md) { return parseBulletList(md); }
   function serializeNames(names) { return serializeBulletList('Names', names); }
 
+  /* ------------------------------ settings ----------------------------- */
+
+  // settings.sys.chippy.md — app preferences as "- <key>: <value>" bullets
+  // (datadefinition §3.5). Keys are lower-case words joined by dashes. Parsing
+  // keeps every well-formed pair, including keys this version does not know,
+  // so a newer build's settings survive a round trip through an older one.
+  // A repeated key: the last line wins. Anything else in the file is ignored.
+  const SETTING_LINE = /^- ([a-z][a-z0-9-]*): (.*)$/;
+
+  function parseSettings(md) {
+    const out = {};
+    for (const line of normEol(md).split('\n')) {
+      const m = line.match(SETTING_LINE);
+      if (!m) continue;
+      const value = m[2].trim();
+      if (value) out[m[1]] = value;
+    }
+    return out;
+  }
+
+  function serializeSettings(settings) {
+    let out = '# Settings\n\n';
+    for (const key of Object.keys(settings || {})) {
+      const value = String(settings[key] == null ? '' : settings[key]).replace(/[\r\n]+/g, ' ').trim();
+      if (/^[a-z][a-z0-9-]*$/.test(key) && value) out += '- ' + key + ': ' + value + '\n';
+    }
+    return out;
+  }
+
   /* ------------------- legacy single-file migration -------------------- */
 
   function migrateLegacyNav(md) {
@@ -254,6 +283,7 @@
     parseTags, serializeTags,
     parseNames, serializeNames,
     parseSummary, serializeSummary,
+    parseSettings, serializeSettings,
     migrateLegacyNav
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

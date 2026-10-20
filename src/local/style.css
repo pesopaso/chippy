@@ -709,6 +709,7 @@ body.slim .cal-month { grid-template-columns: repeat(7, minmax(0, 1fr)); }
 .kanban-focus-btn.active { border-color: var(--accent); color: var(--accent); }
 .kanban-col.drag-over { border-color: var(--accent); background: var(--card); }
 .kanban-col-header { font-size: .7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; }
+.kanban-col-note { text-transform: none; letter-spacing: 0; opacity: .85; }
 .kanban-card { background: var(--card); border-radius: 0; padding: 6px 8px; margin-bottom: 6px; cursor: grab; border-left: 3px solid var(--orange); }
 .kanban-card.followup { border-left-color: var(--followup); }
 .kanban-card.muted { opacity: .55; }
@@ -878,4 +879,19 @@ body.slim.slim-right #memberScreen .split-left { display: none; }
 .entry-card.sens-marked { border-left: 3px solid var(--danger, #e05252); }
 .entry-card.collapsed .entry-text { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 .entry-card .entry-meta { flex-wrap: wrap; }
+/* Compact closed cards (discussion stream): a done/obsolete task or a
+   realized/shelved idea is ONE line while collapsed — time, state, the start
+   of the text, delete (✂ on a link card). The meta row dissolves into the
+   card's own flex row and every other control is hidden; clicking the text
+   expands to the normal full card. */
+.entry-card.compact.collapsed { display: flex; align-items: center; gap: 6px; padding-top: 3px; padding-bottom: 3px; }
+.entry-card.compact.collapsed > .entry-meta { display: contents; }
+.entry-card.compact.collapsed > .entry-meta > :not(.entry-time, .state-square, .idea-state-badge, .link-badge, .del-btn, .dis-btn) { display: none; }
+.entry-card.compact.collapsed > .entry-meta > * { flex: 0 0 auto; margin-bottom: 0; }
+.entry-card.compact.collapsed > .entry-meta > .del-btn,
+.entry-card.compact.collapsed > .entry-meta > .dis-btn { order: 2; margin-left: 4px; }
+.entry-card.compact.collapsed > .entry-text { order: 1; flex: 1 1 0; min-width: 0; line-height: 1.4; }
+.entry-card.compact.collapsed > .entry-text * { font-size: inherit; margin: 0; }
+.entry-card.compact.collapsed > .entry-text :is(h1, h2, h3, h4, h5, h6) { font-weight: inherit; }
+.entry-card.compact.collapsed > .entry-text img { display: none; }
 .summary-meta { font-size: .72rem; color: var(--muted); margin-bottom: 4px; }

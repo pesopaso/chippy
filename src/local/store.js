@@ -18,6 +18,7 @@
     nav: { discussions: [], theme: 'dark' },
     tags: [],
     names: [],
+    settings: {},             // app preferences (settings.sys.chippy.md), key -> string
     members: new Map(),       // name -> member | null (lazy)
     activeMemberName: null,
     activeScreen: 'welcome',
@@ -208,6 +209,7 @@
     state.nav = activeNav;
     state.tags = tags;
     state.names = names;
+    state.settings = await readSettings(dir);
     state.members = new Map(activeNav.discussions.map(d => [d.name, null]));
     state.activeMemberName = null;
     state.folderReady = true;
@@ -236,6 +238,7 @@
     state.nav = activeNav;
     state.tags = tags;
     state.names = names;
+    state.settings = await readSettings(state.dirHandle);
     state.members = new Map(activeNav.discussions.map(d => [d.name, null]));
     // The previously open discussion may have been deleted or archived outside.
     if (state.activeMemberName &&
@@ -244,6 +247,37 @@
     }
     await ensureAllLoaded(); // fresh content for the open screen and all cross views
     emit({ type: 'folderReloaded', discussions: activeNav.discussions.length });
+  }
+
+  /* ------------------------------ settings ----------------------------- */
+
+  // App preferences live in settings.sys.chippy.md in the data folder, so they
+  // travel with the notebook (another browser or computer shows the same
+  // choice). A missing or unreadable file never blocks opening the folder —
+  // every setting just falls back to its default.
+  async function readSettings(dir) {
+    try { return (await io().loadSettings(dir)) || {}; }
+    catch (err) { console.error('[chippy] settings load failed:', err); return {}; }
+  }
+
+  // The stored value, or `fallback` when the setting was never saved.
+  function getSetting(key, fallback) {
+    const has = state.settings && Object.prototype.hasOwnProperty.call(state.settings, key);
+    const v = has ? state.settings[key] : undefined;
+    return v === undefined || v === null || v === '' ? fallback : v;
+  }
+
+  // Remember a preference. The in-memory value changes immediately (so the
+  // caller can re-render at once); the file write follows. Setting the value
+  // it already has writes nothing.
+  async function setSetting(key, value) {
+    value = String(value);
+    if (!state.settings) state.settings = {};
+    if (state.settings[key] === value) return;
+    state.settings[key] = value;
+    emit({ type: 'settingChanged', key, value });
+    if (!state.folderReady || !state.dirHandle) return;
+    await io().saveSettings(state.dirHandle, state.settings);
   }
 
   // Self-healing registries: whenever a discussion's entries are (re)loaded,
@@ -1219,13 +1253,16 @@
     const mk = body.match(/Resolved: (\d{4}-\d{2}-\d{2})/);
     return mk ? mk[1] : null;
   }
-  // True if not resolved, or resolved within the last `months`. (Done-column limit)
-  function doneRecent(e, months) {
+  // True if not resolved (no resolved date), or resolved within the last
+  // `days` days — today and the `days` calendar days before it. (Done-column
+  // limit of the task kanban.) `today` ("YYYY-MM-DD", local) is injectable for
+  // tests; the cutoff is pure UTC date math on that string, so no timezone or
+  // DST shift can move it.
+  function doneWithinDays(e, days, today) {
     const d = resolvedDate(e);
     if (!d) return true;
-    const c = new Date(); c.setMonth(c.getMonth() - months);
-    const p = n => String(n).padStart(2, '0');
-    const cutoff = `${c.getFullYear()}-${p(c.getMonth() + 1)}-${p(c.getDate())}`;
+    const [y, m, dd] = (today || nowISO().slice(0, 10)).split('-').map(Number);
+    const cutoff = new Date(Date.UTC(y, m - 1, dd - days)).toISOString().slice(0, 10);
     return d >= cutoff;
   }
 
@@ -1331,7 +1368,7 @@
       isReference, resolveOrigin, connectToDiscussion, disconnectFromDiscussion,
       saveImage, getImageUrl,
       ensureAllLoaded, collectEntries, applyUnifiedFilter, getAllNames, removeName, getAllTags,
-      getRo3Candidates, pickRo3, doneRecent, resolvedDate,
+      getRo3Candidates, pickRo3, doneWithinDays, resolvedDate, getSetting, setSetting,
       loadSummary, saveSummaryConfig, appendSummary, deleteSummary, updateSummary, moveSummaryToDiscussion, exportContribution, shortId,
       // pure helpers exposed for the UI and for tests
       nowISO, mintGoalId, mintLinkId, extractInlineTags, autoLinkUrls, extractNameTokens, applyEditTagRules,

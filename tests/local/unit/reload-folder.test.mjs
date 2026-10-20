@@ -42,6 +42,7 @@ io.loadDiscussion = async (_d, name) => {
   return { name: m.name, prep: m.prep, entries: m.entries.map(e => ({ ...e })) };
 };
 io.saveNav = async () => {}; io.saveTags = async () => {}; io.saveNames = async () => {};
+io.loadSettings = async () => ({});
 io.saveDiscussion = async (_d, m) => { disk.set(m.name, m); };
 
 test('reloadFolder picks up a discussion created outside Chippy', async () => {

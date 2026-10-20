@@ -1235,3 +1235,47 @@ ahead of this log (the release workflow bumps `main`/`staging` before an entry e
 - **`src/local/main.js`** — help text: where the mute button lives (right-column task rows, Ro3, All Tasks list + kanban); Ro3 line mentions mute.
 - **Tests** — unit suite green (134/134). Headless check: no mute on stream cards; Ro3 mute replaces the pick; All Tasks list mute dims the row and toggles back; task kanban 5/5 cards with mute; idea kanban none.
 - **Version stamp** — `3.3.0-dev.40` via `npm run version:sync`.
+
+### v3.3.0-dev.41 — 2026-10-02 — Task kanban: DONE column limited to the last 14 days
+
+> The DONE column of the task kanban (All Tasks → ▦ Kanban) now shows only tasks resolved in the last 14 days — today and the 14 calendar days before it — instead of roughly two months. The column title says so: "DONE (last 14 days only)". Older done tasks are only hidden from the board; nothing in the data changes and they remain in the discussions and the search. A done task without any resolved date is still shown.
+
+- **`src/local/store.js`** — `doneRecent(e, months)` replaced by `doneWithinDays(e, days, today?)`: cutoff is pure UTC date math on the local `nowISO()` day (honours the test clock), `today` injectable for tests.
+- **`src/local/pages.js`** — `KANBAN_DONE_DAYS = 14`; `buildTaskBoard` filters the resolved column with it and appends the "(last 14 days only)" note to the DONE header.
+- **`src/local/style.css`** — `.kanban-col-note` (note keeps its own casing inside the upper-case column header).
+- **`src/local/main.js`** — help text: Kanban line names the 14-day limit.
+- **Tests** — `store-helpers.test.mjs`: 2 new tests for `doneWithinDays` (today / exactly 14 / 15 days, latest DONE bullet wins, legacy marker, undated kept, month/year/DST boundaries). Unit suite green (136/136), also under `TZ=Europe/Zurich`. Headless check: tasks done today and 14 days ago shown, 15 and 40 days ago hidden, header reads "DONE (last 14 days only)".
+- **Version stamp** — `3.3.0-dev.41` via `npm run version:sync`.
+
+### v3.3.0-dev.42 — 2026-10-02 — All Tasks remembers List / Kanban (new `settings.sys.chippy.md`)
+
+> The All Tasks page now opens in the view you last picked. The choice is saved in a new system file in the data folder, `settings.sys.chippy.md`, as `- all-tasks-view: list|kanban` — so it survives closing Chippy and follows the notebook to another browser or computer. The file is optional: it appears the first time the toggle is used, and a folder without it opens in List as before. It is a general key/value preferences file (`- <key>: <value>`), so further settings can be added without a format change; unknown keys are kept on write. Only the All Tasks view is stored — the All Ideas toggle and ◎ Focus still reset per session.
+
+- **`src/local/format.js`** — `parseSettings` / `serializeSettings` (bullet pairs; malformed lines ignored, last duplicate wins, unknown keys preserved).
+- **`src/local/io.js`** — `SETTINGS_FILE`, `loadSettings` (absent file → `{}`), `saveSettings`.
+- **`src/local/store.js`** — `state.settings`, loaded in `openFolder` and `reloadFolder` (a failed read logs and falls back to defaults, never blocks the folder); `getSetting(key, fallback)`, `setSetting(key, value)` (updates memory first, then writes; no write when unchanged; emits `settingChanged`).
+- **`src/local/pages.js`** — the All Tasks view is read from / written to the `all-tasks-view` setting instead of module state.
+- **`src/local/main.js`** — help text: Tasks page line says the view is remembered.
+- **`documentation/datadefinition.md`** — new §3.5 `settings.sys.chippy.md`; file lists and folder layout mention it.
+- **Tests** — new `settings.test.mjs` (11 tests: namespace, exact bytes, parse rules, round trip, absent file, open/reload load, save + event + no-op, per-folder isolation, unreadable file); `reload-folder.test.mjs` io mock gains `loadSettings`. Unit suite green (147/147), also under `TZ=Europe/Zurich`. Headless check: toggle to Kanban writes the file, a fresh page load reopens in Kanban, back to List likewise; All Ideas unaffected.
+- **Version stamp** — `3.3.0-dev.42` via `npm run version:sync`.
+
+### v3.3.0-dev.43 — 2026-10-07 — Discussion: closed tasks and ideas take one line
+
+> In the discussion stream, done/obsolete tasks (and done followups) and realized/shelved ideas now take a single line instead of a control row plus a text row: the time, the state badge, the start of the text (cut with …) and the delete button. Everything else — idea icon, priority, tags, sensitive chip, edit, action, due date, lock, move, connect, the ▸ triangle — is hidden while the card is folded. Clicking the text opens the full card with all controls; ▾ folds it again. The state badge stays clickable on the line (e.g. to reopen a task). A linked closed task shows 🔗 and ✂ disconnect in place of delete (a link card has no delete). Row height drops from about 65 px to 30 px. Unchanged: achieved/canceled goals (no state badge to show — they keep the previous collapse), open items, and the overview pages (All Comments, Ideas, Goals). Display only — no data change.
+
+- **`src/local/ui.js`** — `entryCard` gains `opts.compactClosed`: closed non-goal cards get the `compact` class; in that mode the text always expands on click (and only expands — ▾ collapses), with a hover hint. The ✂ disconnect button gets a `dis-btn` class.
+- **`src/local/discussion.js`** — the stream's cards (own entries, resolved link cards, in-place refresh) pass `compactClosed: true`.
+- **`src/local/style.css`** — `.entry-card.compact.collapsed`: the meta row dissolves into the card's flex row (`display: contents`), only time / state / link badge / delete / disconnect stay visible, text clamps to one line (images hidden, headings at body size).
+- **`src/local/main.js`** — help text: Collapse and Shelved lines describe the one-line form.
+- **Tests** — unit suite green (147/147), also under `TZ=Europe/Zurich`. Headless check on a discussion with 11 entries: done, obsolete, done-followup (heading + link), sensitive done, realized, shelved and a linked done task all render as one 27–30 px line with exactly time + state + text + 🗑/✂; open task, open idea, plain comment and achieved goal unchanged; text click expands to the full card, a second text click does not collapse, ▾ collapses; state dropdown and delete dialog open from the line.
+- **Version stamp** — `3.3.0-dev.43` via `npm run version:sync`.
+
+### v3.3.0-dev.44 — 2026-10-07 — One-line closed cards: click the text again to fold
+
+> Follow-up to dev.43: on a done/obsolete task or realized/shelved idea in the discussion, clicking the text now toggles — the first click opens the full comment, a second click folds it back to the one line (before, only ▾ folded it). Clicks on a link, an image or a name/tag chip keep their own behaviour, and releasing the mouse after selecting text (drag to copy) does not fold the card.
+
+- **`src/local/ui.js`** — compact `entryCard`: the text click handler toggles in both directions; skips `a, img, .name-chip, .tag-chip` and a non-empty selection inside the text; hover hint reads "Click to fold" when open.
+- **`src/local/main.js`** — help text: Collapse and Shelved lines.
+- **Tests** — unit suite green (147/147). Headless check: text click opens, second click folds, third opens; ▾ still folds; a click on a link inside the open text and a click that ends a text selection leave it open.
+- **Version stamp** — `3.3.0-dev.44` via `npm run version:sync`.

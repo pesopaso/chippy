@@ -296,7 +296,7 @@
   }
   function openTasks() {
     crossScreen('allTasksScreen', 'All Tasks', (c, q) => {
-      if (allTasksView === 'kanban') { buildTaskBoard(c, q); return; }
+      if (getTasksView() === 'kanban') { buildTaskBoard(c, q); return; }
       const items = store().applyUnifiedFilter(store().collectEntries({ discTag: allTasksTagFilter }), q)
         .filter(e => (e.tags || []).some(t => t === 'task' || t === 'followup') && !(e.tags || []).some(t => CLOSED_TASK.includes(t)))
         .sort((a, b) => {
@@ -311,13 +311,13 @@
     { get: () => allTasksSearch, set: v => { allTasksSearch = v; } },
     (header) => {
       const actions = el('span', 'header-actions');
-      if (allTasksView === 'kanban') {
+      if (getTasksView() === 'kanban') {
         const focusBtn = el('button', 'btn-sm' + (kanbanFocus ? ' active' : ''), '◎ Focus');
         focusBtn.title = 'Focus: hide the HOLD and PRGT columns';
         focusBtn.addEventListener('click', () => { kanbanFocus = !kanbanFocus; openTasks(); });
         actions.append(focusBtn);
       }
-      actions.append(viewToggle(() => allTasksView, v => { allTasksView = v; }, openTasks));
+      actions.append(viewToggle(getTasksView, setTasksView, openTasks));
       header.append(actions);
     });
   }
@@ -498,7 +498,14 @@
   const KANBAN_IDEA_COLS = [['considered', 'Considered'], ['explored', 'Explored'], ['promoted', 'Promoted'], ['realized', 'Realized'], ['shelved', 'Shelved']];
   // The kanban is no longer its own page: All Tasks renders the task board and
   // All Ideas the idea lifecycle board, via a List/Kanban toggle per page.
-  let allTasksView = 'list';  // 'list' | 'kanban'
+  // The All Tasks view ('list' | 'kanban') is remembered across sessions: it is
+  // a saved setting (settings.sys.chippy.md via the store), not module state.
+  const TASKS_VIEW_SETTING = 'all-tasks-view';
+  const getTasksView = () => (store().getSetting(TASKS_VIEW_SETTING, 'list') === 'kanban' ? 'kanban' : 'list');
+  const setTasksView = v => {
+    store().setSetting(TASKS_VIEW_SETTING, v)
+      .catch(err => console.error('[chippy] could not save the All Tasks view:', err));
+  };
   let allIdeasView = 'list';  // 'list' | 'kanban'
   let allTasksSearch = '';    // survives the re-renders board drops trigger
   let allIdeasSearch = '';
@@ -576,6 +583,9 @@
 
   const rankPrio = e => ({ high: 0, medium: 1, low: 2 })[prioOf(e.tags)] ?? 3;
 
+  // The task board's DONE column only shows tasks resolved this recently.
+  const KANBAN_DONE_DAYS = 14;
+
   // The former Kanban page's task board, rendered inside All Tasks. Drops
   // change the task state; the page re-opens (search and view survive via
   // module state).
@@ -590,9 +600,12 @@
     const cols = kanbanFocus ? KANBAN_COLS.filter(([k]) => k !== 'onhold' && k !== 'purgatory') : KANBAN_COLS;
     for (const [key, label] of cols) {
       const col = el('div', 'kanban-col');
-      col.append(el('div', 'kanban-col-header', label));
+      const head = el('div', 'kanban-col-header', label);
+      // DONE only shows tasks resolved in the last KANBAN_DONE_DAYS days — say so.
+      if (key === 'resolved') head.append(' ', el('span', 'kanban-col-note', '(last ' + KANBAN_DONE_DAYS + ' days only)'));
+      col.append(head);
       let colTasks = tasks.filter(e => stateKeyOf(e.tags) === key);
-      if (key === 'resolved') colTasks = colTasks.filter(e => store().doneRecent(e, 2));
+      if (key === 'resolved') colTasks = colTasks.filter(e => store().doneWithinDays(e, KANBAN_DONE_DAYS));
       colTasks.sort((a, b) => {
         const ma = store().isMuted(a) ? 1 : 0, mb = store().isMuted(b) ? 1 : 0;
         return ma !== mb ? ma - mb : rankPrio(a) - rankPrio(b);

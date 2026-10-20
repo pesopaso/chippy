@@ -15,6 +15,8 @@ per-discussion image subfolders:
    discussion.
 3. One `summary.sys.chippy.md` — AI-summary history plus the LLM API configuration (present
    once the Summary screen has been used).
+4. One `settings.sys.chippy.md` — app preferences that travel with the notebook (present once
+   a preference has been changed).
 
 **Every file Chippy owns ends in `.chippy.md`** (since v3.3.0-dev.37), so one glob selects them
 all. What comes before that suffix decides the kind of file. Because discussion filenames are
@@ -24,11 +26,11 @@ sanitized to `[A-Za-z0-9_ -]` (dots are stripped), a discussion stem never conta
 |---|---|
 | `<stem>.chippy.md` — no dot in `<stem>` | active discussion |
 | `<stem>.archive.chippy.md` | archived discussion — skipped when the folder is loaded |
-| `<name>.sys.chippy.md` | system file (`navigation`, `tags`, `names`, `summary`) |
+| `<name>.sys.chippy.md` | system file (`navigation`, `tags`, `names`, `summary`, `settings`) |
 | any other `*.<kind>.chippy.md` | reserved, ignored |
 
-The namespaces cannot collide, so `navigation`, `tags`, `names`, and `summary` are ordinary
-discussion names (`tags.chippy.md` is a discussion called "tags").
+The namespaces cannot collide, so `navigation`, `tags`, `names`, `summary`, and `settings` are
+ordinary discussion names (`tags.chippy.md` is a discussion called "tags").
 
 ---
 
@@ -39,7 +41,8 @@ discussion names (`tags.chippy.md` is a discussion called "tags").
   by `.chippy.md`. Example: a discussion displayed as `R&D` is stored as `RD.chippy.md`, while
   the display name kept inside the file (`# R&D`) retains the ampersand.
 - System files (`navigation.sys.chippy.md`, `tags.sys.chippy.md`, `names.sys.chippy.md`,
-  `summary.sys.chippy.md`) and any `*.archive.chippy.md` file are not treated as discussions.
+  `summary.sys.chippy.md`, `settings.sys.chippy.md`) and any `*.archive.chippy.md` file are not
+  treated as discussions.
 - A file counts as a loadable discussion only when it ends in `.chippy.md` and the part before
   that suffix is a valid stem (non-empty, contains no dot). Discussions flagged as archived are
   excluded from the active list. Plain `<stem>.md` / `<stem>.archive.md` files are the
@@ -477,6 +480,29 @@ Generations 1 and 2 are handled in one pass when chippy loads, so existing folde
   therefore runs at most once per folder — after the first load, the folder is in the
   `.sys.chippy.md` layout and the legacy names are free for ordinary discussions.
 
+### 3.5 `settings.sys.chippy.md` — app preferences
+
+```markdown
+# Settings
+
+- all-tasks-view: kanban
+```
+
+Optional file (since v3.3.0-dev.42), present once a preference has been changed. It holds app
+preferences that belong to the notebook rather than to one browser, so the same choice shows
+up wherever the folder is opened. A missing file means every setting is at its default; it is
+not an index and takes no part in the legacy migrations (section 3.4).
+
+One `- <key>: <value>` line per setting. A key is lower-case letters, digits and dashes,
+starting with a letter; the value is the rest of the line. Lines that do not match are ignored,
+a repeated key takes its last value, and keys the running version does not know are kept and
+written back unchanged. An unreadable file is treated as absent — it never blocks opening the
+folder.
+
+| Key | Values | Default | Meaning |
+|---|---|---|---|
+| `all-tasks-view` | `list`, `kanban` | `list` | The view the All Tasks page opens in. Written whenever the List / Kanban toggle changes. Any other value reads as `list`. |
+
 ---
 
 ## 4. `summary.sys.chippy.md` — AI summaries and API configuration
@@ -523,6 +549,7 @@ image filename is `yyyy-mm-dd hh-mm-ss.jpg`. Inside entry text, images are refer
 ├── tags.sys.chippy.md
 ├── names.sys.chippy.md
 ├── summary.sys.chippy.md
+├── settings.sys.chippy.md
 ├── Alice Johnson.chippy.md
 ├── Alice Johnson\
 │   ├── 2026-02-25 10-30-45.jpg

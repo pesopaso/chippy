@@ -142,6 +142,32 @@ test('resolvedDate prefers the latest "→ DONE" action over the legacy marker',
   assert.equal(store.resolvedDate({ body: 'open task' }), null);
 });
 
+test('doneWithinDays keeps tasks resolved today or in the 14 days before, and undated ones', () => {
+  const done = d => ({ body: 'x\n\nTask Resolution Actions\n- ' + d + ' : → DONE' });
+  const today = '2026-10-02';
+  assert.equal(store.doneWithinDays(done('2026-10-02'), 14, today), true);   // today
+  assert.equal(store.doneWithinDays(done('2026-09-18'), 14, today), true);   // exactly 14 days ago
+  assert.equal(store.doneWithinDays(done('2026-09-17'), 14, today), false);  // 15 days ago
+  assert.equal(store.doneWithinDays(done('2026-07-01'), 14, today), false);
+  // the latest DONE bullet counts (re-resolved task)
+  const again = { body: 'x\n\nTask Resolution Actions\n- 2026-08-01 : → DONE\n- 2026-08-05 : → OPEN\n- 2026-09-30 : → DONE' };
+  assert.equal(store.doneWithinDays(again, 14, today), true);
+  // legacy Resolved: marker, and no date at all (kept rather than hidden)
+  assert.equal(store.doneWithinDays({ body: 'x\n\nResolved: 2026-01-01 08:00:00' }, 14, today), false);
+  assert.equal(store.doneWithinDays({ body: 'done without a date' }, 14, today), true);
+});
+
+test('doneWithinDays cutoff crosses month, year and DST boundaries by calendar days', () => {
+  const done = d => ({ body: 'x\n\n- ' + d + ' : → DONE' });
+  assert.equal(store.doneWithinDays(done('2025-12-27'), 14, '2026-01-10'), true);
+  assert.equal(store.doneWithinDays(done('2025-12-26'), 14, '2026-01-10'), false);
+  // Europe/Zurich leaves DST on 2026-10-25
+  assert.equal(store.doneWithinDays(done('2026-10-18'), 14, '2026-11-01'), true);
+  assert.equal(store.doneWithinDays(done('2026-10-17'), 14, '2026-11-01'), false);
+  // default clock: resolved "now" is always inside the window
+  assert.equal(store.doneWithinDays(done(store.nowISO().slice(0, 10)), 14), true);
+});
+
 test('applyEditTagRules promotes a comment to task/goal with defaults', () => {
   // comment -> task: gets default 'low'
   assert.deepEqual(store.applyEditTagRules(['meeting', 'task']), ['meeting', 'task', 'low']);

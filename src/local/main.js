@@ -9,7 +9,7 @@
 
   // Single source of truth for the version. Used for display and as the cache-bust
   // query param on the CSS/JS tags in app.html (bump both together on release).
-  const VERSION = '3.3.0-dev.40';
+  const VERSION = '3.3.0-dev.44';
   Chippy.VERSION = VERSION;
 
   const THEME_KEY = 'chippy_theme';
@@ -249,7 +249,7 @@
 
       section('Tasks, FollowUps & Goals', 'Classified comments gain a state machine and controls.', [
         ['Task states', 'OPEN, WIP (in progress), CHK (check), HOLD (on hold), PRGT (purgatory), DONE (resolved), OBSL (obsolete) — click the state square for the menu. Every state change is logged as a dated "→ STATE" line in the action section.'],
-        ['Collapse', 'DONE / OBSL (and achieved/canceled goals) collapse to one line; click ▸ to expand.'],
+        ['Collapse', 'in the discussion, DONE / OBSL tasks and followups take a single line: time, state, the start of the text and 🗑 (✂ on a linked task). Click the text to open the full comment with all its controls; click it again (or ▾) to fold it; the state square works on the line itself, e.g. to reopen. Achieved/canceled goals keep their text collapsed to one line under the controls (▸ expands).'],
         ['FollowUps', 'behave like tasks; resolving one marks it resolvedfollowup.'],
         ['Goals', '✓ achieve or ✕ cancel logs a dated "→ Achieved" / "→ Canceled" line in Goal Actions; goals are visually highlighted. Link a comment to a goal, and double-click any task/goal to jump to its source entry.'],
         ['Mute', 'hides a task for 5 days (muted:<date>) to cut noise in Ro3 and the kanban; the 🔇 button sits on the task rows in the right column, the Ro3 cards and the All Tasks page (list and kanban) — not in the discussion stream. Muted tasks render dimmed and sort last; a muted Ro3 pick is replaced.'],
@@ -269,7 +269,7 @@
       section('Ideas', 'Ideas (💡) capture possibilities that aren’t yet commitments — a middle ground between comments and tasks/goals.', [
         ['Capture', 'tag a comment #idea; it appears in history with a 💡 icon, its state badge and priority square, and in the "Open Ideas" panel on the right.'],
         ['Lifecycle', 'Considered (default) → Explored → Promoted → Realized or Shelved — click the state badge for the menu. From Explored the menu creates linked tasks (→ Task…; the first task promotes the idea); a Promoted idea stays open and creates further tasks and goals (→ Task…/→ Goal…). Realized (done directly, no task/goal needed) and Shelved are the closed states. Transitions are logged as dated "→ STATE" lines in Idea Actions.'],
-        ['Shelved', 'realized and shelved ideas behave like done/obsolete tasks: dimmed and collapsed to one line in history (▸ expands) and absent from the Open Ideas panel; unshelve or reopen via the badge any time.'],
+        ['Shelved', 'realized and shelved ideas behave like done/obsolete tasks: dimmed and reduced to a single line in the discussion (time, state, start of the text, 🗑 — click the text to open the full comment, again to fold it) and absent from the Open Ideas panel; unshelve or reopen via the badge any time.'],
         ['Promote', 'the badge menu’s "→ Task…" / "→ Goal…" create the new entry (title prompt, prefilled), set the idea to Promoted, and cross-link both action logs.'],
         ['Interest', 'a ▲n indicator counts the actions and links an idea has attracted — a hint which ideas are generating discussion.'],
         ['Kanban', 'the All Ideas page has a ▦ Kanban view (toggle top right) with the five lifecycle columns; drag an idea between them to change its state.'],
@@ -284,14 +284,14 @@
 
       section('Page overview', 'Sidebar buttons open these cross-discussion pages, each with the unified #tag / @name / free-text search. Double-click any comment card (Comments, Tasks, Goals, Ideas, Ro3, Calendar) to jump to that exact comment in its discussion.', [
         ['Comments', 'every comment across all discussions.'],
-        ['Tasks', 'all open tasks.'],
+        ['Tasks', 'all open tasks — as a ☰ List or a ▦ Kanban board (toggle top right). The view you pick is remembered: it is saved with your notebook (settings.sys.chippy.md) and is the one you get the next time you open the folder.'],
         ['Goals', 'all open goals.'],
         ['Ideas', 'all ideas across discussions, with state tabs (Considered / Explored / Promoted / Realized / Shelved).'],
         ['Links', 'all links, deduped (images excluded), renameable.'],
         ['Images', 'every image; click for the carousel.'],
         ['Names', '@[Name] references — counts, last-seen and a drill-down.'],
         ['Tags', 'every tag with its total uses and the date last used.'],
-        ['Kanban', 'no longer a separate page: the All Tasks and All Ideas pages each have a ☰ List / ▦ Kanban toggle (top right). Tasks: drag between state columns (◎ Focus hides HOLD/PRGT; the DONE column shows ~2 months). Ideas: drag between the five lifecycle columns.'],
+        ['Kanban', 'no longer a separate page: the All Tasks and All Ideas pages each have a ☰ List / ▦ Kanban toggle (top right). Tasks: drag between state columns (◎ Focus hides HOLD/PRGT; the DONE column shows only tasks resolved in the last 14 days). Ideas: drag between the five lifecycle columns.'],
         ['Calendar', 'a due-date calendar over open tasks/followups — day, focus, work, full and month views. In the work week, full week and month views, drag a task onto another day to change its due date (nothing else changes). The ⏰ Overdue toggle adds a column on the left with everything overdue — drag a task out of it onto a day to reschedule it. On Focus the toggle is on by default and controls the Overdue column there.'],
         ['Ro3', 'Rule of Three — three open tasks picked at random; Refresh re-rolls. 🔇 mutes a pick for 5 days and replaces it.'],
         ['Activity', 'charts: comment inflow (incl. ideas), task/goal/idea states, a weekly activity timeline with legend (comments, tasks, ideas, links, images, actions, state changes — actions and state changes count in the week they were logged), weekly tasks-over-time state areas (open/WIP/CHK/HOLD/PRGT, rebuilt from the dated state-change actions), and tasks-created-per-week by state.'],

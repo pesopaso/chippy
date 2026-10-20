@@ -18,7 +18,7 @@
   // contains one — a remainder WITHOUT a dot is an active discussion, a
   // remainder ending in ".archive" is an archived discussion, and one ending in
   // ".sys" is an app-managed system file. The namespaces cannot collide, so
-  // "navigation", "tags", "names", and "summary" are ordinary discussion names.
+  // "navigation", "tags", "names", "summary", and "settings" are ordinary discussion names.
   const CHIPPY_SUFFIX = '.chippy.md';
   const ARCHIVE_SUFFIX = '.archive' + CHIPPY_SUFFIX;
   const SYS_SUFFIX = '.sys' + CHIPPY_SUFFIX;
@@ -26,6 +26,7 @@
   const TAGS_FILE = 'tags' + SYS_SUFFIX;
   const NAMES_FILE = 'names' + SYS_SUFFIX;
   const SUMMARY_FILE = 'summary' + SYS_SUFFIX;
+  const SETTINGS_FILE = 'settings' + SYS_SUFFIX; // app preferences (since v3.3.0-dev.42)
   // Gen-2 (v3.1 – v3.3.0-dev.36) system filenames — renamed once to *.sys.chippy.md.
   const GEN2_NAV = 'navigation' + CHIPPY_SUFFIX;
   const GEN2_TAGS = 'tags' + CHIPPY_SUFFIX;
@@ -438,6 +439,17 @@
     await writeFileText(dirHandle, NAMES_FILE, fmt.serializeNames(names));
   }
 
+  // App preferences (datadefinition §3.5). The file is optional: absent means
+  // every setting is at its default, and it is first written when a setting
+  // changes. Never part of the migrations — it has no legacy name.
+  async function loadSettings(dirHandle) {
+    if (!(await fileExists(dirHandle, SETTINGS_FILE))) return {};
+    return fmt.parseSettings(await readFileText(dirHandle, SETTINGS_FILE));
+  }
+  async function saveSettings(dirHandle, settings) {
+    await writeFileText(dirHandle, SETTINGS_FILE, fmt.serializeSettings(settings));
+  }
+
   async function readSummary(dirHandle) {
     if (!(await fileExists(dirHandle, SUMMARY_FILE))) return null;
     return readFileText(dirHandle, SUMMARY_FILE);
@@ -502,14 +514,14 @@
 
   Chippy.io = {
     CHIPPY_SUFFIX, ARCHIVE_SUFFIX, SYS_SUFFIX,
-    NAV_FILE, TAGS_FILE, NAMES_FILE, SUMMARY_FILE,
+    NAV_FILE, TAGS_FILE, NAMES_FILE, SUMMARY_FILE, SETTINGS_FILE,
     sanitizeName, isSafeImagePath, isDiscussionFile,
     classifyFilename, discussionFilename, archiveFilename,
     openFolder, listDiscussions, listArchived, reconcileNavWithFiles,
     loadDiscussion, saveDiscussion,
     archiveDiscussion, renameDiscussion,
     migrateDiscussionFilenames,
-    loadIndexes, saveNav, saveTags, saveNames,
+    loadIndexes, saveNav, saveTags, saveNames, loadSettings, saveSettings,
     readSummary, writeSummary,
     ImageStore
   };

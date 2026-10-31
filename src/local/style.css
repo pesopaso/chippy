@@ -15,6 +15,7 @@
   --border: #46556b;
   --text: #e3e7f0;
   --muted: #92a3b9;
+  --placeholder: #b4bfcc; /* light grey hint text in input boxes */
   --accent: #518eaa;
   --name: #93b4ac;
 
@@ -52,6 +53,7 @@
   --border: #cbd6df;
   --text: #10152a;
   --muted: #63768b;
+  --placeholder: #a3adb8;
   --accent: #384057;
   --name: #214937;
   --goal-bg: #e6ecf2; /* surface with a hint of goal teal (light) */
@@ -245,6 +247,8 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
   font-size: .8rem;
 }
 .sidebar-search.filter-active { border-color: var(--orange); }
+/* Search boxes show a light grey "search" until something is typed. */
+.sidebar-search::placeholder, .list-search::placeholder { color: var(--placeholder); opacity: 1; }
 .search-clear {
   position: absolute; right: 12px; top: 3px;
   border: none; background: none; color: var(--muted);
@@ -311,6 +315,7 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .member-header { display: flex; align-items: center; gap: 12px; padding-top: 12px; }
 .member-title { font-size: 1.4rem; font-weight: 600; min-width: 0; }
 .member-count { font-size: .8rem; color: var(--muted); }
+.member-file-stats { font-size: .72rem; color: var(--muted); white-space: nowrap; margin-right: 4px; cursor: default; }
 .member-header-actions { display: flex; gap: 8px; align-items: center; margin-left: auto; }
 .favorite-btn, .reload-btn, .rename-btn {
   cursor: pointer; color: var(--muted); font-size: 1rem; user-select: none;
@@ -382,6 +387,15 @@ blockquote { border-left: 3px solid var(--border); margin: 6px 0; padding-left: 
 .entry-text pre, .entry-text h1, .entry-text h2, .entry-text h3,
 .entry-text h4, .entry-text h5, .entry-text h6 { margin: 0 0 .7em; }
 .entry-text > :last-child { margin-bottom: 0; }
+/* Action log (Task Resolution Actions / Followup / Goal / Idea Actions): small
+   monospace so the dated log reads apart from the comment above it. */
+.entry-text .entry-action-log {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, "SF Mono", Menlo, "Courier New", monospace;
+  font-size: .72rem; line-height: 1.5;
+}
+.entry-text .entry-action-log p { margin: 0 0 .2em; color: var(--muted); }
+.entry-text .entry-action-log ul { margin: 0; padding-left: 1.4em; }
+.entry-text .entry-action-log > :last-child { margin-bottom: 0; }
 .history-empty, .prep-empty { color: var(--muted); font-size: .85rem; }
 
 /* ---- Entry input ------------------------------------------------------- */

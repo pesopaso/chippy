@@ -186,6 +186,24 @@
   function parseNames(md) { return parseBulletList(md); }
   function serializeNames(names) { return serializeBulletList('Names', names); }
 
+  /* ----------------------------- text stats ---------------------------- */
+
+  // Size of a Markdown file, counted like `wc`: lines = line breaks, plus one
+  // when the text does not end with a break (an empty text has 0 lines);
+  // words = runs of non-whitespace (Markdown markers such as "###" or "-"
+  // count, as they are in the file); chars = Unicode code points, line
+  // breaks included. CRLF counts as one break and one character, so a file
+  // edited on Windows gives the same numbers.
+  function textStats(text) {
+    const t = normEol(String(text || ''));
+    if (!t) return { lines: 0, words: 0, chars: 0 };
+    const breaks = (t.match(/\n/g) || []).length;
+    const lines = breaks + (t.endsWith('\n') ? 0 : 1);
+    const words = (t.match(/\S+/g) || []).length;
+    const chars = Array.from(t).length;
+    return { lines, words, chars };
+  }
+
   /* ------------------------------ settings ----------------------------- */
 
   // settings.sys.chippy.md — app preferences as "- <key>: <value>" bullets
@@ -284,6 +302,7 @@
     parseNames, serializeNames,
     parseSummary, serializeSummary,
     parseSettings, serializeSettings,
+    textStats,
     migrateLegacyNav
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

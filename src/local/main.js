@@ -9,7 +9,7 @@
 
   // Single source of truth for the version. Used for display and as the cache-bust
   // query param on the CSS/JS tags in app.html (bump both together on release).
-  const VERSION = '3.3.0-dev.44';
+  const VERSION = '3.3.0-dev.46';
   Chippy.VERSION = VERSION;
 
   const THEME_KEY = 'chippy_theme';
@@ -190,7 +190,7 @@
 
       section('Navigation', 'The left sidebar lists your discussions and opens the cross-discussion pages.', [
         ['Discussions', 'grouped by tag; favourites (★) are pinned on top; each row shows a comment-count chip on the right.'],
-        ['Search discussions', 'filters the sidebar list by name (× clears).'],
+        ['Search discussions', 'the box marked "search" at the top of the sidebar filters the list by name (× clears).'],
         ['Page buttons', 'open the overview pages — see "Page overview" below.'],
         ['Open Folder', 'connect your local data folder; the status line then shows discussion / tag / name counts.'],
         ['Reload folder (↻ next to +)', 're-reads the whole folder from disk: new discussions appear, outside edits show up, deleted files drop out. Use it when another tool — e.g. an AI — writes into your data folder while Chippy is open.'],
@@ -198,10 +198,10 @@
       ]);
 
       section('Discussion', 'The middle column is where you read and write a discussion.', [
-        ['Title & actions', 'the discussion name with its comment count; on the right: ★ favourite, 🔓/🔒 sensitive (locks the whole discussion out of AI summaries — a red "sensitive" chip appears next to the title), ↻ reload from disk, ⬇ export a contribution summary, 🗄 archive (renames the file to *.archive.chippy.md — nothing is deleted).'],
+        ['Title & actions', 'the discussion name with its comment count; on the right: the size of its .md file (lines · words · characters, updated as you edit), ★ favourite, 🔓/🔒 sensitive (locks the whole discussion out of AI summaries — a red "sensitive" chip appears next to the title), ↻ reload from disk, ⬇ export a contribution summary, 🗄 archive (renames the file to *.archive.chippy.md — nothing is deleted).'],
         ['Description', 'editable notes for the discussion (✎ at the top-right); the "Description" label hides once it has text.'],
         ['New comment', 'type a note — #tag to classify, @ to mention a name, Ctrl+V to paste an image; select some text and Ctrl+V a copied URL to turn the selection into the title of a link. Below the box: tag chips on the left; goal link, due date and Save on the right. The box clears after saving.'],
-        ['Search this discussion', 'filters the comments below by #tag / @name / free text.'],
+        ['Search this discussion', 'the box marked "search" above the comments filters them by #tag / @name / free text.'],
         ['History', 'comments grouped by day, newest first; today reads "Today".']
       ]);
 
@@ -215,7 +215,7 @@
 
       section('Comments — functions & special tags',
         'Comments support Markdown (headings, bold/italic, lists, code, quotes), auto-linked URLs, @[Name] mentions and inline images.', [
-        ['Actions', '✎ edit inline (tags are editable here — type #tag or use "+ tag"; × removes one; #task / #followup / #goal and priorities promote the comment; Ctrl+V pastes an image), ⚡ add a dated action, 📅 due date (calendar icon when unset; shows the date once set), 🔓/🔒 mark sensitive, ➜ move to another discussion, 🔗 connect to another discussion, and — set slightly apart — 🗑 delete. On a linked comment ✂ disconnects instead (removes only the link). Mute (🔇) is not in the stream — it sits on the task rows in the right column, on Ro3 and on the All Tasks page.'],
+        ['Actions', '✎ edit inline (tags are editable here — type #tag or use "+ tag"; × removes one; #task / #followup / #goal and priorities promote the comment; Ctrl+V pastes an image), ⚡ add a dated action (the action log at the end of a comment is shown in small monospace type), 📅 due date (calendar icon when unset; shows the date once set), 🔓/🔒 mark sensitive, ➜ move to another discussion, 🔗 connect to another discussion, and — set slightly apart — 🗑 delete. On a linked comment ✂ disconnects instead (removes only the link). Mute (🔇) is not in the stream — it sits on the task rows in the right column, on Ro3 and on the All Tasks page.'],
         ['"Updated:"', 'a single line recording the latest edit on a later day than creation; refreshed in place on every further edit. Editing only touches the comment text — actions and the Updated line are preserved.'],
         ['Classify', '#task, #followup, #goal or #idea turn a comment into that item type.'],
         ['Priority', '#high / #medium / #low (the priority square cycles them).'],

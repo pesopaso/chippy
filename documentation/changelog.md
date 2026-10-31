@@ -1279,3 +1279,26 @@ ahead of this log (the release workflow bumps `main`/`staging` before an entry e
 - **`src/local/main.js`** — help text: Collapse and Shelved lines.
 - **Tests** — unit suite green (147/147). Headless check: text click opens, second click folds, third opens; ▾ still folds; a click on a link inside the open text and a click that ends a text selection leave it open.
 - **Version stamp** — `3.3.0-dev.44` via `npm run version:sync`.
+
+### v3.3.0-dev.45 — 2026-10-20 — File size in the discussion header; "search" in the search boxes
+
+> Two small UI changes. (1) The discussion header shows the size of the discussion's `.md` file next to the ★ / 🔓 / ↻ / ⬇ / 🗄 actions: "18 lines · 42 words · 256 chars", counted like `wc` on exactly the text that is saved (Markdown markers count as words, line breaks as characters). It updates live on every change, including the ones that only patch a single card (state, action, priority …). (2) Every search box — sidebar, discussion, and the cross-discussion pages — now shows just the word "search" in light grey until something is typed; the longer hint (free text, #tag or @name) moved to the box's tooltip. No data change.
+
+- **`src/local/format.js`** — `textStats(text)` → `{ lines, words, chars }` (CRLF-tolerant, code points).
+- **`src/local/discussion.js`** — `.member-file-stats` in the header actions; `fileStatsText` / `updateFileStats`, refreshed from a store subscription; discussion search placeholder `search` + tooltip.
+- **`src/local/pages.js`** — cross-page search placeholder `search` + tooltip.
+- **`src/local/app.html`** — sidebar search placeholder `search` + tooltip.
+- **`src/local/style.css`** — `--placeholder` colour per theme (light grey) for `.sidebar-search` / `.list-search` placeholders; `.member-file-stats`.
+- **`src/local/main.js`** — help text: Title & actions, Search discussions, Search this discussion.
+- **Tests** — `format.test.mjs`: 2 new tests for `textStats` (empty/null, trailing break, Markdown markers, CRLF = LF, code points, serialized discussion). Unit suite green (149/149), also under `TZ=Europe/Zurich`. Headless check: header numbers equal a `wc`-style count of `Alpha.chippy.md` on disk after create (7 · 6 · 38), two comments (15 · 31 · 188) and an in-place action (18 · 42 · 256); all three search boxes show "search" in light grey in dark and light theme.
+- **Version stamp** — `3.3.0-dev.45` via `npm run version:sync`.
+
+### v3.3.0-dev.46 — 2026-10-30 — Action log in small monospace type
+
+> The action section at the end of a comment — "Task Resolution Actions", "Followup Actions", "Goal Actions" or "Idea Actions" with its dated bullets — is now set in a monospace font at a considerably smaller size (.72rem instead of .92rem), with the section header in the muted colour. The log now reads clearly apart from the comment text above it. Applies wherever the full comment is rendered (discussion stream, All Tasks/Ideas pages). Display only — no data change.
+
+- **`src/local/ui.js`** — `renderEntryText` splits the trailing action section with `store.splitTrailingActions` (the same rule the write path uses) and wraps it in `<div class="entry-action-log">`; bodies without an action section render as before.
+- **`src/local/style.css`** — `.entry-text .entry-action-log`: system monospace stack (`ui-monospace`, Cascadia Mono, Consolas, SF Mono, Menlo), `.72rem`; muted header line, tight bullet list.
+- **`src/local/main.js`** — help text: Actions line mentions the monospace action log.
+- **Tests** — new `action-log-render.test.mjs` (wrapper after the comment, Updated line stays outside, no wrapper without an action section, action-only body). Unit suite green (153/153). No headless check (cosmetic; no browser binary in the VM).
+- **Version stamp** — `3.3.0-dev.46` via `npm run version:sync`.

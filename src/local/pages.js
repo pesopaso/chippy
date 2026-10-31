@@ -202,7 +202,8 @@
     const wrap = el('div', 'list-search-wrap');
     const inp = el('input', 'list-search');
     inp.type = 'text';
-    inp.placeholder = 'Search... use #tag or @name to filter';
+    inp.placeholder = 'search';
+    inp.title = 'Search — free text, #tag or @name to filter';
     if (initial) { inp.value = initial; inp.classList.add('filter-active'); }
     ui().attachNameAutocomplete(inp);
     const clr = el('button', 'search-clear hidden', '×');

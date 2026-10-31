@@ -110,3 +110,26 @@ test('migrateLegacyNav lifts inline Tags / Names sections out of navigation.md',
   assert.deepEqual(m.names, ['Anna Wehrli']);
   assert.equal(m.discussions[0].name, 'Alice Johnson');
 });
+
+test('textStats counts lines, words and characters like wc', () => {
+  assert.deepEqual(format.textStats(''), { lines: 0, words: 0, chars: 0 });
+  assert.deepEqual(format.textStats(null), { lines: 0, words: 0, chars: 0 });
+  assert.deepEqual(format.textStats('one'), { lines: 1, words: 1, chars: 3 });
+  assert.deepEqual(format.textStats('one\n'), { lines: 1, words: 1, chars: 4 });
+  // Markdown markers count as words; blank lines count as lines
+  assert.deepEqual(format.textStats('# Title\n\n## Entries\n\n- a  b\n'), { lines: 5, words: 7, chars: 28 });
+  // CRLF is one break and one character: same numbers as LF
+  assert.deepEqual(format.textStats('a b\r\nc\r\n'), format.textStats('a b\nc\n'));
+  // characters are code points (emoji, umlauts count once)
+  assert.deepEqual(format.textStats('Zürich 💡'), { lines: 1, words: 2, chars: 8 });
+});
+
+test('textStats of a serialized discussion matches the saved text', () => {
+  const md = format.serializeDiscussion({ name: 'Alpha', prep: '', entries: [
+    { created_at: '2026-10-20 09:00:00', tags: ['task'], goal: null, due: null, body: 'Call the supplier' }
+  ] });
+  const s = format.textStats(md);
+  assert.equal(s.lines, md.split('\n').length - (md.endsWith('\n') ? 1 : 0));
+  assert.equal(s.chars, md.length);
+  assert.equal(s.words, md.trim().split(/\s+/).length);
+});

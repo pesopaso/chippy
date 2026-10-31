@@ -413,11 +413,31 @@
     return wrap;
   }
 
+  // "1,234 lines · 5,678 words · 40,321 chars" for the discussion's .md file —
+  // counted on the exact text that is saved (format.serializeDiscussion).
+  function fileStatsText(member) {
+    const s = Chippy.format.textStats(Chippy.format.serializeDiscussion(member));
+    const n = (v, one, many) => v.toLocaleString() + ' ' + (v === 1 ? one : many);
+    return n(s.lines, 'line', 'lines') + ' · ' + n(s.words, 'word', 'words') + ' · ' + n(s.chars, 'char', 'chars');
+  }
+  // Every store change can alter the file (a new action, a state change, a
+  // prep edit …) and most of them only patch one card in place, so the header
+  // numbers are refreshed on every store event while a discussion is open.
+  function updateFileStats() {
+    const elStats = document.querySelector('#memberScreen .member-file-stats');
+    const member = store().getActiveMember && store().getActiveMember();
+    if (elStats && member) elStats.textContent = fileStatsText(member);
+  }
+  if (Chippy.store && Chippy.store.subscribe) {
+    Chippy.store.subscribe(() => { try { updateFileStats(); } catch (_) { /* header not built */ } });
+  }
+
   // Search box that filters this discussion's comment history.
   function makeDiscSearch(onChange) {
     const wrap = el('div', 'list-search-wrap');
     const inp = el('input', 'list-search'); inp.type = 'text';
-    inp.placeholder = 'Search this discussion…  #tag or @name';
+    inp.placeholder = 'search';
+    inp.title = 'Search this discussion — free text, #tag or @name';
     ui().attachNameAutocomplete(inp);
     const clr = el('button', 'search-clear hidden', '×');
     inp.addEventListener('input', () => {
@@ -852,6 +872,11 @@
     const countEl = el('span', 'member-count', entryCount + (entryCount === 1 ? ' comment' : ' comments'));
     header.append(countEl);
     const actions = el('div', 'member-header-actions');
+    // Size of the discussion's .md file (lines · words · characters), kept
+    // current by the store subscription below (updateFileStats).
+    const stats = el('span', 'member-file-stats', fileStatsText(member));
+    stats.title = 'Size of this discussion\'s .md file (as saved): lines · words · characters';
+    actions.append(stats);
     const star = el('span', 'favorite-btn' + (isFavorite(member.name) ? ' on' : ''),
       isFavorite(member.name) ? '★' : '☆');
     star.title = 'Toggle favorite';
